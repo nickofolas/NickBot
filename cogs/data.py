@@ -211,6 +211,7 @@ class Data(commands.Cog):
     async def create_tag(self, ctx, name: str = None, *, body: str = None):
         """Create a tag with the specified name and content
         Tag name must go in quotes if you intend to use spaces"""
+        msg = ctx.message
         async with asq.connect('./database.db') as db:
             if name is None and body is None:
                 async with ctx.ExHandler(
@@ -232,8 +233,11 @@ class Data(commands.Cog):
             if name in ('create', 'delete', 'del', 'info', 'edit', 'list'):
                 raise commands.CommandError('This name cannot be used')
             res = await db.execute('SELECT EXISTS(SELECT 1 FROM tags WHERE tagname=$1)', (name.lower(),))
-            if attach := msg.attachments or ctx.message.attachments:
-                body += ' ' + attach[0].url
+            if attach := msg.attachments:
+                if body:
+                    body += ' ' + attach[0].url
+                else:
+                    body = attach[0].url
             if (await res.fetchone())[0] == 1:
                 raise commands.CommandError('A tag with this name already exists!')
             await db.execute('INSERT INTO tags (owner_id, tagname, tagbody, usage_epoch) VALUES ($1, $2, $3, $4)', (ctx.author.id, name.lower(), body, time.time()))
