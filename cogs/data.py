@@ -232,6 +232,8 @@ class Data(commands.Cog):
             if name in ('create', 'delete', 'del', 'info', 'edit', 'list'):
                 raise commands.CommandError('This name cannot be used')
             res = await db.execute('SELECT EXISTS(SELECT 1 FROM tags WHERE tagname=$1)', (name.lower(),))
+            if attach := msg.attachments or ctx.message.attachments:
+                body += ' ' + attach[0].url
             if (await res.fetchone())[0] == 1:
                 raise commands.CommandError('A tag with this name already exists!')
             await db.execute('INSERT INTO tags (owner_id, tagname, tagbody, usage_epoch) VALUES ($1, $2, $3, $4)', (ctx.author.id, name.lower(), body, time.time()))
