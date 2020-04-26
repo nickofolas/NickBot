@@ -28,8 +28,9 @@ class Data(commands.Cog):
     @highlight.command()
     async def add(self, ctx, *, highlight_words):
         """
-        Add a new highlight!
-        When a highlighted word is used, you'll get notified!
+        Add a new highlight! When a highlighted word is used, you'll get notified!
+        If desired, the highlight can be made quite granular, as regex patterns are
+        supported.
         """
         if len(highlight_words) <= 1:
             raise commands.CommandError('Highlights must be at least 2 characters long')
@@ -37,7 +38,7 @@ class Data(commands.Cog):
             check = await db.execute('SELECT kw FROM highlights WHERE user_id=$1', (ctx.author.id,))
             if len(await check.fetchall()) == 5:
                 raise commands.CommandError('You may only have 5 highlights at a time')
-            await db.execute('INSERT INTO highlights(user_id, kw) VALUES ( $1, $2 )', (ctx.author.id, highlight_words))
+            await db.execute('INSERT INTO highlights(user_id, kw) VALUES ( $1, $2 )', (ctx.author.id, fr"{highlight_words}"))
             await db.commit()
         await ctx.message.add_reaction(ctx.tick(True))
 
@@ -88,11 +89,15 @@ class Data(commands.Cog):
 
     @highlight.command(name='info')
     async def view_highlight_info(self, ctx, highlight_index: int):
+        """Display info on what triggers a specific highlight, or what guilds are muted from it"""
         async with asq.connect('./database.db') as db:
             async with db.execute('SELECT * FROM highlights WHERE user_id=$1', (ctx.author.id,)) as cur:
                 hl_data = [item async for item in cur][highlight_index-1]
-        excluded_guilds = [self.bot.get_guild(int(g)).name for g in hl_data[2].split(',') if g != '' or None]
-        ex_guild_display = f"**Ignored Guilds** {', '.join(excluded_guilds)}" if excluded_guilds else ''
+        excluded_list = None
+        if hl_data[2] not in (None, ''):
+            excluded_list = hl_data[2].split(',')
+            excluded_guilds = [self.bot.get_guild(int(g)).name for g in excluded_list if g not in ('', None)]
+        ex_guild_display = f"**Ignored Guilds** {', '.join(excluded_guilds)}" if excluded_list else ''
         embed = discord.Embed(
             description=f'**Triggered by** "{hl_data[1]}"\n{ex_guild_display}',
             color=discord.Color.main)
@@ -117,6 +122,7 @@ class Data(commands.Cog):
                 await ctx.message.add_reaction(ctx.tick(True))
 
     @highlight.command(name='test')
+    @commands.cooldown(1, 5, commands.BucketType.user)
     async def test_highlight(self, ctx, *, message):
         """Test your highlights by simulating a message event
         Pass a message that contains a highlights, and the
@@ -210,7 +216,17 @@ class Data(commands.Cog):
     @tag.command(name='create')
     async def create_tag(self, ctx, name: str = None, *, body: str = None):
         """Create a tag with the specified name and content
-        Tag name must go in quotes if you intend to use spaces"""
+        This can be used in 2 different ways:
+            - The first option is to create a tag in one command. This is
+            accomplished by entering the tag name, and content all in the
+            command invocation. It is important to note that if you wish
+            to include spaces in the tag name, the name must be surrounded
+            in quotes
+            - The second option is to pass no arguments, which will launch
+            an interactive tag creation prompt. This will allow you to enter
+            the tag's name and content independently of each other, so quotes
+            are **not** required
+        If desired, images can also be appended to the tag's content"""
         msg = ctx.message
         async with asq.connect('./database.db') as db:
             if name is None and body is None:
@@ -234,8 +250,8 @@ class Data(commands.Cog):
                 raise commands.CommandError('This name cannot be used')
             res = await db.execute('SELECT EXISTS(SELECT 1 FROM tags WHERE tagname=$1)', (name.lower(),))
             if attach := msg.attachments:
-                body = (body + ' ' + attach[0].url) if body else None
-            if (await res.fetchone())[0] == 1:
+                body = (body + ' ' + attach[0].url) if body else attach[0].url
+            if (await res.fetchone())[0] >= 1:
                 raise commands.CommandError('A tag with this name already exists!')
             await db.execute('INSERT INTO tags (owner_id, tagname, tagbody, usage_epoch) VALUES ($1, $2, $3, $4)', (ctx.author.id, name.lower(), body, time.time()))
             await db.commit()
@@ -256,6 +272,7 @@ class Data(commands.Cog):
 
     @tag.command(name='info')
     async def view_tag_info(self, ctx, *, tag_name):
+        """View details on a tag, such as times used and tag owner"""
         async with asq.connect('./database.db') as db:
             sel = await db.execute('SELECT * FROM tags WHERE tagname=$1', (tag_name.lower(),))
             res = await sel.fetchone()
@@ -275,6 +292,7 @@ class Data(commands.Cog):
 
     @tag.command(name='edit')
     async def edit_tag(self, ctx, tag_name: str, *, new_content):
+        """Change the content of a specified tag that you own"""
         async with asq.connect('./database.db') as db:
             await db.execute('UPDATE tags SET tagbody=$1 WHERE tagname=$2 AND owner_id=$3', (new_content, tag_name.lower(), ctx.author.id))
             await db.commit()

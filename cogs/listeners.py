@@ -9,7 +9,6 @@ import aiosqlite as asq
 
 from utils.context import Context
 
-me = re.compile(r'n+[i¡!]+c+[kh]+((of)?olas)?', re.I)
 ignored_cmds = re.compile(r'\.+')
 
 
@@ -83,15 +82,15 @@ class Listeners(commands.Cog):
         async with Context.ExHandler(exception_type=AttributeError), asq.connect('database.db') as db:
             async with db.execute('SELECT user_id, kw, exclude_guild FROM highlights') as cur:
                 async for c in cur:
-                    if c[1].lower() in message.content.lower() and not\
-                     message.author.bot:
+                    regex_pattern = re.compile(c[1], re.I)
+                    if match := re.search(regex_pattern, message.content):
                         if c[2]:
                             if str(message.guild.id) in c[2].split(','):
                                 continue
-                        alerted = self.bot.get_user(c[0])
+                        alerted = self.bot.get_user(c[0])                     
                         embed = discord.Embed(
                             title=f'A word has been highlighted!',
-                            description=message.content.replace(c[1], f'**{c[1]}**'),
+                            description=message.content.replace(match.group(0), f'**{match.group(0)}**'),
                             color=discord.Color.main)
                         embed.add_field(name='Jump URL', value=message.jump_url)
                         embed.set_footer(
@@ -101,30 +100,9 @@ class Listeners(commands.Cog):
                         embed.timestamp = message.created_at
                         if (
                             alerted in message.guild.members and alerted.id != message.author.id and message.channel
-                                .permissions_for(message.guild.get_member(alerted.id)).read_messages
+                                .permissions_for(message.guild.get_member(alerted.id)).read_messages and not message.author.bot
                         ):
                             await alerted.send(embed=embed)
-        noacc = ud.unidecode(message.content)
-        f_a = me.search(noacc)
-        if (
-            f_a and not message.author.bot
-            and (await self.bot.application_info()).owner
-            in message.guild.members
-            and message.author.id != 680835476034551925
-                ):
-            s = list(message.content)
-            s.insert(f_a.end(), '**')
-            s.insert(f_a.start(), '**')
-            user = self.bot.get_user(680835476034551925)
-            uem = discord.Embed(
-                title='Potential Mention',
-                description=''.join(s),
-                color=discord.Color.main)
-            uem.add_field(name='Message author:', value=f'{message.author}')
-            uem.add_field(name='Jump Link:', value=message.jump_url)
-            uem.add_field(
-                name='In server:', value=f'{message.guild}', inline=True)
-            await user.send(embed=uem)
 
     @commands.Cog.listener()
     async def on_message_edit(self, before, after):
