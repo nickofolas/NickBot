@@ -224,7 +224,7 @@ class Data(commands.Cog):
                         check=lambda m: m.author.id == ctx.author.id,
                         timeout=60.0)
                     name = msg.content
-                    await ctx.send(f'So the tag is called **{name}**. What should its content be?')
+                    await ctx.send(f'The tag is named **{name}**. What is its content?')
                     msg = await self.bot.wait_for(
                         'message',
                         check=lambda m: m.author.id == ctx.author.id,
@@ -234,10 +234,7 @@ class Data(commands.Cog):
                 raise commands.CommandError('This name cannot be used')
             res = await db.execute('SELECT EXISTS(SELECT 1 FROM tags WHERE tagname=$1)', (name.lower(),))
             if attach := msg.attachments:
-                if body:
-                    body += ' ' + attach[0].url
-                else:
-                    body = attach[0].url
+                body = (body + ' ' + attach[0].url) if body else None
             if (await res.fetchone())[0] == 1:
                 raise commands.CommandError('A tag with this name already exists!')
             await db.execute('INSERT INTO tags (owner_id, tagname, tagbody, usage_epoch) VALUES ($1, $2, $3, $4)', (ctx.author.id, name.lower(), body, time.time()))
