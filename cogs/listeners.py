@@ -1,6 +1,7 @@
 import math
 from datetime import datetime
 import re
+import asyncio
 
 import unidecode as ud
 import discord
@@ -23,9 +24,18 @@ class Listeners(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.status_updater.start()
+        self.queue = asyncio.Queue()
 
     def cog_unload(self):
         self.status_updater.cancel()
+
+    async def producer(self, queue, item):
+        await asyncio.sleep(2.5)
+        await queue.put(item)
+
+    async def consumer(self, queue, target):
+        val = await queue.get()
+        await target.send(embed=val)
 
     @tasks.loop(minutes=5.0)
     async def status_updater(self):
@@ -87,7 +97,7 @@ class Listeners(commands.Cog):
                         if c[2]:
                             if str(message.guild.id) in c[2].split(','):
                                 continue
-                        alerted = self.bot.get_user(c[0])                     
+                        alerted = self.bot.get_user(c[0])
                         embed = discord.Embed(
                             title=f'A word has been highlighted!',
                             description=message.content.replace(match.group(0), f'**{match.group(0)}**'),
@@ -102,7 +112,7 @@ class Listeners(commands.Cog):
                             alerted in message.guild.members and alerted.id != message.author.id and message.channel
                                 .permissions_for(message.guild.get_member(alerted.id)).read_messages and not message.author.bot
                         ):
-                            await alerted.send(embed=embed)
+                            await asyncio.gather(self.consumer(queue, ctx), self.producer(queue, embed))
 
     @commands.Cog.listener()
     async def on_message_edit(self, before, after):
