@@ -233,6 +233,8 @@ class Pages:
 
 
 class CSMenu(menus.MenuPages):
+    """Subclass of menus.MenuPages to customize emojis and behavior"""
+
     def __init__(self, source, **kwargs):
         super().__init__(source, **kwargs)
         for b in ['⏮️', '◀️', '⏹️', '▶️', '⏭️']:
