@@ -45,7 +45,7 @@ class Context(commands.Context):
         lookup = {
             True: '<:c_:703740667926675536>',
             False: '<:x_:703739402094117004>',
-            None: '<:greytick:699030818970009663>',
+            None: '<:unicode_neutral:704141512912666624>',
         }
         emoji = lookup.get(opt, '<:x_:703739402094117004>')
         if label is not None:

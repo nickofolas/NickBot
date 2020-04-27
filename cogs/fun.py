@@ -178,7 +178,7 @@ class Fun(commands.Cog):
         triv = await ctx.send(embed=embed)
         for index, value in enumerate(anwrs):
             await triv.add_reaction(conf['number_emojis'][str(index+1)])
-        await triv.add_reaction('❌')
+        await triv.add_reaction(ctx.tick(False))
         react, user = await self.bot.wait_for(
             'reaction_add',
             check=lambda r, u:
