@@ -24,18 +24,11 @@ class Listeners(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.status_updater.start()
-        self.queue = asyncio.Queue()
+        self.hl_mailer.start()
+        self.hl_msgs = list()
 
     def cog_unload(self):
         self.status_updater.cancel()
-
-    async def producer(self, queue, item):
-        await asyncio.sleep(2.5)
-        await queue.put(item)
-
-    async def consumer(self, queue, target):
-        val = await queue.get()
-        await target.send(embed=val)
 
     @tasks.loop(minutes=5.0)
     async def status_updater(self):
@@ -45,8 +38,16 @@ class Listeners(commands.Cog):
                     type=discord.ActivityType.watching,
                     name=f"{len(self.bot.guilds):,} servers | {len(self.bot.users):,} members"))
 
+    @tasks.loop(seconds=2.5)
+    async def hl_mailer(self):
+        for person, embed in self.hl_msgs:
+            await person.send(embed=embed)
+            await asyncio.sleep(0.25)
+        self.hl_msgs = list()    
+
+    @hl_mailer.before_loop
     @status_updater.before_loop
-    async def before_status_updater(self):
+    async def before_task_loops(self):
         await self.bot.wait_until_ready()
 
     # Provides general command error messages
@@ -89,6 +90,7 @@ class Listeners(commands.Cog):
     @commands.Cog.listener()
     async def on_message(self, message):
         await self.bot.wait_until_ready()
+        recipients = []
         async with Context.ExHandler(exception_type=AttributeError), asq.connect('database.db') as db:
             async with db.execute('SELECT user_id, kw, exclude_guild FROM highlights') as cur:
                 async for c in cur:
@@ -112,8 +114,9 @@ class Listeners(commands.Cog):
                             alerted in message.guild.members and alerted.id != message.author.id and message.channel
                                 .permissions_for(message.guild.get_member(alerted.id)).read_messages and not message.author.bot
                         ):
-                            await asyncio.gather(self.consumer(queue, ctx), self.producer(queue, embed))
-
+                            if len(self.hl_msgs) < 10 and [i[0] for i in self.hl_msgs].count(alerted) < 5:
+                                self.hl_msgs.append((alerted, embed))
+                            
     @commands.Cog.listener()
     async def on_message_edit(self, before, after):
         await self.bot.process_commands(after)
