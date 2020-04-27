@@ -25,6 +25,16 @@ from utils.helpers import return_lang_hl
 import utils
 
 
+async def do_shell(args):
+    shell = os.getenv("SHELL") or "/bin/bash"
+    process = await asyncio.create_subprocess_shell(
+        f'{shell} -c "{args}"',
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.PIPE)
+    stdout, stderr = await process.communicate()
+    return stdout, stderr
+
+
 async def copy_ctx(
         self, ctx, command_string, *,
         channel: discord.TextChannel = None,
@@ -85,12 +95,7 @@ class Dev(commands.Cog):
         hl_lang = 'sh'
         if 'cat' in args:
             hl_lang = return_lang_hl(args)
-        shell = os.getenv("SHELL") or "/bin/bash"
-        process = await asyncio.create_subprocess_shell(
-            f'{shell} -c "{args}"',
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE)
-        stdout, stderr = await process.communicate()
+        stdout, stderr = await do_shell(args)
         output = stdout + stderr
         entries = list(clean_bytes(output))
         source = ShellMenu(entries, code_lang=hl_lang, per_page=1985)
@@ -207,6 +212,21 @@ class Dev(commands.Cog):
             except Exception:
                 await db.commit()
                 await ctx.safe_send(f"Executed ```sql\n{query}```")
+
+    @commands.group(name='dev')
+    @commands.is_owner()
+    async def dev_command_group(self, ctx):
+        pass
+
+    @dev_command_group.command(name='logs')
+    @commands.is_owner()
+    async def view_journal_ctl(self, ctx):
+        stdout, stderr = await do_shell('journalctl -u mybot -n 300 --no-pager -q')
+        output = stdout + stderr
+        entries = list(clean_bytes(output))
+        source = ShellMenu(entries, code_lang='sh', per_page=1985)
+        menu = CSMenu(source, delete_message_after=True)
+        await menu.start(ctx)
 
     @commands.group(name='edit')
     @commands.is_owner()
@@ -332,11 +352,7 @@ class Dev(commands.Cog):
         extension = extension.split(' ')
         """Pulls from git and then reloads all or specified cogs"""
         await ctx.message.add_reaction('<a:loading:681628799376293912>')
-        proc = await asyncio.create_subprocess_shell(
-            'git pull',
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE)
-        await proc.communicate()
+        await do_shell('git pull')
         errored = []
         if len(extension) == 1 and extension[0] in ('*', 'all', 'a'):
             for filename in os.listdir('./cogs'):
