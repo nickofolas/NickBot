@@ -17,6 +17,14 @@ from utils.config import conf
 from utils.checks import exclude_channels
 
 
+def filter_posts(obj):
+    checks = list()
+    if p := obj.get('preview').get('reddit_video_preview'):
+        checks.append(p.get('is_gif') is False)
+    checks.append(obj.get('is_video') is False)
+    return all(checks)
+
+
 async def do_translation(self, ctx, input, dest='en'):
     tr = Translator()
     translated = await tr.translate(input, dest=dest)
@@ -37,7 +45,8 @@ async def get_sub(self, ctx, sort, subreddit, safe=True):
     parameters = {
         'limit': '100'
     }
-    if sort not in ['top', 'new', 'rising', 'hot', 'controversial', 'best']:
+    if sort not in (
+            'top', 'new', 'rising', 'hot', 'controversial', 'best'):
         raise errors.SortError(f"'{sort}' is not a valid sort option")
     if sort == 'top':
         parameters['t'] = 'all'
@@ -49,23 +58,11 @@ async def get_sub(self, ctx, sort, subreddit, safe=True):
         if r.status == 403:
             raise errors.ApiError(f"Received 403 Forbidden - 'r/{subreddit}' is likely set to private")
         res = await r.json()  # returns dict
-        no_videos = list()
-        for p in res['data']['children']:
-            try:
-                if p['data'].get('preview').get('reddit_video_preview').get('is_gif') is True:
-                    continue
-            except AttributeError:
-                pass
-            if p['data'].get('is_video') is True:
-                continue
-            no_videos.append(p)
-        if safe is True:
-            no_videos = [
-                p for p in no_videos
-                if p['data']['over_18'] is False
-            ]
+        listing = [p['data'] for p in res['data']['children']]
+        ls = filter(lambda p: p.get('over_18') is False, listing) if safe \
+            else listing
         try:
-            post = random.choice(no_videos)
+            post = random.choice(list(filter(filter_posts, ls)))
         except IndexError:
             raise commands.CommandError('No SFW posts found')
         if post['data']['selftext']:
@@ -89,12 +86,6 @@ async def get_sub(self, ctx, sort, subreddit, safe=True):
     return post, embed
 
 
-async def q(self, subreddit, p):
-    async with self.bot.session.get(f'https://www.reddit.com/r/{subreddit}/about/modqueue/.json', params=p) as r:
-        retrieved = await r.json()  # returns dict
-    return retrieved
-
-
 class Api(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
@@ -102,7 +93,7 @@ class Api(commands.Cog):
     @commands.group(invoke_without_command=True)
     async def rand(self, ctx, sort, subreddit):
         """Asynchronously get a random post from a sort on a subreddit"""
-        post, embed = await get_sub(self, ctx, sort, subreddit)
+        post, embed = await get_sub(self, ctx, sort, subreddit, safe=ctx.channel.nsfw)
         await ctx.send(embed=embed)
 
     @rand.command(hidden=True)
@@ -110,66 +101,6 @@ class Api(commands.Cog):
     async def bypass(self, ctx, sort, subreddit):
         post, embed = await get_sub(self, ctx, sort, subreddit, safe=False)
         await ctx.send(embed=embed)
-
-    @commands.command(aliases=['modqueue', 'modq'])
-    async def queue(self, ctx, subreddit='mod'):
-        """Get the modqueue of a sub, defaults to combined queue"""
-        p2 = {
-            'feed': os.getenv("FEED"),
-            'user': 'nickofolas',
-            'limit': '100',
-            'only': 'comments'
-            }
-        p = {
-            'feed': os.getenv("FEED"),
-            'user': 'nickofolas',
-            'limit': '100',
-            'only': 'links'
-            }
-        start = time.perf_counter()
-        async with ctx.typing():
-            ret2 = await q(self, subreddit, p2)
-            ret = await q(self, subreddit, p)
-            posts = []
-            comments = []
-            aft = ret['data']['after']
-            aft2 = ret2['data']['after']
-            while True:
-                p = {
-                    'feed': os.getenv("FEED"),
-                    'user': 'nickofolas',
-                    'limit': '100', 'only': 'links',
-                    'after': aft
-                    }
-                try:
-                    r = await q(self, subreddit, p)
-                    posts.append(len(r['data']['children']))
-                    aft = r['data']['after']
-                except Exception:
-                    break
-            while True:
-                p2 = {
-                    'feed': os.getenv("FEED"),
-                    'user': 'nickofolas',
-                    'limit': '100', 'only':
-                    'comments',
-                    'after': aft2
-                    }
-                try:
-                    r2 = await q(self, subreddit, p2)
-                    comments.append(len(r2['data']['children']))
-                    aft2 = r2['data']['after']
-                except Exception:
-                    break
-            end = time.perf_counter()
-            embed = discord.Embed(
-                title=f'Modqueue for r/{subreddit}',
-                description=
-                f"Posts in queue: {len(ret['data']['children']) + sum(posts)}\nComments in queue: {len(ret2['data']['children']) + sum(comments)}",
-                url=f'https://www.reddit.com/r/{subreddit}/about/modqueue',
-                color=discord.Color.main)
-            embed.set_footer(text=f'Fetched in {(end - start):.3f}s')
-            await ctx.send(embed=embed)
 
     @commands.group(invoke_without_command=True, aliases=['sub'])
     async def subreddit(self, ctx, *, subreddit):
