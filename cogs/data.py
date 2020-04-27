@@ -36,8 +36,10 @@ class Data(commands.Cog):
             raise commands.CommandError('Highlights must be at least 2 characters long')
         async with asq.connect('./database.db') as db:
             check = await db.execute('SELECT kw FROM highlights WHERE user_id=$1', (ctx.author.id,))
-            if len(await check.fetchall()) == 5:
+            if len(active := await check.fetchall()) == 5:
                 raise commands.CommandError('You may only have 5 highlights at a time')
+            if highlight_words in [a[0] for a in active]:
+                raise commands.CommandError('You already have a highlight with this trigger')
             await db.execute('INSERT INTO highlights(user_id, kw) VALUES ( $1, $2 )', (ctx.author.id, fr"{highlight_words}"))
             await db.commit()
         await ctx.message.add_reaction(ctx.tick(True))
@@ -134,8 +136,8 @@ class Data(commands.Cog):
         self.bot.dispatch('message', copied_message)
         await ctx.message.add_reaction(ctx.tick(True))
 
-    @highlight.command(name='clear')
-    async def clear_todos(self, ctx):
+    @highlight.command(name='clear', aliases=['yeetall'])
+    async def clear_highlights(self, ctx):
         """
         Completely wipe your list of highlights
         """
@@ -144,8 +146,6 @@ class Data(commands.Cog):
             async with asq.connect('./database.db') as db:
                 await db.execute('DELETE FROM highlights WHERE user_id=$1', (ctx.author.id,))
                 await db.commit()
-            return
-        else:
             return
 
     # END HIGHLIGHTS GROUP ~

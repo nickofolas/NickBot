@@ -335,8 +335,7 @@ class Fun(commands.Cog):
         """Ahem... yea"""
         victim = victim or ctx.author
         random.seed(victim.id)
-        ran = 25 if victim.id == self.bot.owner_id or \
-            victim.id == self.bot.user.id else random.randint(1, 15)
+        ran = 25 if victim.id in (self.bot.owner_id, self.bot.user.id) else random.randint(1, 15)
         dong = '8' + ''.join(['=' for i in range(ran)]) + 'D'
         await ctx.safe_send(dong)
 
