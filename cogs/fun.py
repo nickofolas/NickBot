@@ -330,6 +330,15 @@ class Fun(commands.Cog):
             js = await resp.json()
         await ctx.safe_send(victim.display_name + f', {js["insult"].lower()}')
 
+    @commands.command()
+    async def dongsize(self, ctx, *, victim: discord.Member = None):
+        """Ahem... yea"""
+        victim = victim or ctx.author
+        random.seed(victim.id)
+        ran = 25 if victim.id == self.bot.owner_id else random.randint(1, 15)
+        dong = '8' + ''.join(['=' for i in range(ran)]) + 'D'
+        await ctx.safe_send(dong)
+
 
 def setup(bot):
     bot.add_cog(Fun(bot))
