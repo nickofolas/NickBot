@@ -39,7 +39,7 @@ class Listeners(commands.Cog):
                     type=discord.ActivityType.watching,
                     name=f"{len(self.bot.guilds):,} servers | {len(self.bot.users):,} members"))
 
-    @tasks.loop(seconds=2.5)
+    @tasks.loop(seconds=10)
     async def hl_mailer(self):
         for person, embed in self.hl_msgs:
             await person.send(embed=embed)
@@ -115,7 +115,7 @@ class Listeners(commands.Cog):
                             alerted in message.guild.members and alerted.id != message.author.id and message.channel
                                 .permissions_for(message.guild.get_member(alerted.id)).read_messages and not message.author.bot
                         ):
-                            if len(self.hl_msgs) < 10 and [i[0] for i in self.hl_msgs].count(alerted) < 5:
+                            if len(self.hl_msgs) < 40 and [i[0] for i in self.hl_msgs].count(alerted) < 5:
                                 self.hl_msgs.append((alerted, embed))
 
     @commands.Cog.listener()
