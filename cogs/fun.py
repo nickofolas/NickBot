@@ -236,9 +236,9 @@ class Fun(commands.Cog):
     @get_emoji.command(aliases=['r'])
     async def react(self, ctx, *, emoji):
         """
-        React with emoji from other guilds without nitro! Use the command with
-        an emoji name, and then add your reaction within 15 seconds,
-        and the bot will remove its own.
+        React with emoji from other guilds without nitro!
+        Use the command with an emoji name, and then add your reaction
+        within 15 seconds, and the bot will remove its own.
         """
         to_react = await fetch_one(self, ctx, emoji)
         async for m in ctx.channel.history(limit=2).filter(lambda m: m.id != ctx.message.id):

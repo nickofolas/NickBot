@@ -281,12 +281,11 @@ class Meta(commands.Cog):
         await ctx.send(embed=embed)
 
     async def fetch_latest_commit(self):
-        async with self.bot.session.get(
-            'https://api.github.com/repos/nickofolas/NickBot/commits/master',
-            headers={
-                'Authorization': f'token  {os.getenv("GITHUB_TOKEN")}'})\
-                as resp:
-            self.last_commit_cache = await resp.json()
+        headers = {'Authorization': f'token  {os.getenv("GITHUB_TOKEN")}'}
+        url = 'https://api.github.com/repos/nickofolas/NickBot/commits'
+        async with self.bot.session.get(f'{url}/master', headers=headers) as resp1, self.bot.session.get(url, headers=headers) as resp2:
+            self.last_commit_cache = await resp1.json()
+            self.all_commits = len(await resp2.json())
 
     @commands.command(aliases=['ab'])
     async def about(self, ctx):
@@ -324,7 +323,7 @@ class Meta(commands.Cog):
             """
             )
         embed.add_field(
-            name=f'**Latest Commit** - `{self.last_commit_cache["sha"][:7]}`',
+            name=f'**Latest Commit** - `{self.last_commit_cache["sha"][:7]}` - {self.all_commits} total',
             value=f'```\n{self.last_commit_cache["commit"]["message"]}\n```',
             inline=False
         )

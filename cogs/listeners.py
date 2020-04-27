@@ -29,6 +29,7 @@ class Listeners(commands.Cog):
 
     def cog_unload(self):
         self.status_updater.cancel()
+        self.hl_mailer.cancel()
 
     @tasks.loop(minutes=5.0)
     async def status_updater(self):
@@ -43,7 +44,7 @@ class Listeners(commands.Cog):
         for person, embed in self.hl_msgs:
             await person.send(embed=embed)
             await asyncio.sleep(0.25)
-        self.hl_msgs = list()    
+        self.hl_msgs = list()
 
     @hl_mailer.before_loop
     @status_updater.before_loop
@@ -116,7 +117,7 @@ class Listeners(commands.Cog):
                         ):
                             if len(self.hl_msgs) < 10 and [i[0] for i in self.hl_msgs].count(alerted) < 5:
                                 self.hl_msgs.append((alerted, embed))
-                            
+
     @commands.Cog.listener()
     async def on_message_edit(self, before, after):
         await self.bot.process_commands(after)
