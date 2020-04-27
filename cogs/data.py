@@ -134,6 +134,20 @@ class Data(commands.Cog):
         self.bot.dispatch('message', copied_message)
         await ctx.message.add_reaction(ctx.tick(True))
 
+    @highlight.command(name='clear')
+    async def clear_todos(self, ctx):
+        """
+        Completely wipe your list of highlights
+        """
+        conf = await ctx.prompt('Are you sure you want to clear all highlights?')
+        if conf:
+            async with asq.connect('./database.db') as db:
+                await db.execute('DELETE FROM highlights WHERE user_id=$1', (ctx.author.id,))
+                await db.commit()
+            return
+        else:
+            return
+
     # END HIGHLIGHTS GROUP ~
     # BEGIN TODOS GROUP ~
 
