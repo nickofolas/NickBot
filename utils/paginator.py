@@ -246,6 +246,15 @@ class CSMenu(menus.MenuPages):
             return True
         return max_pages <= 2
 
+    async def _get_kwargs_from_page(self, page):
+        value = await discord.utils.maybe_coroutine(self._source.format_page, self, page)
+        if isinstance(value, dict):
+            return value
+        elif isinstance(value, str):
+            return {'content': value, 'embed': None}
+        elif isinstance(value, discord.Embed):
+            return {'embed': value.set_footer(text=f'Page {self.current_page+1}/{self._source.get_max_pages()}'), 'content': None}
+
     @menus.button(
             '<:track_backward:703845740702859345>\ufe0f',
             position=menus.First(0), skip_if=_skip_double_triangle_buttons)
@@ -299,14 +308,6 @@ class BareBonesMenu(menus.ListPageSource):
         else:
             return discord.Embed(
                 title='', description='\n'.join(page), color=discord.Color.main)
-
-
-class PyCodeMenu(menus.ListPageSource):
-    async def format_page(self, menu, page):
-        if isinstance(page, str):
-            return page
-        else:
-            return '```py\n' + ''.join(page) + '```'
 
 
 class ShellMenu(menus.ListPageSource):

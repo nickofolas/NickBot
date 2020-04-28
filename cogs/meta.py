@@ -6,7 +6,7 @@ from datetime import datetime
 
 import discord
 from discord.ext import commands
-from utils.paginator import PyCodeMenu, Pages, CSMenu
+from utils.paginator import ShellMenu, Pages, CSMenu
 import import_expression
 import psutil
 import humanize
@@ -235,7 +235,7 @@ class Meta(commands.Cog):
                 .replace('```', '`\N{zero width space}`')
             ]
         entries = lines
-        source = PyCodeMenu(entries, per_page=1500)
+        source = ShellMenu(entries, code_lang='py', per_page=1500)
         menu = CSMenu(source, delete_message_after=True)
         await menu.start(ctx)
 
