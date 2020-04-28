@@ -3,6 +3,7 @@ import asyncio
 import itertools
 import os
 from datetime import datetime
+import sys
 
 import discord
 from discord.ext import commands
@@ -297,31 +298,18 @@ class Meta(commands.Cog):
                 if name.endswith('.py'):
                     python_files.append(name)
         mem = psutil.virtual_memory()[2]
+        vi = sys.version_info
         ascii_bar = utils.data_vis.bar_make(round(mem / 10), 10, '▰', '▱')
         delta_uptime = datetime.utcnow() - self.bot.launch_time
-        embed = discord.Embed(title='', description='', color=discord.Color.main)
-        embed.add_field(
-            name='**Bot Info**',
-            value=f"""
-**Current Uptime **{humanize.naturaldelta(delta_uptime)}
-**Total Guilds **{len(self.bot.guilds):,}
-**Available Emojis **{len(self.bot.emojis):,}
-**Visible Users **{len(self.bot.users):,}
-**discord.py Version **{discord.__version__}
-**Bot Owner **{appinfo.owner}
-            """
-            )
-        embed.add_field(
-            name='_ _',
-            value=f"""
-**Total Commands **{len(set(self.bot.walk_commands()))}
-**Total Cogs **{len(self.bot.cogs)}
-**Memory Usage **{mem}%
-{ascii_bar}
-**Cached Messages **{len(self.bot.cached_messages):,}/1,000
-**Number of Files **{len(python_files)}
-            """
-            )
+        embed = discord.Embed(color=discord.Color.main)
+        embed.set_author(name=appinfo.owner)
+        embed.set_footer(text=f'Python {vi.major}.{vi.minor}.{vi.micro} | discord.py {discord.__version__}')
+        embed.description = f"""
+**Online for** {humanize.naturaldelta(delta_uptime)}
+{len(self.bot.guilds):,} **guilds** | {len(self.bot.users):,} **users**
+{len(set(self.bot.walk_commands()))} **commands** | {len(self.bot.cogs)} **cogs**
+{ascii_bar} **{mem}% memory**
+        """
         embed.add_field(
             name=f'**Latest Commit** - `{self.last_commit_cache["sha"][:7]}` - {self.all_commits} total',
             value=f'```\n{self.last_commit_cache["commit"]["message"]}\n```',
