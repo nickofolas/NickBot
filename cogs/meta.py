@@ -298,16 +298,6 @@ class Meta(commands.Cog):
         ascii_bar = utils.data_vis.bar_make(round(mem / 10), 10, '▰', '▱')
         delta_uptime = datetime.utcnow() - self.bot.launch_time
         embed = discord.Embed(color=discord.Color.main)
-<<<<<<< HEAD
-        embed.set_author(name=appinfo.owner)
-        embed.set_footer(text=f'Python {vi.major}.{vi.minor}.{vi.micro} | discord.py {discord.__version__}')
-        embed.description = f"""
-**Online for** {humanize.naturaldelta(delta_uptime)}
-{len(self.bot.guilds):,} **guilds** | {len(self.bot.users):,} **users**
-{len(set(self.bot.walk_commands()))} **commands** | {len(self.bot.cogs)} **cogs**
-{ascii_bar} **{mem}% memory**
-        """
-=======
         embed.set_footer(text=f'Python {vi.major}.{vi.minor}.{vi.micro} | discord.py {discord.__version__}')
         embed.set_author(name=appinfo.owner)
         embed.add_field(
@@ -328,7 +318,6 @@ class Meta(commands.Cog):
 {ascii_bar}
             """
             )
->>>>>>> 833a008dfc1b8640308ece681391f60fd268755f
         embed.add_field(
             name=f'**Latest Commit** - `{self.last_commit_cache["sha"][:7]}` - {self.all_commits} total',
             value=f'```\n{self.last_commit_cache["commit"]["message"]}\n```',
