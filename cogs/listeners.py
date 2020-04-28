@@ -27,7 +27,7 @@ class Listeners(commands.Cog):
         self.hl_mailer.start()
         self.hl_msgs = list()
         self.hl_cache = []
-        self.bot.loop.create_task(build_hl_cache())
+        self.bot.loop.create_task(self.build_hl_cache())
 
     def cog_unload(self):
         self.status_updater.cancel()
@@ -114,7 +114,7 @@ class Listeners(commands.Cog):
     async def on_message(self, message):
         await self.bot.wait_until_ready()
         recipients = []
-        async with Context.ExHandler(exception_type=AttributeError):
+        async with Context.ExHandler(exception_type=commands.CommandError):
             for c in self.hl_cache:
                 regex_pattern = re.compile(c[1], re.I)
                 if match := re.search(regex_pattern, message.content):
@@ -126,7 +126,7 @@ class Listeners(commands.Cog):
                     alerted = self.bot.get_user(c[0])
                     embed = discord.Embed(
                         title=f'A word has been highlighted!',
-                        description='\n'.join(reversed(context_list)),
+                        description=message.content,
                         color=discord.Color.main)
                     embed.add_field(name='Jump URL', value=message.jump_url)
                     embed.set_footer(
