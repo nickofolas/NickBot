@@ -251,26 +251,26 @@ class Api(commands.Cog):
             if resp.status == 404:
                 raise errors.ApiError(f"404 - '{package_name}' was not found")
             js = await resp.json()
-        home_link = js['info'].get('home_page')
-        docs_link = js['info']['project_urls'].get('Documentation')
-        pkg_url = js['info'].get('package_url'')
+        info = js['info']
         found = {
-            'Home Page': home_link,
-            'Documentation': docs_link,
-            'Package URL': pkg_url
+            'Home Page': info.get('home_page'),
+            'Package URL': info.get('package_url')
         }
+        for key, value in info['project_urls'].items():
+            if 'doc' in key.lower() or 'issu' in key.lower():
+                found[key] = value
         embed = discord.Embed(color=discord.Color.main)
-        embed.description = js['info']['summary']
-        embed.title = js['info']['name']
-        embed.set_author(name=js['info']['author'])
+        embed.description = info['summary']
+        embed.title = info['name']
+        embed.set_author(name=info['author'])
         embed.add_field(
             name='Links',
-            value='\n'.join([f'{k}: {v}' for k, v in found if v is not None]),
+            value='\n'.join([f'[{k}]({v})' for k, v in found.items() if v is not None]),
             )
-        embed.set_footer(text=f"Version: {js['info']['version']}")
+        embed.set_footer(text=f"Version: {info['version']}")
         await ctx.send(embed=embed)
 
-    @commands.group(aliases=['trans'], invoke_without_command=True)
+    @commands.group(aliases=['tr'], invoke_without_command=True)
     async def translate(self, ctx, *, input):
         """
         Basic translation - tries to auto-detect and translate to English
