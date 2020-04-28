@@ -57,8 +57,6 @@ all copies or substantial portions of the Software.
 class HelpPaginator(Pages):
     def __init__(self, help_command, ctx, entries, *, per_page=4):
         super().__init__(ctx, entries=entries, per_page=per_page)
-        self.reaction_emojis.append(
-            ('\N{WHITE QUESTION MARK ORNAMENT}', self.show_bot_help))
         self.total = len(entries)
         self.help_command = help_command
         self.prefix = help_command.clean_prefix
@@ -86,36 +84,6 @@ class HelpPaginator(Pages):
         if self.maximum_pages:
             self.embed.set_author(name=f'Page {page}/{self.maximum_pages} ({self.total} commands)')
 
-    async def show_bot_help(self):
-        """Shows how to use the bot"""
-
-        self.embed.title = 'Using the bot'
-        self.embed.description = 'Hello! Welcome to the help page.'
-        self.embed.clear_fields()
-
-        entries = (
-            ('<argument>', 'This means the argument is __**required**__.'),
-            ('[argument]', 'This means the argument is __**optional**__.'),
-            ('A|B', 'This means the it can be __**either A or B**__.'),
-            ('[argument...]', 'This means you can have multiple arguments.\n' \
-                              'Now that you know the basics, it should be noted that...\n' \
-                              '__**You do not type in the brackets!**__')
-        )
-
-        self.embed.add_field(name='How do I use this bot?', value='Reading the bot signature is pretty simple.')
-
-        for name, value in entries:
-            self.embed.add_field(name=name, value=value, inline=False)
-
-        self.embed.set_footer(text=f'We were on page {self.current_page} before this message.')
-        await self.message.edit(embed=self.embed)
-
-        async def go_back_to_current_page():
-            await asyncio.sleep(30.0)
-            await self.show_current_page()
-
-        self.bot.loop.create_task(go_back_to_current_page())
-
 
 class PaginatedHelpCommand(commands.HelpCommand):
     def __init__(self):
@@ -125,7 +93,7 @@ class PaginatedHelpCommand(commands.HelpCommand):
 
     async def on_help_command_error(self, ctx, error):
         if isinstance(error, commands.CommandInvokeError):
-            await ctx.send(str(error.original))
+            await ctx.propagate_to_eh(self.bot, ctx, str(error.original))
 
     def get_command_signature(self, command):
         parent = command.full_parent_name

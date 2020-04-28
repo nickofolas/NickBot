@@ -41,8 +41,9 @@ class Listeners(commands.Cog):
 
     @tasks.loop(seconds=10)
     async def hl_mailer(self):
-        for person, embed in self.hl_msgs:
+        for person, embed, emoji in self.hl_msgs:
             await person.send(embed=embed)
+            await emoji.delete()
             await asyncio.sleep(0.25)
         self.hl_msgs = list()
 
@@ -103,9 +104,12 @@ class Listeners(commands.Cog):
                         if re.search(re.compile(r'([a-zA-Z0-9]{24}\.[a-zA-Z0-9]{6}\.[a-zA-Z0-9_\-]{27}|mfa\.[a-zA-Z0-9_\-]{84})'), message.content):
                             continue
                         alerted = self.bot.get_user(c[0])
+                        e = self.bot.get_guild(680877741079265354)
+                        av = await (message.author.avatar_url_as(size=64)).read()
+                        em = await e.create_custom_emoji(name='temp', image=av)
                         embed = discord.Embed(
                             title=f'A word has been highlighted!',
-                            description=message.content.replace(match.group(0), f'**{match.group(0)}**'),
+                            description=f"{em} {message.content.replace(match.group(0), f'**{match.group(0)}**')}",
                             color=discord.Color.main)
                         embed.add_field(name='Jump URL', value=message.jump_url)
                         embed.set_footer(
@@ -118,7 +122,7 @@ class Listeners(commands.Cog):
                                 .permissions_for(message.guild.get_member(alerted.id)).read_messages and not message.author.bot
                         ):
                             if len(self.hl_msgs) < 40 and [i[0] for i in self.hl_msgs].count(alerted) < 5:
-                                self.hl_msgs.append((alerted, embed))
+                                self.hl_msgs.append((alerted, embed, em))
 
     @commands.Cog.listener()
     async def on_message_edit(self, before, after):
