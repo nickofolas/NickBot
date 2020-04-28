@@ -115,7 +115,7 @@ class Listeners(commands.Cog):
                             emoji.append(em)
                         embed = discord.Embed(
                             title=f'A word has been highlighted!',
-                            description='\n'.join(context_list),
+                            description='\n'.join(reversed(context_list)),
                             color=discord.Color.main)
                         embed.add_field(name='Jump URL', value=message.jump_url)
                         embed.set_footer(
