@@ -44,10 +44,12 @@ class Listeners(commands.Cog):
 
     @tasks.loop(seconds=10)
     async def hl_mailer(self):
-        for person, embed, emoji in self.hl_msgs:
+        for person, embed in self.hl_msgs:
             await person.send(embed=embed)
+            '''
             for e in emoji:
                 await e.delete()
+            '''
             await asyncio.sleep(0.25)
         self.hl_msgs = list()
 
@@ -113,7 +115,6 @@ class Listeners(commands.Cog):
     @commands.Cog.listener()
     async def on_message(self, message):
         await self.bot.wait_until_ready()
-        recipients = []
         for c in self.hl_cache:
             regex_pattern = re.compile(c[1], re.I)
             if match := re.search(regex_pattern, message.content):
