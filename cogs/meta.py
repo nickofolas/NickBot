@@ -292,16 +292,13 @@ class Meta(commands.Cog):
     async def about(self, ctx):
         """Displays info about the bot"""
         appinfo = await self.bot.application_info()
-        python_files = []
-        for path, subdirs, files in os.walk('.'):
-            for name in files:
-                if name.endswith('.py'):
-                    python_files.append(name)
+        vi = sys.version_info
         mem = psutil.virtual_memory()[2]
         vi = sys.version_info
         ascii_bar = utils.data_vis.bar_make(round(mem / 10), 10, '▰', '▱')
         delta_uptime = datetime.utcnow() - self.bot.launch_time
         embed = discord.Embed(color=discord.Color.main)
+<<<<<<< HEAD
         embed.set_author(name=appinfo.owner)
         embed.set_footer(text=f'Python {vi.major}.{vi.minor}.{vi.micro} | discord.py {discord.__version__}')
         embed.description = f"""
@@ -310,6 +307,28 @@ class Meta(commands.Cog):
 {len(set(self.bot.walk_commands()))} **commands** | {len(self.bot.cogs)} **cogs**
 {ascii_bar} **{mem}% memory**
         """
+=======
+        embed.set_footer(text=f'Python {vi.major}.{vi.minor}.{vi.micro} | discord.py {discord.__version__}')
+        embed.set_author(name=appinfo.owner)
+        embed.add_field(
+            name='**Bot Info**',
+            value=f"""
+**Current Uptime **{humanize.naturaldelta(delta_uptime)}
+**Total Guilds **{len(self.bot.guilds):,}
+**Available Emojis **{len(self.bot.emojis):,}
+**Visible Users **{len(self.bot.users):,}
+            """
+            )
+        embed.add_field(
+            name='_ _',
+            value=f"""
+**Total Commands **{len(set(self.bot.walk_commands()))}
+**Total Cogs **{len(self.bot.cogs)}
+**Memory Usage **{mem}%
+{ascii_bar}
+            """
+            )
+>>>>>>> 833a008dfc1b8640308ece681391f60fd268755f
         embed.add_field(
             name=f'**Latest Commit** - `{self.last_commit_cache["sha"][:7]}` - {self.all_commits} total',
             value=f'```\n{self.last_commit_cache["commit"]["message"]}\n```',
