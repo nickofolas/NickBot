@@ -45,6 +45,8 @@ class Context(commands.Context):
                     )
             else:
                 return await self.send(content, **kwargs)
+        else:
+            await self.send(**kwargs)
 
     def tick(self, opt, label=None):
         lookup = {

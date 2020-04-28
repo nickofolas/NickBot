@@ -19,8 +19,9 @@ from utils.checks import exclude_channels
 
 def filter_posts(obj):
     checks = list()
-    if p := obj.get('preview').get('reddit_video_preview'):
-        checks.append(p.get('is_gif') is False)
+    if p := obj.get('preview'):
+        if p2 := p.get('reddit_video_preview'):
+            checks.append(p2.get('is_gif') is False)
     checks.append(obj.get('is_video') is False)
     return all(checks)
 
@@ -41,7 +42,7 @@ async def do_translation(self, ctx, input, dest='en'):
     await ctx.send(embed=embed)
 
 
-async def get_sub(self, ctx, sort, subreddit, safe=True):
+async def get_sub(self, ctx, sort, subreddit, safe):
     parameters = {
         'limit': '100'
     }
@@ -59,29 +60,29 @@ async def get_sub(self, ctx, sort, subreddit, safe=True):
             raise errors.ApiError(f"Received 403 Forbidden - 'r/{subreddit}' is likely set to private")
         res = await r.json()  # returns dict
         listing = [p['data'] for p in res['data']['children']]
-        ls = filter(lambda p: p.get('over_18') is False, listing) if safe \
-            else listing
+        if safe is True:
+            listing = list(filter(lambda p: p.get('over_18') is False, listing))
         try:
-            post = random.choice(list(filter(filter_posts, ls)))
+            post = random.choice(list(filter(filter_posts, listing)))
         except IndexError:
             raise commands.CommandError('No SFW posts found')
-        if post['data']['selftext']:
-            text = (post['data']['selftext'][:1500] + '...') if len(post['data']['selftext']) > 1500 else post['data']['selftext']
+        if post['selftext']:
+            text = (post['selftext'][:1500] + '...') if len(post['selftext']) > 1500 else post['selftext']
         else:
             text = ''
-        post_delta = time.time()-post['data']['created_utc']
+        post_delta = time.time()-post['created_utc']
         embed = discord.Embed(
-            title=(post['data']['title'][:252] + '...') if len(post['data']['title']) > 252 else post['data']['title'],
+            title=(post['title'][:252] + '...') if len(post['title']) > 252 else post['title'],
             description=
-            (f"**<:upvote:698744205710852167> {post['data']['ups']} | {post['data']['num_comments']} :speech_balloon:**\n {text}"),
-            url="https://www.reddit.com" + post['data']['permalink'],
+            (f"**<:upvote:698744205710852167> {post['ups']} | {post['num_comments']} :speech_balloon:**\n {text}"),
+            url="https://www.reddit.com" + post['permalink'],
             color=discord.Color.main)
         embed.set_image(
-            url=post['data']['url'])
-        embed.set_footer(text=f'r/{post["data"]["subreddit"]} | Submitted {humanize.naturaltime(post_delta)}')
+            url=post['url'])
+        embed.set_footer(text=f'r/{post["subreddit"]} | Submitted {humanize.naturaltime(post_delta)}')
         embed.set_author(
-            name=post['data']['author'],
-            url=f"https://www.reddit.com/user/{post['data']['author']}"
+            name=post['author'],
+            url=f"https://www.reddit.com/user/{post['author']}"
             )
     return post, embed
 
@@ -93,13 +94,13 @@ class Api(commands.Cog):
     @commands.group(invoke_without_command=True)
     async def rand(self, ctx, sort, subreddit):
         """Asynchronously get a random post from a sort on a subreddit"""
-        post, embed = await get_sub(self, ctx, sort, subreddit, safe=ctx.channel.nsfw)
+        post, embed = await get_sub(self, ctx, sort, subreddit, not ctx.channel.nsfw)
         await ctx.send(embed=embed)
 
     @rand.command(hidden=True)
     @commands.is_owner()
     async def bypass(self, ctx, sort, subreddit):
-        post, embed = await get_sub(self, ctx, sort, subreddit, safe=False)
+        post, embed = await get_sub(self, ctx, sort, subreddit, False)
         await ctx.send(embed=embed)
 
     @commands.group(invoke_without_command=True, aliases=['sub'])

@@ -4,6 +4,8 @@ from datetime import datetime, timedelta
 import asyncio
 import random
 import copy
+import re
+import string
 
 import discord
 from discord.ext import commands
@@ -33,8 +35,12 @@ class Data(commands.Cog):
         If desired, the highlight can be made quite granular, as regex patterns are
         supported.
         """
-        if len(highlight_words) <= 1:
+        if len(highlight_words) < 2:
             raise commands.CommandError('Highlights must be at least 2 characters long')
+        content_check = re.compile(fr'{highlight_words}', re.I)
+        for i in ('afssafasfa', '12421', '\n', ' ', string.ascii_letters, string.digits):
+            if re.search(content_check, i):
+                raise commands.CommandError('This trigger is too general')
         async with asq.connect('./database.db') as db:
             check = await db.execute('SELECT kw FROM highlights WHERE user_id=$1', (ctx.author.id,))
             if len(active := await check.fetchall()) == 5:
