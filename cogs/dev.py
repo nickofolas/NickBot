@@ -17,7 +17,7 @@ import import_expression
 
 from utils.checks import is_owner_or_administrator
 from utils.paginator import ShellMenu, CSMenu
-from utils.helpers import return_lang_hl
+from utils.helpers import return_lang_hl, pluralize
 import utils
 
 
@@ -360,14 +360,14 @@ class Dev(commands.Cog):
                     errored.append(filename[:-3])
             await ctx.message.remove_reaction('<a:loading:681628799376293912>', ctx.me)
             if errored:
-                await ctx.send('\nThe following cogs errored while reloading: ' + ', '.join(errored))
+                await ctx.send(f'\nThe following {pluralize("cog", errored)} errored while reloading: ' + ', '.join(errored))
             else:
                 await ctx.message.add_reaction(ctx.tick(True))
         else:
             for e in extension:
                 self.bot.reload_extension(f'cogs.{e.lower()}')
                 errored.append(e)
-            await ctx.send(f'Succesfully reloaded cog(s) {", ".join(errored)}')
+            await ctx.send(f'Succesfully reloaded {pluralize("cog", errored)} {", ".join(errored)}')
             await ctx.message.remove_reaction('<a:loading:681628799376293912>', ctx.me)
 
     '''

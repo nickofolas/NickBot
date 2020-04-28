@@ -1,6 +1,3 @@
-from discord.ext import commands
-import discord
-
 LANGUAGES = sorted([
     'as',
     '1c',
@@ -329,7 +326,7 @@ def return_lang_hl(input_string) -> str:
 
 def pluralize(inp, value):
     if isinstance(value, list):
-        inp = inp + 's' if len(value) > 1 else inp
+        inp = inp + 's' if len(value) != 1 else inp
     if isinstance(value, int):
-        inp = inp + 's' if value > 1 else inp
+        inp = inp + 's' if value != 1 else inp
     return inp

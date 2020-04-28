@@ -199,7 +199,7 @@ class Api(commands.Cog):
     @redditor.command(aliases=['def'])
     async def default(self, ctx, *, reddit_user):
         """Set a shortcut to your reddit user for reddit commands
-        This will allow you to access your reddit acc info without passing an argument """
+        This will allow you to access your reddit acc info without passing an argument"""
         async with asq.connect('./database.db') as db:
             await db.execute("UPDATE user_data SET default_reddit=$1 WHERE user_id=$2", (reddit_user, ctx.author.id))
             await db.commit()
@@ -251,20 +251,21 @@ class Api(commands.Cog):
             if resp.status == 404:
                 raise errors.ApiError(f"404 - '{package_name}' was not found")
             js = await resp.json()
-        home_link = js['info'].get('home_page', 'No home page url found')
-        docs_link = js['info']['project_urls'].get('Documentation', 'No documentation link found')
-        pkg_url = js['info'].get('package_url', 'No package url found')
+        home_link = js['info'].get('home_page')
+        docs_link = js['info']['project_urls'].get('Documentation')
+        pkg_url = js['info'].get('package_url'')
+        found = {
+            'Home Page': home_link,
+            'Documentation': docs_link,
+            'Package URL': pkg_url
+        }
         embed = discord.Embed(color=discord.Color.main)
         embed.description = js['info']['summary']
         embed.title = js['info']['name']
         embed.set_author(name=js['info']['author'])
         embed.add_field(
             name='Links',
-            value=f"""
-Home Page: {home_link}
-Documentation: {docs_link}
-Package URL: {pkg_url}
-            """,
+            value='\n'.join([f'{k}: {v}' for k, v in found if v is not None]),
             )
         embed.set_footer(text=f"Version: {js['info']['version']}")
         await ctx.send(embed=embed)

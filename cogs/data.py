@@ -11,6 +11,7 @@ import aiosqlite as asq
 import humanize
 
 from utils.paginator import BareBonesMenu, CSMenu
+from utils.helpers import pluralize
 
 
 class Data(commands.Cog):
@@ -335,7 +336,7 @@ class Data(commands.Cog):
         async with asq.connect('./database.db') as db:
             async with db.execute('SELECT * FROM tags WHERE usage_epoch<$1', (seven_days_epoch,)) as re:
                 to_purge = await re.fetchall()
-                prompt = await ctx.prompt(f'Are you sure you want to purge {len(to_purge)} tags?')
+                prompt = await ctx.prompt(f'Are you sure you want to purge {len(to_purge)} {pluralize("tag", to_purge)}?')
                 if prompt:
                     await db.execute('DELETE FROM tags WHERE usage_epoch<$1', (seven_days_epoch,))
                     await db.commit()
