@@ -26,6 +26,8 @@ class Listeners(commands.Cog):
         self.status_updater.start()
         self.hl_mailer.start()
         self.hl_msgs = list()
+        self.hl_cache = []
+        self.bot.loop.create_task(build_hl_cache())
 
     def cog_unload(self):
         self.status_updater.cancel()
@@ -38,6 +40,7 @@ class Listeners(commands.Cog):
                 activity=discord.Activity(
                     type=discord.ActivityType.watching,
                     name=f"{len(self.bot.guilds):,} servers | {len(self.bot.users):,} members"))
+        await self.build_hl_cache()
 
     @tasks.loop(seconds=10)
     async def hl_mailer(self):
@@ -64,6 +67,12 @@ class Listeners(commands.Cog):
             return
         await ctx.propagate_to_eh(self.bot, ctx, error)
 
+    async def build_hl_cache(self):
+        async with asq.connect('database.db') as db:
+            async with db.execute('SELECT user_id, kw, exclude_guild FROM highlights') as cur:
+                async for c in cur:
+                    self.hl_cache.append(c)
+
     @commands.Cog.listener()
     async def on_command(self, ctx):
         async with asq.connect('./database.db') as db:
@@ -89,46 +98,48 @@ class Listeners(commands.Cog):
     '''
 
 
+    '''
+    e = self.bot.get_guild(704773889582039050)
+    context_list = list()
+    emoji = list()
+    async for m in message.channel.history(limit=4):
+        av = await (m.author.avatar_url_as(size=64)).read()
+        em = await e.create_custom_emoji(name='temp', image=av)
+        context_list.append(f"{em} {m.author}: {m.content.replace(match.group(0), f'**{match.group(0)}**')}")
+        emoji.append(em)
+    '''
+
     # Message events
     @commands.Cog.listener()
     async def on_message(self, message):
         await self.bot.wait_until_ready()
         recipients = []
-        async with Context.ExHandler(exception_type=AttributeError), asq.connect('database.db') as db:
-            async with db.execute('SELECT user_id, kw, exclude_guild FROM highlights') as cur:
-                async for c in cur:
-                    regex_pattern = re.compile(c[1], re.I)
-                    if match := re.search(regex_pattern, message.content):
-                        if c[2]:
-                            if str(message.guild.id) in c[2].split(','):
-                                continue
-                        if re.search(re.compile(r'([a-zA-Z0-9]{24}\.[a-zA-Z0-9]{6}\.[a-zA-Z0-9_\-]{27}|mfa\.[a-zA-Z0-9_\-]{84})'), message.content):
+        async with Context.ExHandler(exception_type=AttributeError):
+            for c in self.hl_cache:
+                regex_pattern = re.compile(c[1], re.I)
+                if match := re.search(regex_pattern, message.content):
+                    if c[2]:
+                        if str(message.guild.id) in c[2].split(','):
                             continue
-                        alerted = self.bot.get_user(c[0])
-                        e = self.bot.get_guild(704773889582039050)
-                        context_list = list()
-                        emoji = list()
-                        async for m in message.channel.history(limit=4):
-                            av = await (m.author.avatar_url_as(size=64)).read()
-                            em = await e.create_custom_emoji(name='temp', image=av)
-                            context_list.append(f"{em} {m.author}: {m.content.replace(match.group(0), f'**{match.group(0)}**')}")
-                            emoji.append(em)
-                        embed = discord.Embed(
-                            title=f'A word has been highlighted!',
-                            description='\n'.join(reversed(context_list)),
-                            color=discord.Color.main)
-                        embed.add_field(name='Jump URL', value=message.jump_url)
-                        embed.set_footer(
-                            text=f'Msg sent by {message.author}',
-                            icon_url=message.author.avatar_url_as(
-                                static_format='png'))
-                        embed.timestamp = message.created_at
-                        if (
-                            alerted in message.guild.members and alerted.id != message.author.id and message.channel
-                                .permissions_for(message.guild.get_member(alerted.id)).read_messages and not message.author.bot
-                        ):
-                            if len(self.hl_msgs) < 40 and [i[0] for i in self.hl_msgs].count(alerted) < 5:
-                                self.hl_msgs.append((alerted, embed, emoji))
+                    if re.search(re.compile(r'([a-zA-Z0-9]{24}\.[a-zA-Z0-9]{6}\.[a-zA-Z0-9_\-]{27}|mfa\.[a-zA-Z0-9_\-]{84})'), message.content):
+                        continue
+                    alerted = self.bot.get_user(c[0])
+                    embed = discord.Embed(
+                        title=f'A word has been highlighted!',
+                        description='\n'.join(reversed(context_list)),
+                        color=discord.Color.main)
+                    embed.add_field(name='Jump URL', value=message.jump_url)
+                    embed.set_footer(
+                        text=f'Msg sent by {message.author}',
+                        icon_url=message.author.avatar_url_as(
+                            static_format='png'))
+                    embed.timestamp = message.created_at
+                    if (
+                        alerted in message.guild.members and alerted.id != message.author.id and message.channel
+                            .permissions_for(message.guild.get_member(alerted.id)).read_messages and not message.author.bot
+                    ):
+                        if len(self.hl_msgs) < 40 and [i[0] for i in self.hl_msgs].count(alerted) < 5:
+                            self.hl_msgs.append((alerted, embed, emoji))
 
     @commands.Cog.listener()
     async def on_message_edit(self, before, after):
