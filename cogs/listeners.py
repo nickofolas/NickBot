@@ -114,32 +114,31 @@ class Listeners(commands.Cog):
     async def on_message(self, message):
         await self.bot.wait_until_ready()
         recipients = []
-        async with Context.ExHandler(exception_type=commands.CommandError):
-            for c in self.hl_cache:
-                regex_pattern = re.compile(c[1], re.I)
-                if match := re.search(regex_pattern, message.content):
-                    if c[2]:
-                        if str(message.guild.id) in c[2].split(','):
-                            continue
-                    if re.search(re.compile(r'([a-zA-Z0-9]{24}\.[a-zA-Z0-9]{6}\.[a-zA-Z0-9_\-]{27}|mfa\.[a-zA-Z0-9_\-]{84})'), message.content):
+        for c in self.hl_cache:
+            regex_pattern = re.compile(c[1], re.I)
+            if match := re.search(regex_pattern, message.content):
+                if c[2]:
+                    if str(message.guild.id) in c[2].split(','):
                         continue
-                    alerted = self.bot.get_user(c[0])
-                    embed = discord.Embed(
-                        title=f'A word has been highlighted!',
-                        description=message.content,
-                        color=discord.Color.main)
-                    embed.add_field(name='Jump URL', value=message.jump_url)
-                    embed.set_footer(
-                        text=f'Msg sent by {message.author}',
-                        icon_url=message.author.avatar_url_as(
-                            static_format='png'))
-                    embed.timestamp = message.created_at
-                    if (
-                        alerted in message.guild.members and alerted.id != message.author.id and message.channel
-                            .permissions_for(message.guild.get_member(alerted.id)).read_messages and not message.author.bot
-                    ):
-                        if len(self.hl_msgs) < 40 and [i[0] for i in self.hl_msgs].count(alerted) < 5:
-                            self.hl_msgs.append((alerted, embed, emoji))
+                if re.search(re.compile(r'([a-zA-Z0-9]{24}\.[a-zA-Z0-9]{6}\.[a-zA-Z0-9_\-]{27}|mfa\.[a-zA-Z0-9_\-]{84})'), message.content):
+                    continue
+                alerted = self.bot.get_user(c[0])
+                embed = discord.Embed(
+                    title=f'A word has been highlighted!',
+                    description=message.content,
+                    color=discord.Color.main)
+                embed.add_field(name='Jump URL', value=message.jump_url)
+                embed.set_footer(
+                    text=f'Msg sent by {message.author}',
+                    icon_url=message.author.avatar_url_as(
+                        static_format='png'))
+                embed.timestamp = message.created_at
+                if (
+                    alerted in message.guild.members and alerted.id != message.author.id and message.channel
+                        .permissions_for(message.guild.get_member(alerted.id)).read_messages and not message.author.bot
+                ):
+                    if len(self.hl_msgs) < 40 and [i[0] for i in self.hl_msgs].count(alerted) < 5:
+                        self.hl_msgs.append((alerted, embed))
 
     @commands.Cog.listener()
     async def on_message_edit(self, before, after):
