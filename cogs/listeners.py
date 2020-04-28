@@ -100,7 +100,7 @@ class Listeners(commands.Cog):
                         if c[2]:
                             if str(message.guild.id) in c[2].split(','):
                                 continue
-                        if re.search(re.compile(r'([a-zA-Z0-9]{24}.[a-zA-Z0-9]{6}.[a-zA-Z0-9-]{27}|mfa.[a-zA-Z0-9-]{84})'), message.content):
+                        if re.search(re.compile(r'([a-zA-Z0-9]{24}\.[a-zA-Z0-9]{6}\.[a-zA-Z0-9_\-]{27}|mfa\.[a-zA-Z0-9_\-]{84})'), message.content):
                             continue
                         alerted = self.bot.get_user(c[0])
                         embed = discord.Embed(

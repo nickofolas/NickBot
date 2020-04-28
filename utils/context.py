@@ -31,7 +31,7 @@ class Context(commands.Context):
             if escape_mentions:
                 converter = commands.clean_content()
                 content = await converter.convert(self, str(content))
-            if match := re.search(re.compile(r'([a-zA-Z0-9]{24}.[a-zA-Z0-9]{6}.[a-zA-Z0-9-]{27}|mfa.[a-zA-Z0-9-]{84})'), content):
+            if match := re.search(re.compile(r'([a-zA-Z0-9]{24}\.[a-zA-Z0-9]{6}\.[a-zA-Z0-9_\-]{27}|mfa\.[a-zA-Z0-9_\-]{84})'), content):
                 content = content.replace(match.group(0), '[token omitted]')
             if len(content) > 2000:
                 async with self.bot.session.post(
@@ -45,8 +45,6 @@ class Context(commands.Context):
                     )
             else:
                 return await self.send(content, **kwargs)
-        else:
-            await self.send(**kwargs)
 
     def tick(self, opt, label=None):
         lookup = {
