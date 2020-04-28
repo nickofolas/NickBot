@@ -298,14 +298,14 @@ class Meta(commands.Cog):
         delta_uptime = datetime.utcnow() - self.bot.launch_time
         embed = discord.Embed(color=discord.Color.main)
         embed.set_footer(text=f'Python {vi.major}.{vi.minor}.{vi.micro} | discord.py {discord.__version__}')
-        embed.set_author(name=appinfo.owner)
+        embed.set_author(name=f'Owner: {appinfo.owner}')
         embed.add_field(
             name='**Bot Info**',
             value=f"""
 **Current Uptime **{humanize.naturaldelta(delta_uptime)}
 **Total Guilds **{len(self.bot.guilds):,}
-**Available Emojis **{len(self.bot.emojis):,}
 **Visible Users **{len(self.bot.users):,}
+**Available Emojis **{len(self.bot.emojis):,}
             """
             )
         embed.add_field(
@@ -318,7 +318,7 @@ class Meta(commands.Cog):
             """
             )
         embed.add_field(
-            name=f'**Latest Commit** - `{self.last_commit_cache["sha"][:7]}` - {self.all_commits} total',
+            name=f'Latest Commit - `{self.last_commit_cache["sha"][:7]}` ({self.all_commits} total)',
             value=f'```\n{self.last_commit_cache["commit"]["message"]}\n```',
             inline=False
         )

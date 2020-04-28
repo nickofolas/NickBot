@@ -346,6 +346,7 @@ class Data(commands.Cog):
                 if prompt:
                     await db.execute('DELETE FROM tags WHERE usage_epoch<$1', (seven_days_epoch,))
                     await db.commit()
+                    await self.bot.get_user(self.bot.owner_id).send(f'Deleted tags: {to_purge}')
 
     # END TAGS GROUP ~
 
