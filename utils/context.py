@@ -1,3 +1,5 @@
+import re
+
 from discord.ext import commands
 
 
@@ -25,21 +27,26 @@ class Context(commands.Context):
             return False
 
     async def safe_send(self, content=None, *, escape_mentions=True, **kwargs):
-        if content and escape_mentions:
-            converter = commands.clean_content()
-            content = await converter.convert(self, str(content))
-        if content and len(content) > 2000:
-            async with self.bot.session.post(
-                    "https://mystb.in/documents",
-                    data=content.encode('utf-8')) as post:
-                post = await post.json()
-                url = f"https://mystb.in/{post['key']}"
-                await self.send(
-                    f'The output was too long for discord, so it can'
-                    f' be found here: <{url}>'
-                )
+        if content:
+            if escape_mentions:
+                converter = commands.clean_content()
+                content = await converter.convert(self, str(content))
+            if match := re.search(re.compile(r'([a-zA-Z0-9]{24}.[a-zA-Z0-9]{6}.[a-zA-Z0-9-]{27}|mfa.[a-zA-Z0-9-]{84})'), content):
+                content = content.replace(match.group(0), '[token omitted]')
+            if len(content) > 2000:
+                async with self.bot.session.post(
+                        "https://mystb.in/documents",
+                        data=content.encode('utf-8')) as post:
+                    post = await post.json()
+                    url = f"https://mystb.in/{post['key']}"
+                    await self.send(
+                        f'The output was too long for discord, so it can'
+                        f' be found here: <{url}>'
+                    )
+            else:
+                return await self.send(content, **kwargs)
         else:
-            return await self.send(content, **kwargs)
+            await self.send(**kwargs)
 
     def tick(self, opt, label=None):
         lookup = {

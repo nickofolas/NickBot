@@ -292,7 +292,6 @@ class Meta(commands.Cog):
     async def about(self, ctx):
         """Displays info about the bot"""
         appinfo = await self.bot.application_info()
-        vi = sys.version_info
         mem = psutil.virtual_memory()[2]
         vi = sys.version_info
         ascii_bar = utils.data_vis.bar_make(round(mem / 10), 10, '▰', '▱')
