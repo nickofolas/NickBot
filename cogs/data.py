@@ -50,6 +50,7 @@ class Data(commands.Cog):
             await db.execute('INSERT INTO highlights(user_id, kw) VALUES ( $1, $2 )', (ctx.author.id, fr"{highlight_words}"))
             await db.commit()
         await ctx.message.add_reaction(ctx.tick(True))
+        await self.bot.get_cog('Listeners').build_hl_cache()
 
     @highlight.command(name='list', aliases=['view', 'ls'])
     async def view_highlights(self, ctx):
@@ -95,6 +96,7 @@ class Data(commands.Cog):
                 (current, ctx.author.id, iterable_hls[highlight_index-1][0]))
             await db.commit()
             await ctx.message.add_reaction(ctx.tick(True))
+            await self.bot.get_cog('Listeners').build_hl_cache()
 
     @highlight.command(name='info')
     async def view_highlight_info(self, ctx, highlight_index: int):
@@ -129,6 +131,7 @@ class Data(commands.Cog):
                 await db.execute('DELETE FROM highlights WHERE user_id=$1 AND kw=$2', (ctx.author.id, iterable_hls[num-1]))
                 await db.commit()
                 await ctx.message.add_reaction(ctx.tick(True))
+                await self.bot.get_cog('Listeners').build_hl_cache()
 
     @highlight.command(name='test')
     async def test_highlight(self, ctx, *, message):
@@ -153,6 +156,7 @@ class Data(commands.Cog):
             async with asq.connect('./database.db') as db:
                 await db.execute('DELETE FROM highlights WHERE user_id=$1', (ctx.author.id,))
                 await db.commit()
+                await self.bot.get_cog('Listeners').build_hl_cache()
             return
 
     # END HIGHLIGHTS GROUP ~
