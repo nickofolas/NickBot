@@ -126,13 +126,8 @@ class Listeners(commands.Cog):
                 context_list = reversed(context_list)
                 embed = discord.Embed(
                     title=f'A word has been highlighted!',
-                    description='\n'.join(context_list),
+                    description='\n'.join(context_list) + f'\n[Jump URL]({message.jump_url})',
                     color=discord.Color.main)
-                embed.add_field(name='Jump URL', value=message.jump_url)
-                embed.set_footer(
-                    text=f'Msg sent by {message.author}',
-                    icon_url=message.author.avatar_url_as(
-                        static_format='png'))
                 embed.timestamp = message.created_at
                 if (
                     alerted in message.guild.members and alerted.id != message.author.id and message.channel
