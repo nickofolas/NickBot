@@ -1,5 +1,3 @@
-import shlex
-import subprocess
 import time
 import io
 from contextlib import redirect_stdout
@@ -9,7 +7,6 @@ import asyncio
 import os
 import copy
 from typing import Union
-import datetime
 import re
 
 import discord
@@ -17,7 +14,6 @@ from discord.ext import commands
 import aiosqlite as asq
 from tabulate import tabulate
 import import_expression
-import humanize
 
 from utils.checks import is_owner_or_administrator
 from utils.paginator import ShellMenu, CSMenu
@@ -265,7 +261,7 @@ class Dev(commands.Cog):
         async with ctx.ExHandler(
                 exception_type=KeyError,
                 propagate=(self.bot, ctx),
-                message='Not a valid activity type') as man:
+                message='Not a valid activity type'):
             if type_dict[act_type] == 4:
                 self.bot.persistent_status = False
             else:

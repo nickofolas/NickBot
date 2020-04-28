@@ -287,7 +287,7 @@ class Meta(commands.Cog):
             self.last_commit_cache = await resp1.json()
             self.all_commits = len(await resp2.json())
 
-    @commands.command(aliases=['ab'])
+    @commands.group(invoke_without_command=True, aliases=['ab'])
     async def about(self, ctx):
         """Displays info about the bot"""
         appinfo = await self.bot.application_info()

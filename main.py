@@ -40,6 +40,8 @@ async def get_prefix(bot, message):
 
 
 class NickOfOBot(commands.Bot):
+    """The bot itself"""
+
     def __init__(self):
         super().__init__(command_prefix=get_prefix, case_insensitive=True)
         self.session = aiohttp.ClientSession()

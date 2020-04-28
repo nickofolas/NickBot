@@ -56,7 +56,7 @@ def member_info(self, ctx, target, act, e):
                 act.append(f'Streaming **{a.name}**')
             if a.type == discord.ActivityType.listening:
                 act.append(f'Listening to **{a.name}**')
-    acts = '\n'.join(act)
+    acts = '\n'.join(sorted(act))
     for m in ctx.guild.members:
         e.append(m)
     e.sort(key=lambda r: r.joined_at)
@@ -165,11 +165,10 @@ class Info(commands.Cog):
                 [f'{ctx.tick(g[1])} {discord.utils.escape_markdown(g[0])}'
                  for g in group if g[0] not in conf['bad_perms']])
             embed.add_field(name='_ _', value=joined or '_ _')
+        embed.set_field_at(0, name=ctx.channel.permissions_for(ctx.author).value, value=embed.fields[0].value)
         embed.set_author(
             name=target.display_name,
             icon_url=target.avatar_url_as(static_format='png'))
-        embed.set_footer(text=f'{ctx.author.name}')
-        embed.timestamp = ctx.message.created_at
         await ctx.send(embed=embed)
 
     @userinfo.command(aliases=['spot'])
