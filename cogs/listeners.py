@@ -124,11 +124,19 @@ class Listeners(commands.Cog):
                 if re.search(re.compile(r'([a-zA-Z0-9]{24}\.[a-zA-Z0-9]{6}\.[a-zA-Z0-9_\-]{27}|mfa\.[a-zA-Z0-9_\-]{84})'), message.content):
                     continue
                 alerted = self.bot.get_user(c[0])
+                e = self.bot.get_guild(704773889582039050)
+                context_list = list()
+                emoji = list()
+                async for m in message.channel.history(limit=4):
+                    av = await (m.author.avatar_url_as(size=64)).read()
+                    em = await e.create_custom_emoji(name='temp', image=av)
+                    context_list.append(f"{em} {m.author}: {m.content.replace(match.group(0), f'**{match.group(0)}**')}")
+                    emoji.append(em)
                 embed = discord.Embed(
                     title=f'A word has been highlighted!',
                     description=message.content,
                     color=discord.Color.main)
-                embed.add_field(name='Jump URL', value=message.jump_url)
+                embed.add_field(name='Jump URL', value='\n'.join(reversed(context_list)))
                 embed.set_footer(
                     text=f'Msg sent by {message.author}',
                     icon_url=message.author.avatar_url_as(
