@@ -332,11 +332,10 @@ class Fun(commands.Cog):
 
     @commands.command()
     async def dongsize(self, ctx, *, victim: discord.Member = None):
-        """Ahem... yea"""
+        """Go ahead. You know you want to."""
         victim = victim or ctx.author
-        random.seed(victim.id)
-        ran = 25 if victim.id in (self.bot.owner_id, self.bot.user.id) else random.randint(1, 15)
-        dong = '8' + ''.join(['=' for i in range(ran)]) + 'D'
+        ran = 25 if victim.id in (self.bot.owner_id, self.bot.user.id) else random.Random(victim.id).randint(1, 15)
+        dong = '8' + '='*ran + 'D'
         await ctx.safe_send(dong)
 
 

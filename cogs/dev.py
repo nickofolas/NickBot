@@ -221,7 +221,7 @@ class Dev(commands.Cog):
     @dev_command_group.command(name='logs')
     @commands.is_owner()
     async def view_journal_ctl(self, ctx):
-        stdout, stderr = await do_shell('journalctl -u mybot -n 300 --no-pager -q')
+        stdout, stderr = await do_shell('journalctl -u mybot -n 300 --no-pager -o cat')
         output = stdout + stderr
         entries = list(clean_bytes(output))
         source = ShellMenu(entries, code_lang='sh', per_page=1985)
