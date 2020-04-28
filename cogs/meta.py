@@ -3,6 +3,7 @@ import asyncio
 import itertools
 import os
 from datetime import datetime
+import sys
 
 import discord
 from discord.ext import commands
@@ -291,15 +292,13 @@ class Meta(commands.Cog):
     async def about(self, ctx):
         """Displays info about the bot"""
         appinfo = await self.bot.application_info()
-        python_files = []
-        for path, subdirs, files in os.walk('.'):
-            for name in files:
-                if name.endswith('.py'):
-                    python_files.append(name)
+        vi = sys.version_info
         mem = psutil.virtual_memory()[2]
         ascii_bar = utils.data_vis.bar_make(round(mem / 10), 10, '▰', '▱')
         delta_uptime = datetime.utcnow() - self.bot.launch_time
-        embed = discord.Embed(title='', description='', color=discord.Color.main)
+        embed = discord.Embed(color=discord.Color.main)
+        embed.set_footer(text=f'Python {vi.major}.{vi.minor}.{vi.micro} | discord.py {discord.__version__}')
+        embed.set_author(name=appinfo.owner)
         embed.add_field(
             name='**Bot Info**',
             value=f"""
@@ -307,8 +306,6 @@ class Meta(commands.Cog):
 **Total Guilds **{len(self.bot.guilds):,}
 **Available Emojis **{len(self.bot.emojis):,}
 **Visible Users **{len(self.bot.users):,}
-**discord.py Version **{discord.__version__}
-**Bot Owner **{appinfo.owner}
             """
             )
         embed.add_field(
@@ -318,8 +315,6 @@ class Meta(commands.Cog):
 **Total Cogs **{len(self.bot.cogs)}
 **Memory Usage **{mem}%
 {ascii_bar}
-**Cached Messages **{len(self.bot.cached_messages):,}/1,000
-**Number of Files **{len(python_files)}
             """
             )
         embed.add_field(
