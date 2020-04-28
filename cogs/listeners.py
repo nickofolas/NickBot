@@ -43,7 +43,8 @@ class Listeners(commands.Cog):
     async def hl_mailer(self):
         for person, embed, emoji in self.hl_msgs:
             await person.send(embed=embed)
-            await emoji.delete()
+            for e in emoji:
+                await e.delete()
             await asyncio.sleep(0.25)
         self.hl_msgs = list()
 
@@ -106,10 +107,12 @@ class Listeners(commands.Cog):
                         alerted = self.bot.get_user(c[0])
                         e = self.bot.get_guild(704773889582039050)
                         context_list = list()
+                        emoji = list()
                         async for m in message.channel.history(limit=4):
                             av = await (m.author.avatar_url_as(size=64)).read()
                             em = await e.create_custom_emoji(name='temp', image=av)
                             context_list.append(f"{em} {m.author}: {m.content.replace(match.group(0), f'__{match.group(0)}__')}")
+                            emoji.append(em)
                         embed = discord.Embed(
                             title=f'A word has been highlighted!',
                             description='\n'.join(context_list),
@@ -125,7 +128,7 @@ class Listeners(commands.Cog):
                                 .permissions_for(message.guild.get_member(alerted.id)).read_messages and not message.author.bot
                         ):
                             if len(self.hl_msgs) < 40 and [i[0] for i in self.hl_msgs].count(alerted) < 5:
-                                self.hl_msgs.append((alerted, embed, em))
+                                self.hl_msgs.append((alerted, embed, emoji))
 
     @commands.Cog.listener()
     async def on_message_edit(self, before, after):
