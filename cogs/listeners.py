@@ -111,7 +111,7 @@ class Listeners(commands.Cog):
                         async for m in message.channel.history(limit=4):
                             av = await (m.author.avatar_url_as(size=64)).read()
                             em = await e.create_custom_emoji(name='temp', image=av)
-                            context_list.append(f"{em} {m.author}: {m.content.replace(match.group(0), f'__{match.group(0)}__')}")
+                            context_list.append(f"{em} **{m.author.name}:** {m.content.replace(match.group(0), f'__{match.group(0)}__')}")
                             emoji.append(em)
                         embed = discord.Embed(
                             title=f'A word has been highlighted!',
