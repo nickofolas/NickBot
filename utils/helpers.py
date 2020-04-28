@@ -325,3 +325,11 @@ def return_lang_hl(input_string) -> str:
         if input_string.endswith(possible_suffix):
             return possible_suffix
     return 'sh'
+
+
+def pluralize(inp, value):
+    if isinstance(value, list):
+        inp = inp + 's' if len(value) > 1 else inp
+    if isinstance(value, int):
+        inp = inp + 's' if value > 1 else inp
+    return inp

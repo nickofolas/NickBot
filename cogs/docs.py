@@ -104,6 +104,7 @@ class Docs(commands.Cog):
         # next line is "# Project: <name>"
         # then after that is "# Version: <version>"
         projname = stream.readline().rstrip()[11:]
+        version = stream.readline().rstrip()[11:]
 
         # next line says if it's a zlib header
         line = stream.readline()
