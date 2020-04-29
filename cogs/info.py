@@ -111,9 +111,15 @@ class Info(commands.Cog):
             f"{humanize.naturaltime(datetime.utcnow() - target.joined_at)}"\
             f"\n**Join Position **{join_pos}\n" \
             if isinstance(target, discord.Member) and ctx.guild else ''
+        bot_tag = ''
+        if target.bot:
+            if 'verified_bot' in list(flag_vals):
+                bot_tag = '<:verified1:704885163003478069><:verified2:704885180162244749>'
+            else:
+                bot_tag = '<:bot:699991045886312488>'
         embed = discord.Embed(
             title=f"{target}"
-            f" {('<:bot:699991045886312488>' if target.bot else '')}",
+            f" {bot_tag}",
             colour=discord.Color.main)
         embed.set_thumbnail(url=target.avatar_url_as(static_format='png'))
         status_display = status_display or ''
