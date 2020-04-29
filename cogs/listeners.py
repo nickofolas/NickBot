@@ -60,10 +60,6 @@ class Listeners(commands.Cog):
     # Provides general command error messages
     @commands.Cog.listener()
     async def on_command_error(self, ctx, error):
-        if ignored_cmds.search(ctx.invoked_with):
-            return
-        if not isinstance(error, commands.CommandOnCooldown):
-            ctx.command.reset_cooldown(ctx)
         if isinstance(error, commands.CommandNotFound):
             return
         await ctx.propagate_to_eh(self.bot, ctx, error)
@@ -73,7 +69,9 @@ class Listeners(commands.Cog):
         async with asq.connect('database.db') as db:
             async with db.execute('SELECT user_id, kw, exclude_guild FROM highlights') as cur:
                 async for c in cur:
+                    c = list(c)
                     c[1] = re.compile(c[1], re.I)
+                    c = tuple(c)
                     self.hl_cache.append(c)
 
     @commands.Cog.listener()
