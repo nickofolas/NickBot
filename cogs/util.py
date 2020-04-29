@@ -7,6 +7,7 @@ import copy
 import unicodedata
 from inspect import Parameter
 import os
+import json
 
 import unidecode as ud
 import discord
@@ -165,6 +166,16 @@ class Util(commands.Cog):
         async with ctx.typing(), self.bot.session.post('https://api.imgur.com/3/image', headers=headers, data=data) as resp:
             resp = await resp.json()
         await ctx.safe_send(resp['data'].get('link'))
+
+    @commands.command()
+    async def shorten(self, ctx, *, link):
+        """Shorten a link into a compact redirect"""
+        async with self.bot.session.post(
+                'https://api.rebrandly.com/v1/links',
+                headers={'Content-type': 'application/json', 'apikey': os.getenv('REBRANDLY_KEY')},
+                data=json.dumps({'destination': 'https://developers.rebrandly.com/docs'})) as resp:
+            resp = await resp.json()
+        await ctx.safe_send(f'Shortened URL: {resp["shorturl"]}')
 
 
 def setup(bot):
