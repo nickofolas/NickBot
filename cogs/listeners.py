@@ -45,8 +45,11 @@ class Listeners(commands.Cog):
     @tasks.loop(seconds=10)
     async def hl_mailer(self):
         for person, embed in set(self.hl_msgs):
-            await person.send(embed=embed)
-            await asyncio.sleep(0.25)
+            try:
+                await person.send(embed=embed)
+                await asyncio.sleep(0.25)
+            except Exception:
+                continue
         self.hl_msgs = list()
 
     @tasks.loop(minutes=1.0)
