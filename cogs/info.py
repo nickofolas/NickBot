@@ -163,7 +163,7 @@ class Info(commands.Cog):
         for key, group in itertools.groupby(ls, lambda x: x[1]):
             joined = '\n'.join(
                 [f'{ctx.tick(g[1])} {discord.utils.escape_markdown(g[0])}'
-                 for g in group if g[0] not in conf['bad_perms']])
+                 for g in group if g[0] not in [a[0] for a in filter(lambda p: p[1] is True, discord.Permissions(2080898303))]])
             embed.add_field(name='_ _', value=joined or '_ _')
         embed.set_field_at(0, name=ctx.channel.permissions_for(ctx.author).value, value=embed.fields[0].value)
         embed.set_author(

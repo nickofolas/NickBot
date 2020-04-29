@@ -53,15 +53,11 @@ perm_list:
 - 'dm_only'
 - 'is_nsfw'
 - 'guild_only'
-bad_perms:
-- 'priority_speaker'
-- 'stream'
-- 'connect'
-- 'speak'
-- 'mute_members'
-- 'deafen_members'
-- 'move_members'
-- 'use_voice_activation'
+default_discord_users:
+- '<:def3:704881302934913045>'
+- '<:def2:704881316616732752>'
+- '<:def0:704881247473893434>'
+- '<:f1:704881276288761906>'
 trophy_emojis:
   'Alpha Tester': '<:alpha_user:701169882317717575>'
   'Bellwether': '<:bellwether:701169890727559260>'

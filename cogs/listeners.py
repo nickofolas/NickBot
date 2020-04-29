@@ -1,6 +1,7 @@
 import math
 from datetime import datetime
 import re
+import random
 import asyncio
 
 import unidecode as ud
@@ -9,6 +10,7 @@ from discord.ext import commands, tasks
 import aiosqlite as asq
 
 from utils.context import Context
+from utils.config import conf
 
 ignored_cmds = re.compile(r'\.+')
 
@@ -99,7 +101,7 @@ class Listeners(commands.Cog):
                 alerted = self.bot.get_user(c[0])
                 context_list = []
                 async for m in message.channel.history(limit=5):
-                    context_list.append(f"> **{m.author.name}:** {m.content.replace(match.group(0), f'__{match.group(0)}__')}")
+                    context_list.append(f"{random.choice(conf['default_discord_users'])} **{m.author.name}:** {m.content.replace(match.group(0), f'__{match.group(0)}__')}")
                 context_list = reversed(context_list)
                 embed = discord.Embed(
                     title=f'A word has been highlighted!',
@@ -126,12 +128,7 @@ class Listeners(commands.Cog):
 
     @commands.Cog.listener()
     async def on_guild_join(self, guild):
-        await self.bot.change_presence(
-            activity=discord.Activity(
-                type=discord.ActivityType.watching,
-                name=f"{len(self.bot.guilds):,} servers | {len(self.bot.users):,} members"))
         embed = discord.Embed(
-            title='',
             description=f'Joined guild {guild.name}',
             color=discord.Color.main)
         embed.set_thumbnail(url=guild.icon_url_as(static_format='png'))
@@ -141,7 +138,6 @@ class Listeners(commands.Cog):
             + f'**Admins:** {len([m for m in guild.members if m.guild_permissions.administrator])}\n'
             + f'**Owner: ** {guild.owner}\n',
             inline=False)
-
         try:
             embed.add_field(
                 name='**Guild Invite**',
@@ -156,26 +152,10 @@ class Listeners(commands.Cog):
             await db.commit()
 
         await guild.get_member(self.bot.user.id).edit(nick='Nick of O-Bot [n/]')
-        '''
-        try:
-            if 'Muted' not in [r.name for r in guild.roles]:
-                muterole = await guild.create_role(name='Muted')
-
-                for channel in guild.channels:
-                    await channel.set_permissions(
-                        muterole, send_messages=False, add_reactions=False)
-        except Exception as e:
-            print(e)
-        '''
         await (await self.bot.application_info()).owner.send(embed=embed)
 
     @commands.Cog.listener()
     async def on_guild_remove(self, guild):
-        await self.bot.change_presence(
-            activity=discord.Activity(
-                type=discord.ActivityType.watching,
-                name=f"{str(len(self.bot.guilds))} servers | {len(self.bot.users)} members"))
-
         async with asq.connect('./database.db') as db:
             await db.execute("DELETE FROM guild_prefs WHERE guild_id=$1", (guild.id,))
             await db.commit()
