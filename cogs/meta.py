@@ -4,6 +4,7 @@ import itertools
 import os
 from datetime import datetime
 import sys
+import textwrap
 
 import discord
 from discord.ext import commands
@@ -276,9 +277,10 @@ class Meta(commands.Cog):
 {ascii_bar}
             """
             )
+        com_msg = self.last_commit_cache['commit']['message']
         embed.add_field(
             name=f'Latest Commit - `{self.last_commit_cache["sha"][:7]}`',
-            value=f'```\n{self.last_commit_cache["commit"]["message"]}\n```',
+            value='\n'.join(['\n'.join(textwrap.wrap(line, 25, break_long_words=False, replace_whitespace=False)) for line in com_msg.splitlines() if line.strip() != '']),
             inline=True
         )
         if ctx.author not in self.bot.get_guild(696739356815392779).members:

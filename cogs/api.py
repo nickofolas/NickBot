@@ -2,6 +2,7 @@ import random
 import os
 import time
 from typing import Union
+import textwrap
 
 import discord
 from discord.ext import commands
@@ -68,12 +69,12 @@ async def get_sub(self, ctx, sort, subreddit, safe):
         except IndexError:
             raise commands.CommandError('No SFW posts found')
         if post['selftext']:
-            text = (post['selftext'][:1500] + '...') if len(post['selftext']) > 1500 else post['selftext']
+            text = textwrap.shorten(post['selftext'], width=1500)
         else:
             text = ''
         post_delta = time.time()-post['created_utc']
         embed = discord.Embed(
-            title=(post['title'][:252] + '...') if len(post['title']) > 252 else post['title'],
+            title=textwrap.shorten(post['title'], width=252),
             description=
             (f"**<:upvote:698744205710852167> {post['ups']} | {post['num_comments']} :speech_balloon:**\n {text}"),
             url="https://www.reddit.com" + post['permalink'],
