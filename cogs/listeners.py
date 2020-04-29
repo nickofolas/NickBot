@@ -65,7 +65,7 @@ class Listeners(commands.Cog):
     # Provides general command error messages
     @commands.Cog.listener()
     async def on_command_error(self, ctx, error):
-        if isinstance(error, commands.CommandNotFound):
+        if isinstance(error, (commands.CommandNotFound, commands.NotOwner)):
             return
         await ctx.propagate_to_eh(self.bot, ctx, error)
 
@@ -107,7 +107,7 @@ class Listeners(commands.Cog):
                     avatar_index = m.author.default_avatar.value
                     hl_underline = m.content.replace(match.group(0), f'__{match.group(0)}__')
                     repl = r'<a?:\w*:\d*>'
-                    context_list.append(f"{conf['default_discord_users'][avatar_index]} **{m.author.name}:** {re.sub(repl, '', hl_underline)}")
+                    context_list.append(f"{conf['default_discord_users'][avatar_index]} **{m.author.name}:** {re.sub(repl, '[emoji]', hl_underline)}")
                 context_list = reversed(context_list)
                 embed = discord.Embed(
                     title=f'A word has been highlighted!',
