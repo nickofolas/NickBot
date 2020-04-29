@@ -25,8 +25,8 @@ class Listeners(commands.Cog):
         self.bot = bot
         self.status_updater.start()
         self.hl_mailer.start()
+        self.update_hl_cache.start()
         self.hl_msgs = list()
-        self.bot.loop.create_task(self.build_hl_cache())
 
     def cog_unload(self):
         self.status_updater.cancel()
@@ -47,8 +47,13 @@ class Listeners(commands.Cog):
             await asyncio.sleep(0.25)
         self.hl_msgs = list()
 
+    @tasks.loop(minutes=1.0)
+    async def update_hl_cache(self):
+        await self.build_hl_cache()
+
     @hl_mailer.before_loop
     @status_updater.before_loop
+    @update_hl_cache.before_loop
     async def before_task_loops(self):
         await self.bot.wait_until_ready()
 
@@ -68,6 +73,7 @@ class Listeners(commands.Cog):
         async with asq.connect('database.db') as db:
             async with db.execute('SELECT user_id, kw, exclude_guild FROM highlights') as cur:
                 async for c in cur:
+                    c[1] = re.compile(c[1], re.I)
                     self.hl_cache.append(c)
 
     @commands.Cog.listener()
@@ -81,44 +87,17 @@ class Listeners(commands.Cog):
                 await db.execute('INSERT INTO user_data(user_id) VALUES ($1)', (ctx.author.id,))
                 await db.commit()
 
-
-    '''
-    @commands.Cog.listener()
-    async def on_socket_response(self, m):
-        try:
-            try:
-                self.bot.socket_stats[m.get('t')] += 1
-            except KeyError:
-                self.bot.socket_stats[m.get('t')] = 1
-        except Exception:
-            return
-    '''
-
-
-    '''
-    e = self.bot.get_guild(704773889582039050)
-    context_list = list()
-    emoji = list()
-    async for m in message.channel.history(limit=4):
-        av = await (m.author.avatar_url_as(size=64)).read()
-        em = await e.create_custom_emoji(name='temp', image=av)
-        context_list.append(f"{em} {m.author}: {m.content.replace(match.group(0), f'**{match.group(0)}**')}")
-        emoji.append(em)
-    '''
-
     # Message events
     @commands.Cog.listener()
     async def on_message(self, message):
         await self.bot.wait_until_ready()
-        e = self.bot.get_guild(704796236967968818)
+        if re.search(re.compile(r'([a-zA-Z0-9]{24}\.[a-zA-Z0-9]{6}\.[a-zA-Z0-9_\-]{27}|mfa\.[a-zA-Z0-9_\-]{84})'), message.content) or not hasattr(self, 'hl_cache'):
+            return
         for c in self.hl_cache:
-            regex_pattern = re.compile(c[1], re.I)
-            if match := re.search(regex_pattern, message.content):
+            if match := re.search(c[1], message.content):
                 if c[2]:
                     if str(message.guild.id) in c[2].split(','):
                         continue
-                if re.search(re.compile(r'([a-zA-Z0-9]{24}\.[a-zA-Z0-9]{6}\.[a-zA-Z0-9_\-]{27}|mfa\.[a-zA-Z0-9_\-]{84})'), message.content):
-                    continue
                 alerted = self.bot.get_user(c[0])
                 context_list = []
                 async for m in message.channel.history(limit=5):
@@ -158,16 +137,6 @@ class Listeners(commands.Cog):
             description=f'Joined guild {guild.name}',
             color=discord.Color.main)
         embed.set_thumbnail(url=guild.icon_url_as(static_format='png'))
-        embed.add_field(
-            name='**General**',
-            value=f'**Channels:** <:text_channel:687064764421373954> {len(guild.text_channels)} | <:voice_channel:687064782167212165> {len(guild.voice_channels)}\n'
-            + f'**Region:** {str(guild.region).title()}\n'
-            + f'**Verification Level:** {str(guild.verification_level).capitalize()}\n'
-
-            + f'**Emojis:** {len([emoji for emoji in guild.emojis if not emoji.animated])}/{guild.emoji_limit}\n'
-
-            + f'**Max Upload:** {round(guild.filesize_limit * 0.00000095367432)}MB',
-            inline=False)
         embed.add_field(
             name='**Members**',
             value=f'**Total:** {len(guild.members)}\n'
@@ -212,11 +181,6 @@ class Listeners(commands.Cog):
         async with asq.connect('./database.db') as db:
             await db.execute("DELETE FROM guild_prefs WHERE guild_id=$1", (guild.id,))
             await db.commit()
-
-    # Print to console upon disconnect - doesn't proc often
-    @commands.Cog.listener()
-    async def on_disconnect(self):
-        print('{0.user} has disconnected from Discord\n---'.format(self.bot))
 
 
 def setup(bot):
