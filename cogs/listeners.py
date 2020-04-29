@@ -102,7 +102,8 @@ class Listeners(commands.Cog):
                 context_list = []
                 async for m in message.channel.history(limit=5):
                     avatar_index = m.author.default_avatar.value
-                    context_list.append(f"{conf['default_discord_users'][avatar_index]} **{m.author.name}:** {m.content.replace(match.group(0), f'__{match.group(0)}__')}")
+                    hl_underline = m.content.replace(match.group(0), f'__{match.group(0)}__')
+                    context_list.append(f"{conf['default_discord_users'][avatar_index]} **{m.author.name}:** {re.sub(f'<a?:\w*:\d*>', '', hl_underline)}")
                 context_list = reversed(context_list)
                 embed = discord.Embed(
                     title=f'A word has been highlighted!',
