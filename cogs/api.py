@@ -1,6 +1,7 @@
 import random
 import os
 import time
+from typing import Union
 
 import discord
 from discord.ext import commands
@@ -125,11 +126,13 @@ class Api(commands.Cog):
         await ctx.send(embed=embed)
 
     @commands.group(invoke_without_command=True, aliases=['r'])
-    async def redditor(self, ctx, *, user=None):
+    async def redditor(self, ctx, *, user: Union[str, discord.Member, discord.User, int] = None):
         """Overview of a reddit user"""
-        if user is None:
+        user = user or ctx.author
+        if user is None or isinstance(user, (discord.Member, discord.User, int)):
+            id = user.id if not isinstance(user, int) else user
             async with asq.connect('./database.db') as db:
-                usr_get = await db.execute("SELECT default_reddit FROM user_data WHERE user_id=$1", (ctx.author.id,))
+                usr_get = await db.execute("SELECT default_reddit FROM user_data WHERE user_id=$1", (id,))
                 user = (await usr_get.fetchone())[0]
                 if user is None:
                     raise commands.CommandError(
