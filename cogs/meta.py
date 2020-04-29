@@ -273,22 +273,14 @@ class Meta(commands.Cog):
 **Current Uptime **{humanize.naturaldelta(delta_uptime)}
 **Total Guilds **{len(self.bot.guilds):,}
 **Visible Users **{len(self.bot.users):,}
-**Available Emojis **{len(self.bot.emojis):,}
-            """
-            )
-        embed.add_field(
-            name='_ _',
-            value=f"""
-**Total Commands **{len(set(self.bot.walk_commands()))}
-**Total Cogs **{len(self.bot.cogs)}
-**Memory Usage **{mem}%
+**Memory % **{mem}
 {ascii_bar}
             """
             )
         embed.add_field(
             name=f'Latest Commit - `{self.last_commit_cache["sha"][:7]}` ({self.all_commits} total)',
             value=f'```\n{self.last_commit_cache["commit"]["message"]}\n```',
-            inline=False
+            inline=True
         )
         if ctx.author not in self.bot.get_guild(696739356815392779).members:
             embed.add_field(
