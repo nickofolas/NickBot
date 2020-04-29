@@ -126,7 +126,7 @@ class Api(commands.Cog):
         await ctx.send(embed=embed)
 
     @commands.group(invoke_without_command=True, aliases=['r'])
-    async def redditor(self, ctx, *, user: Union[str, discord.Member, discord.User, int] = None):
+    async def redditor(self, ctx, *, user: Union[discord.Member, discord.User, int, str] = None):
         """Overview of a reddit user"""
         user = user or ctx.author
         if user is None or isinstance(user, (discord.Member, discord.User, int)):
@@ -134,15 +134,11 @@ class Api(commands.Cog):
             async with asq.connect('./database.db') as db:
                 usr_get = await db.execute("SELECT default_reddit FROM user_data WHERE user_id=$1", (id,))
                 user = (await usr_get.fetchone())[0]
-                if user is None:
-                    raise commands.CommandError(
-                        'You have no default user set. Please see '
-                        f'the `{ctx.prefix}redditor default` command to set one.')
         else:
             user = user.replace('u/', '')
         async with self.bot.session.get(f'https://www.reddit.com/user/{user}/about/.json') as resp:
-            if resp.status == 404:
-                raise errors.ApiError(f'u/{user} was not found')
+            if resp.status == 404 or user is None:
+                raise errors.ApiError(f'User was not found')
             usr = (await resp.json())['data']
         async with self.bot.session.get(f'https://www.reddit.com/user/{user}/trophies/.json') as resp:
             trophies = await resp.json()
@@ -153,7 +149,7 @@ class Api(commands.Cog):
         alt_disp_name = alt_name if alt_name != usr['name'] else ''
         embed = discord.Embed(
             title=alt_disp_name,
-            description=''.join(set(trophy_list)) + ctx.tab(),
+            description=''.join(set(trophy_list)),
             color=discord.Color.main).set_author(
                 name=usr['subreddit']['display_name_prefixed'],
                 url=f'https://www.reddit.com/user/{user}',
@@ -172,21 +168,23 @@ class Api(commands.Cog):
         await ctx.send(embed=embed)
 
     @redditor.command(aliases=['mod'])
-    async def modstats(self, ctx, user=None):
+    async def modstats(self, ctx, user: Union[discord.Member, discord.User, int, str] = None):
         """View moderator stats for a redditor"""
-        if user is None:
+        user = user or ctx.author
+        if user is None or isinstance(user, (discord.Member, discord.User, int)):
+            id = user.id if not isinstance(user, int) else user
             async with asq.connect('./database.db') as db:
-                usr_get = await db.execute("SELECT default_reddit FROM user_data WHERE user_id=$1", (ctx.author.id,))
+                usr_get = await db.execute("SELECT default_reddit FROM user_data WHERE user_id=$1", (id,))
                 user = (await usr_get.fetchone())[0]
-                if user is None:
-                    raise commands.CommandError('You have no default user set')
+        else:
+            user = user.replace('u/', '')
         async with self.bot.session.get(f'https://www.reddit.com/user/{user}/moderated_subreddits/.json') as r:
             js = await r.json()
         async with self.bot.session.get(f'https://www.reddit.com/user/{user}/about.json?raw_json=1') as r:
             profile_js = await r.json()
-        total_modded = '{:,}'.format(sum(sub['subscribers'] for sub in js['data']))
+        total_modded = '{:,}'.format(sum(sub['subscribers'] for sub in js.get('data', [])))
         top_20 = []
-        for sub in js['data']:
+        for sub in js.get('data', []):
             if len(top_20) == 15:
                 break
             top_20.append(f'[{sub["sr_display_name_prefixed"]}](https://www.reddit.com{sub["url"]})')
@@ -195,9 +193,12 @@ class Api(commands.Cog):
             description=f'**Mod Stats for [u/{user}](https://www.reddit.com/user/{user})**',
             color=discord.Color.main)
         embed.set_thumbnail(url=profile_js['data']['icon_img'])
-        embed.add_field(name='Total Subscribers', value=total_modded)
-        embed.add_field(name='No. Subs Modded', value=len(js['data']))
-        embed.add_field(name=f'Top {len(top_20)} Subreddits', value='\n'.join(top_20), inline=False)
+        if data := js.get('data'):
+            embed.add_field(name='Total Subscribers', value=total_modded)
+            embed.add_field(name='No. Subs Modded', value=len(data))
+            embed.add_field(name=f'Top {len(top_20)} Subreddits', value='\n'.join(top_20), inline=False)
+        else:
+            embed.add_field(name='_ _', value='This user does not mod any subs')
         await ctx.send(embed=embed)
 
     @redditor.command(aliases=['def'])

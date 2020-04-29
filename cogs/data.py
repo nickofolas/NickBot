@@ -34,6 +34,7 @@ class Data(commands.Cog):
         Add a new highlight! When a highlighted word is used, you'll get notified!
         If desired, the highlight can be made quite granular, as regex patterns are
         supported.
+        NOTE: It may take up to a minute for a new highlight to take effect
         """
         if len(highlight_words) < 2:
             raise commands.CommandError('Highlights must be at least 2 characters long')
@@ -75,7 +76,8 @@ class Data(commands.Cog):
         If the specified guild is not being ignored, then it will be added to the list
         of ignored guilds
             - If the specified guild is already being ignored, running the command,
-            and passing that guild a second time will remove it from the list"""
+            and passing that guild a second time will remove it from the list
+        NOTE: It may take up to a minute for this to take effect"""
         guild_id = guild_id or str(ctx.guild.id)
         async with asq.connect('./database.db') as db:
             async with db.execute('SELECT kw, exclude_guild FROM highlights WHERE user_id=$1', (ctx.author.id,)) as cur:
@@ -116,6 +118,7 @@ class Data(commands.Cog):
     async def remove_highlight(self, ctx, highlight_index: commands.Greedy[int]):
         """
         Remove one, or multiple highlights by index
+        NOTE: It may take up to a minute for this to take effect
         """
         for i in highlight_index:
             try:
@@ -147,6 +150,7 @@ class Data(commands.Cog):
     async def clear_highlights(self, ctx):
         """
         Completely wipe your list of highlights
+        NOTE: It may take up to a minute for this to take effect
         """
         conf = await ctx.prompt('Are you sure you want to clear all highlights?')
         if conf:

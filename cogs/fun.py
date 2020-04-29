@@ -130,7 +130,7 @@ class Fun(commands.Cog):
 
     @commands.command(aliases=['md'])
     async def markdown(self, ctx, message_id: str = None):
-        """Decode the markdown of a message in the current channel"""
+        """Decode the markdown of a message"""
         if message_id is None:
             async for m in ctx.channel.history(limit=2):
                 if m.id == ctx.message.id:
