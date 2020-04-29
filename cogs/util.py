@@ -160,7 +160,7 @@ class Util(commands.Cog):
         if image is None and not ctx.message.attachments:
             raise commands.MissingRequiredArgument(Parameter(name='image', kind=Parameter.KEYWORD_ONLY))
         image = image or await ctx.message.attachments[0].read()
-        headers = {'Authorization': f"Client-ID: {os.getenv('IMGUR_ID')}"}
+        headers = {'Authorization': f"Client-ID {os.getenv('IMGUR_ID')}"}
         data = {'image': image}
         async with ctx.typing(), self.bot.session.post('https://api.imgur.com/3/image', headers=headers, data=data) as resp:
             resp = await resp.json()

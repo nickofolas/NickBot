@@ -252,9 +252,8 @@ class Meta(commands.Cog):
     async def fetch_latest_commit(self):
         headers = {'Authorization': f'token  {os.getenv("GITHUB_TOKEN")}'}
         url = 'https://api.github.com/repos/nickofolas/NickBot/commits'
-        async with self.bot.session.get(f'{url}/master', headers=headers) as resp1, self.bot.session.get(url, headers=headers) as resp2:
+        async with self.bot.session.get(f'{url}/master', headers=headers) as resp1:
             self.last_commit_cache = await resp1.json()
-            self.all_commits = len(await resp2.json())
 
     @commands.group(invoke_without_command=True, aliases=['ab'])
     async def about(self, ctx):
@@ -278,7 +277,7 @@ class Meta(commands.Cog):
             """
             )
         embed.add_field(
-            name=f'Latest Commit - `{self.last_commit_cache["sha"][:7]}` ({self.all_commits} total)',
+            name=f'Latest Commit - `{self.last_commit_cache["sha"][:7]}`',
             value=f'```\n{self.last_commit_cache["commit"]["message"]}\n```',
             inline=True
         )
