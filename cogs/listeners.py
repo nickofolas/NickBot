@@ -137,7 +137,7 @@ class Listeners(commands.Cog):
     @commands.Cog.listener()
     async def on_guild_join(self, guild):
         embed = discord.Embed(
-            description=f'Joined guild {guild.name}',
+            description=f'Joined guild {guild.name} [{guild.id}]',
             color=discord.Color.main)
         embed.set_thumbnail(url=guild.icon_url_as(static_format='png'))
         embed.add_field(

@@ -31,6 +31,13 @@ perm_dict = {
     "False": '<:x_:703739402094117004>'
 }
 
+activity_type_mapping = {
+    discord.ActivityType.watching: 'Watching',
+    discord.ActivityType.playing: 'Playing',
+    discord.ActivityType.streaming: 'Streaming',
+    discord.ActivityType.listening: 'Listening to'
+}
+
 
 async def member_info(self, ctx, target, act, e):
     multi_status = [
@@ -45,24 +52,17 @@ async def member_info(self, ctx, target, act, e):
         if isinstance(a, discord.Spotify):
             act.append('Listening to **Spotify**')
         elif isinstance(a, discord.CustomActivity):
+            emoji = ''
             try:
-                if not a.emoji:
-                    break
-                emoji = await commands.EmojiConverter().convert(ctx, a.emoji.id)
+                if a.emoji:
+                    emoji = await commands.EmojiConverter().convert(ctx, a.emoji.id)
             except commands.errors.BadArgument:
                 emoji = ':question:'
             act.append(f'{emoji} {a.name or ""}')
         elif isinstance(a, discord.Game):
             act.append(f'Playing **{a.name}**')
         elif isinstance(a, discord.activity.Activity):
-            if a.type == discord.ActivityType.watching:
-                act.append(f'Watching **{a.name}**')
-            if a.type == discord.ActivityType.playing:
-                act.append(f'Playing **{a.name}**')
-            if a.type == discord.ActivityType.streaming:
-                act.append(f'Streaming **{a.name}**')
-            if a.type == discord.ActivityType.listening:
-                act.append(f'Listening to **{a.name}**')
+            act.append(f'{activity_type_mapping.get(a.type)} **{a.name}**')
     acts = '\n'.join(sorted(act))
     for m in ctx.guild.members:
         e.append(m)
