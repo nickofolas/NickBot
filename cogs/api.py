@@ -262,9 +262,10 @@ class Api(commands.Cog):
             'Home Page': info.get('home_page'),
             'Package URL': info.get('package_url')
         }
-        for key, value in info['project_urls'].items():
-            if 'doc' in key.lower() or 'issu' in key.lower():
-                found[key] = value
+        if info.get('project_urls'):
+            for key, value in info.get('project_urls').items():
+                if 'doc' in key.lower() or 'issu' in key.lower():
+                    found[key] = value
         embed = discord.Embed(color=discord.Color.main)
         embed.description = info['summary']
         embed.title = info['name']

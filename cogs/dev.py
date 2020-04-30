@@ -91,6 +91,7 @@ class Dev(commands.Cog):
         hl_lang = 'sh'
         if 'cat' in args:
             hl_lang = return_lang_hl(args)
+        await ctx.trigger_typing()
         stdout, stderr = await do_shell(args)
         output = stdout + stderr
         entries = list(clean_bytes(output))
@@ -302,7 +303,6 @@ class Dev(commands.Cog):
         extension = extension.split(' ')
         ls = []
         if len(extension) == 1 and extension[0] in ('*', 'all', 'a'):
-            await ctx.message.add_reaction('<a:loading:681628799376293912>')
             for filename in os.listdir('./cogs'):
                 try:
                     if not filename.endswith('.py') or filename == 'dev.py':
@@ -310,7 +310,6 @@ class Dev(commands.Cog):
                     self.bot.load_extension(f'cogs.{filename[:-3]}')
                 except Exception:
                     continue
-            await ctx.message.remove_reaction('<a:loading:681628799376293912>', ctx.me)
             await ctx.message.add_reaction(ctx.tick(True))
         else:
             for e in extension:
@@ -324,7 +323,6 @@ class Dev(commands.Cog):
         extension = extension.split(' ')
         ls = []
         if len(extension) == 1 and extension[0] in ('*', 'all', 'a'):
-            await ctx.message.add_reaction('<a:loading:681628799376293912>')
             for filename in os.listdir('./cogs'):
                 try:
                     if not filename.endswith('.py') or filename == 'dev.py':
@@ -332,7 +330,6 @@ class Dev(commands.Cog):
                     self.bot.unload_extension(f'cogs.{filename[:-3]}')
                 except Exception:
                     continue
-            await ctx.message.remove_reaction('<a:loading:681628799376293912>', ctx.me)
             await ctx.message.add_reaction(ctx.tick(True))
         else:
             if 'dev' in [ex.lower() for ex in extension]:
@@ -347,7 +344,6 @@ class Dev(commands.Cog):
     async def reload(self, ctx, *, extension):  # Cog loading
         extension = extension.split(' ')
         """Pulls from git and then reloads all or specified cogs"""
-        await ctx.message.add_reaction('<a:loading:681628799376293912>')
         await do_shell('git pull')
         errored = []
         if len(extension) == 1 and extension[0] in ('*', 'all', 'a'):
@@ -368,7 +364,6 @@ class Dev(commands.Cog):
                 self.bot.reload_extension(f'cogs.{e.lower()}')
                 errored.append(e)
             await ctx.send(f'Succesfully reloaded {pluralize("cog", errored)} {", ".join(errored)}')
-            await ctx.message.remove_reaction('<a:loading:681628799376293912>', ctx.me)
 
     '''
     @commands.command(name='socketstats')

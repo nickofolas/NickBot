@@ -2,7 +2,6 @@ import os
 import warnings
 from datetime import datetime
 import random
-import logging
 
 import aiosqlite as asq
 from discord.ext import commands
@@ -14,9 +13,6 @@ import async_cleverbot as ac
 import utils.context
 
 load_dotenv()
-
-logging.basicConfig(level=logging.INFO)
-
 
 def warn(*args, **kwargs):
     pass

@@ -341,14 +341,14 @@ class Data(commands.Cog):
     @tag.command(name='purge')
     @commands.is_owner()
     async def purge_inactive_tags(self, ctx, days: int = 7):
-        """Purge tags, defaults to tags that haven't been used for 7 days"""
+        """Purge tags, defaults to tags that haven't been used for 7 days and less than 10 times"""
         seven_days_epoch = datetime.timestamp(datetime.utcnow() - timedelta(days=days))
         async with asq.connect('./database.db') as db:
             async with db.execute('SELECT * FROM tags WHERE usage_epoch<$1', (seven_days_epoch,)) as re:
                 to_purge = await re.fetchall()
                 prompt = await ctx.prompt(f'Are you sure you want to purge {len(to_purge)} {pluralize("tag", to_purge)}?')
                 if prompt:
-                    await db.execute('DELETE FROM tags WHERE usage_epoch<$1', (seven_days_epoch,))
+                    await db.execute('DELETE FROM tags WHERE usage_epoch<$1 AND times_used<10', (seven_days_epoch,))
                     await db.commit()
                     await self.bot.get_user(self.bot.owner_id).send(f'Deleted tags: {to_purge}')
 

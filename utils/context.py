@@ -3,6 +3,8 @@ import re
 from discord.ext import commands
 import discord
 
+import utils.paginator as pages
+
 
 class Context(commands.Context):
 
@@ -62,6 +64,11 @@ class Context(commands.Context):
         for i in range(repeat):
             tabs.append(' \u200b')
         return ''.join(tabs)
+
+    async def quick_menu(self, entries, per_page, **kwargs):
+        source = pages.BareBonesMenu(entries, per_page=per_page)
+        menu = pages.CSMenu(source, **kwargs)
+        await menu.start(self)
 
     @staticmethod
     async def propagate_to_eh(bot, ctx, error):

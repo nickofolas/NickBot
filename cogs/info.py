@@ -55,7 +55,7 @@ async def member_info(self, ctx, target, act, e):
             emoji = ''
             try:
                 if a.emoji:
-                    emoji = await commands.EmojiConverter().convert(ctx, a.emoji.id)
+                    emoji = await commands.EmojiConverter().convert(ctx, a.emoji.id) if a.emoji.is_custom_emoji() else a.emoji
             except commands.errors.BadArgument:
                 emoji = ':question:'
             act.append(f'{emoji} {a.name or ""}')
@@ -319,6 +319,12 @@ class Info(commands.Cog):
                 name=item[0], value='\n'.join(item[1]),
                 inline=False)
         await ctx.send(embed=embed)
+
+    @serverinfo.command()
+    @commands.guild_only()
+    async def roles(self, ctx):
+        """Returns member distribution for roles in the current guild"""
+        await ctx.quick_menu(list(reversed([r.mention for r in ctx.guild.roles[1:]])), 20, delete_message_after=True)
 
 
 def setup(bot):
