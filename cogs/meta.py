@@ -256,7 +256,7 @@ class Meta(commands.Cog):
         async with self.bot.session.get(f'{url}/master', headers=headers) as resp1:
             self.last_commit_cache = await resp1.json()
 
-    @commands.group(invoke_without_command=True, aliases=['ab'])
+    @commands.group(invoke_without_command=True, aliases=['ab', 'info'])
     async def about(self, ctx):
         """Displays info about the bot"""
         appinfo = await self.bot.application_info()
@@ -279,7 +279,7 @@ class Meta(commands.Cog):
             )
         com_msg = self.last_commit_cache['commit']['message']
         embed.add_field(
-            name=f'Latest Commit - `{self.last_commit_cache["sha"][:7]}`',
+            name=f'**Latest Commit -** `{self.last_commit_cache["sha"][:7]}`',
             value='\n'.join(['\n'.join(textwrap.wrap(line, 25, break_long_words=False, replace_whitespace=False)) for line in com_msg.splitlines() if line.strip() != '']),
             inline=True
         )

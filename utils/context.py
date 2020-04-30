@@ -1,6 +1,7 @@
 import re
 
 from discord.ext import commands
+import discord
 
 
 class Context(commands.Context):
@@ -26,11 +27,8 @@ class Context(commands.Context):
             await msg.edit(content='Cancelled!')
             return False
 
-    async def safe_send(self, content=None, *, escape_mentions=True, **kwargs):
+    async def safe_send(self, content=None, **kwargs):
         if content:
-            if escape_mentions:
-                converter = commands.clean_content()
-                content = await converter.convert(self, str(content))
             if match := re.search(re.compile(r'([a-zA-Z0-9]{24}\.[a-zA-Z0-9]{6}\.[a-zA-Z0-9_\-]{27}|mfa\.[a-zA-Z0-9_\-]{84})'), content):
                 content = content.replace(match.group(0), '[token omitted]')
             if len(content) > 2000:
@@ -44,7 +42,7 @@ class Context(commands.Context):
                         f' be found here: <{url}>'
                     )
             else:
-                return await self.send(content, **kwargs)
+                return await self.send(content, allowed_mentions=discord.AllowedMentions(everyone=False, users=False, roles=False), **kwargs)
         else:
             await self.send(**kwargs)
 
