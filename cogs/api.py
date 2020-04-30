@@ -331,7 +331,7 @@ class Api(commands.Cog):
         """Ask Cleverbot a question!"""
         async with ctx.ExHandler(propagate=(self.bot, ctx)), ctx.typing():
             r = await self.bot.cleverbot.ask(query, ctx.author.id)
-            await ctx.send("{}, {}".format(ctx.author.mention, r.text))
+            await ctx.send("{}, {}".format(ctx.author.mention, r.text), allowed_mentions=discord.AllowedMentions(users=True))
 
     def cog_unload(self):
         self.bot.loop.create_task(self.bot.cleverbot.close())

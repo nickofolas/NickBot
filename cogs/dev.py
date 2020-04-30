@@ -140,10 +140,10 @@ class Dev(commands.Cog):
                 pass
             if ret is None:
                 if value:
-                    await ctx.safe_send(f'```py\n{value}\n```')
+                    await ctx.safe_send(f'{value}')
             else:
                 self._last_result = ret
-                await ctx.safe_send(f'```py\n{value}{ret}\n```')
+                await ctx.safe_send(f'{value}{ret}')
 
     @commands.command()
     @commands.is_owner()
