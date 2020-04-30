@@ -45,7 +45,11 @@ def member_info(self, ctx, target, act, e):
         if isinstance(a, discord.Spotify):
             act.append('Listening to **Spotify**')
         elif isinstance(a, discord.CustomActivity):
-            act.append(str(a))
+            try:
+                emoji = await commands.EmojiConverter.convert(ctx, a.emoji.id)
+            except commands.errors.BadArgument:
+                emoji = ':question:'
+            act.append(f'{emoji} {a.name}')
         elif isinstance(a, discord.Game):
             act.append(f'Playing **{a.name}**')
         elif isinstance(a, discord.activity.Activity):
