@@ -304,8 +304,7 @@ class Info(commands.Cog):
                         chan.overwrites_for(guild.default_role)
                         .read_messages is False else
                         '<:voice_locked:697526650333691986> ' + chan.name))
-                    for chan in chanlist if chan.permissions_for(ctx.author)
-                    .read_messages is True])
+                    for chan in chanlist])
             if to_append[1]:
                 final.append(to_append)
         embed = discord.Embed(color=discord.Color.main)

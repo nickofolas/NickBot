@@ -123,6 +123,8 @@ class Listeners(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message_edit(self, before, after):
+        if after.content == before.content:
+            return
         await self.bot.process_commands(after)
 
     @commands.Cog.listener()

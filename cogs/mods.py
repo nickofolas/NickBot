@@ -35,32 +35,6 @@ class Mods(commands.Cog):
         else:
             return False
 
-    # Channel lock command
-    @commands.command(aliases=['l'])
-    @has_permissions(manage_channels=True, manage_messages=True)
-    async def lock(self, ctx):
-        """Lock the current channel"""
-        await ctx.channel.set_permissions(
-            ctx.guild.default_role, send_messages=False)
-        lock = discord.Embed(
-            title='Channel Locked',
-            description='This channel has been locked until further notice',
-            color=discord.Color.main)
-        await ctx.send(embed=lock)
-
-    # Channel unlock command
-    @commands.command(aliases=['ul'])
-    @has_permissions(manage_channels=True, manage_messages=True)
-    async def unlock(self, ctx):
-        """Unlock a locked channel"""
-        await ctx.channel.set_permissions(
-            ctx.guild.default_role, overwrite=None)
-        unlock = discord.Embed(
-            title='Channel Unlocked',
-            description='This channel is now unlocked',
-            color=discord.Color.main)
-        await ctx.send(embed=unlock)
-
     # Bulk clear command
     @commands.group(aliases=['c', 'purge'], invoke_without_command=True)
     @has_permissions(manage_messages=True)
@@ -265,84 +239,6 @@ class Mods(commands.Cog):
         async for message in ctx.channel.history(limit=amount):
             await message.clear_reactions()
 
-    # Mute command
-    @commands.group(invoke_without_command=True)
-    @has_permissions(manage_messages=True)
-    async def mute(self,
-                   ctx,
-                   member: discord.Member,
-                   duration: int = None,
-                   time_unit: str = None):
-        """Apply an indefinite or temporary mute on a member"""
-        if duration is None and time_unit is None:
-            role = discord.utils.get(ctx.guild.roles, name="Muted")
-            await member.add_roles(role)
-            await ctx.message.delete()
-        else:
-            role = discord.utils.get(ctx.guild.roles, name="Muted")
-            await member.add_roles(role)
-            await ctx.message.delete()
-            # Send notif if in specified channel
-            if ctx.guild.id == 626080674474098697:
-                embed = discord.Embed(
-                    description=
-                    f'{member} muted for {duration} {time_unit} by {ctx.author}',
-                    color=discord.Color.main)
-                embed.set_author(name=member)
-                embed.set_thumbnail(
-                    url=str(member.avatar_url).replace("webp", "png"))
-                notifs = self.bot.get_channel(655891096253104149)
-                await notifs.send(embed=embed)
-            # Sleeps for specified amount of time
-            await asyncio.sleep(duration * units[time_unit[:1]])
-            await member.remove_roles(role)
-
-    @mute.command()
-    @has_permissions(administrator=True)
-    async def update(self, ctx):
-        """Update channel perms to add mute role"""
-        muterole = discord.utils.get(ctx.guild.roles, name="Muted")
-        try:
-            await ctx.message.add_reaction('<a:loading:681628799376293912>')
-            for channel in ctx.guild.channels:
-                await channel.set_permissions(
-                    muterole, send_messages=False, add_reactions=False)
-            await ctx.message.clear_reactions()
-            await ctx.send('Successfully updated channels')
-        except Exception:
-            pass
-
-    # Manual unmute command
-    @commands.command()
-    @has_permissions(manage_messages=True)
-    async def unmute(self, ctx, member: discord.Member):
-        """Unmute a muted user"""
-        role = discord.utils.get(ctx.guild.roles, name="Muted")
-        # Checks if specified user is muted
-        if role in member.roles:
-            await member.remove_roles(role)
-            await ctx.message.delete()
-            if ctx.guild.id == 626080674474098697:
-                embed = discord.Embed(
-                    description=f'{member} unmuted manually by {ctx.author}',
-                    color=0x2cff00)
-                embed.set_author(name=member)
-                embed.set_thumbnail(
-                    url=str(member.avatar_url).replace("webp", "png"))
-                notifs = self.bot.get_channel(655891096253104149)
-                await notifs.send(embed=embed)
-        # If user is not muted
-        else:
-            embed = discord.Embed(
-                description=f'{member} is not currently muted',
-                color=discord.Color.main)
-            embed.set_author(name=member)
-            embed.set_thumbnail(
-                url=str(member.avatar_url).replace("webp", "png"))
-            sembed = await ctx.send(embed=embed)
-            await asyncio.sleep(5)
-            await sembed.delete()
-
     @commands.command()
     @has_permissions(ban_members=True)
     async def ban(self, ctx, member: discord.Member, *, reason=None):
@@ -367,33 +263,6 @@ class Mods(commands.Cog):
         await member.kick(reason=reason)
         await ctx.send(f'{member} was kicked - **{reason}**')
         await ctx.message.delete()
-
-    @commands.group()
-    @has_permissions(administrator=True)
-    async def role(self, ctx):
-        """Command group to work with roles"""
-
-    ''' Removed for API abuse concerns
-    @role.command()
-    @has_permissions(administrator=True)
-    async def all(self, ctx, role: discord.Role):
-      """Apply a role to every member in the guild"""
-      for mem in ctx.guild.members:
-        await mem.add_roles(role)
-      embed = discord.Embed(title=' ', description=f'Successfully applied role {role.mention} to all members of the guild')
-      await ctx.send(embed=embed)
-    '''
-
-    @role.command()
-    @has_permissions(administrator=True)
-    async def member(self, ctx, role: discord.Role, user: discord.Member):
-        """Apply a role to a specific member"""
-        await user.add_roles(role)
-        embed = discord.Embed(
-            title=' ',
-            description=
-            f'Successfully applied role {role.mention} to {user.mention}')
-        await ctx.send(embed=embed)
 
 
 def setup(bot):

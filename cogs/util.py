@@ -85,16 +85,19 @@ class Util(commands.Cog):
         await message.edit(embed=embed)
 
     @commands.command(aliases=['inv'])
-    async def invite(self, ctx, *, permissions='administrator'):
+    async def invite(self, ctx, *, permissions=None):
         """Gets an invite link for the bot
         When run with no arguments, an invite link with
-        administrator permissions will be returned. However, this
+        default permissions will be returned. However, this
         command also allows for granular permission setting:
             - To request an invite link with only read_messages
             permissions, one would run `invite read_messages`"""
-        permission_names = tuple(re.split(r'[ ,] ?', permissions))
-        permissions = discord.Permissions()
-        permissions.update(**dict.fromkeys(permission_names, True))
+        if permissions:
+            permission_names = tuple(re.split(r'[ ,] ?', permissions))
+            permissions = discord.Permissions()
+            permissions.update(**dict.fromkeys(permission_names, True))
+        else:
+            permissions = discord.Permissions(1878523719)
         # ideally you'd fetch this once and store it in bot.client_id
         await ctx.send('**Use this link to invite me to your server: **<'
                        + discord.utils.oauth_url(self.bot.user.id, permissions)
@@ -155,7 +158,7 @@ class Util(commands.Cog):
             color=discord.Color.main)
         await ctx.send(embed=embed)
 
-    @commands.command()
+    @commands.command(name='imgur')
     async def imgur(self, ctx, *, image=None):
         """Upload an image to imgur via attachment or link"""
         if image is None and not ctx.message.attachments:
@@ -164,18 +167,14 @@ class Util(commands.Cog):
         headers = {'Authorization': f"Client-ID {os.getenv('IMGUR_ID')}"}
         data = {'image': image}
         async with ctx.typing(), self.bot.session.post('https://api.imgur.com/3/image', headers=headers, data=data) as resp:
-            resp = await resp.json()
-        await ctx.safe_send(resp['data'].get('link'))
+            re = await resp.json()
+            await ctx.send('<' + re['data'].get('link') + '>')
 
-    @commands.command()
+    @commands.command(name='shorten')
     async def shorten(self, ctx, *, link):
         """Shorten a link into a compact redirect"""
-        async with self.bot.session.post(
-                'https://api.rebrandly.com/v1/links',
-                headers={'Content-type': 'application/json', 'apikey': os.getenv('REBRANDLY_KEY')},
-                data=json.dumps({'destination': 'https://developers.rebrandly.com/docs'})) as resp:
-            resp = await resp.json()
-        await ctx.safe_send(f'Shortened URL: {resp["shorturl"]}')
+        resp = await self.bot.session.post('https://api.rebrandly.com/v1/links', headers={'Content-type': 'application/json', 'apikey': os.getenv('REBRANDLY_KEY')}, data=json.dumps({'destination': link}))
+        await ctx.send(f'Shortened URL: <https://{(await resp.json())["shortUrl"]}>')
 
 
 def setup(bot):
