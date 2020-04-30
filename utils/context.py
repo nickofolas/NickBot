@@ -42,7 +42,7 @@ class Context(commands.Context):
                         f' be found here: <{url}>'
                     )
             else:
-                return await self.send(content, allowed_mentions=discord.AllowedMentions(everyone=False, users=False, roles=False), **kwargs)
+                return await self.send(content, **kwargs)
         else:
             await self.send(**kwargs)
 

@@ -46,7 +46,7 @@ class NickOfOBot(commands.Bot):
     """The bot itself"""
 
     def __init__(self):
-        super().__init__(command_prefix=get_prefix, case_insensitive=True)
+        super().__init__(command_prefix=get_prefix, case_insensitive=True, allowed_mentions=discord.AllowedMentions(everyone=False, users=False, roles=False))
         self.session = aiohttp.ClientSession()
         self.deleted = {}
         # self.socket_stats = {}
