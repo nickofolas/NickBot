@@ -32,7 +32,7 @@ perm_dict = {
 }
 
 
-def member_info(self, ctx, target, act, e):
+async def member_info(self, ctx, target, act, e):
     multi_status = [
         e[0] for e in [
             ('Mobile', target.mobile_status),
@@ -96,7 +96,7 @@ class Info(commands.Cog):
         act, e, status_display, badge_list, join_pos = ([], [], None, [], None)
         if isinstance(target, discord.Member) and ctx.guild:
             status_display, acts, act, join_pos = \
-                member_info(self, ctx, target, act, e)
+                await member_info(self, ctx, target, act, e)
         async with asq.connect('./database.db') as db:
             bio_get = await db.execute(
                 "SELECT user_bio FROM user_data WHERE user_id=$1", (target.id,)
