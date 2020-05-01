@@ -1,14 +1,10 @@
-import asyncio
-from datetime import datetime
-import re
 import argparse
+import re
 import shlex
 
-import aiosqlite as asq
 import discord
 from discord.ext import commands
 from discord.ext.commands import has_permissions
-import humanize
 
 
 class Arguments(argparse.ArgumentParser):

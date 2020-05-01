@@ -17,6 +17,7 @@ def round_up(n, decimals=0):
     return math.ceil(n * multiplier) / multiplier
 
 
+# noinspection PyCallingNonCallable
 class Listeners(commands.Cog):
     """Contains the listeners for the bot"""
 

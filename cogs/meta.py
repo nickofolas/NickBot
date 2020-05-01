@@ -1,20 +1,19 @@
 import inspect
-import asyncio
 import itertools
 import os
-from datetime import datetime
 import sys
 import textwrap
+from datetime import datetime
 
 import discord
-from discord.ext import commands
-from utils.paginator import ShellMenu, Pages, CSMenu
+import humanize
 import import_expression
 import psutil
-import humanize
+from discord.ext import commands
 
-from utils.config import conf
 import utils
+from utils.config import conf
+from utils.paginator import ShellMenu, Pages, CSMenu
 
 
 def retrieve_checks(command):

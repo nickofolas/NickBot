@@ -14,7 +14,8 @@ import utils.context
 
 load_dotenv()
 
-def warn(*args, **kwargs):
+
+def warn():
     pass
 
 
@@ -35,6 +36,7 @@ async def get_prefix(bot, message):
                 prefix = r[0]
         return prefix
 
+
 # Bot class itself, kinda important
 
 
@@ -42,7 +44,8 @@ class NickOfOBot(commands.Bot):
     """The bot itself"""
 
     def __init__(self):
-        super().__init__(command_prefix=get_prefix, case_insensitive=True, allowed_mentions=discord.AllowedMentions(everyone=False, users=False, roles=False))
+        super().__init__(command_prefix=get_prefix, case_insensitive=True,
+                         allowed_mentions=discord.AllowedMentions(everyone=False, users=False, roles=False))
         self.session = aiohttp.ClientSession()
         self.deleted = {}
         # self.socket_stats = {}
@@ -51,8 +54,8 @@ class NickOfOBot(commands.Bot):
         self.cleverbot = ac.Cleverbot(os.getenv("CLEVERBOT_KEY"))
         self.cleverbot.set_context(ac.DictContext(self.cleverbot))
         self.cleverbot.emotion = random.choice([
-                ac.Emotion.normal, ac.Emotion.sad,
-                ac.Emotion.fear, ac.Emotion.joy, ac.Emotion.anger])
+            ac.Emotion.normal, ac.Emotion.sad,
+            ac.Emotion.fear, ac.Emotion.joy, ac.Emotion.anger])
         self.all_cogs = list()
         self.persistent_status = False
 
