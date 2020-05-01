@@ -41,7 +41,7 @@ async def get_prefix(bot, message):
 # Bot class itself, kinda important
 
 
-class NickOfOBot(commands.Bot):
+class NeoBot(commands.Bot):
     """The bot itself"""
 
     def __init__(self):
@@ -97,4 +97,4 @@ class NickOfOBot(commands.Bot):
         await super().close()
 
 
-NickOfOBot().run()
+NeoBot().run()

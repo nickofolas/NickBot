@@ -47,7 +47,6 @@ def clean_bytes(line):
     """
     Cleans a byte sequence of shell directives and decodes it.
     """
-
     text = line.decode('utf-8').replace('\r', '').strip('\n')
     return re.sub(r'\x1b[^m]*m', '', text).replace("``", "`\u200b`").strip('\n')
 
@@ -193,7 +192,7 @@ class Dev(commands.Cog):
                 await db.commit()
 
         await ctx.guild.get_member(
-            self.bot.user.id).edit(nick=f'Nick of O-Bot [{new_prefix}]')
+            self.bot.user.id).edit(nick=f'{self.bot.user.name} [{new_prefix}]')
         await ctx.send(f'Prefix successfully changed to `{new_prefix}`')
 
     @commands.command()

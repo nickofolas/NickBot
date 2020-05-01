@@ -160,7 +160,7 @@ class Listeners(commands.Cog):
                 await db.execute("INSERT INTO guild_prefs (guild_id, prefix) VALUES ($1, $2)", (guild.id, 'n/'))
             await db.commit()
 
-        await guild.get_member(self.bot.user.id).edit(nick='Nick of O-Bot [n/]')
+        await guild.get_member(self.bot.user.id).edit(nick=f'{self.bot.user.name} [n/]')
         await (await self.bot.application_info()).owner.send(embed=embed)
 
     @commands.Cog.listener()

@@ -4,6 +4,7 @@ import os
 import sys
 import textwrap
 from datetime import datetime
+from contextlib import suppress
 
 import discord
 import humanize
@@ -18,7 +19,7 @@ from utils.paginator import ShellMenu, Pages, CSMenu
 
 def retrieve_checks(command):
     req = []
-    try:  # Tries to get the checks for a command
+    with suppress(Exception):
         for line in (source := inspect.getsource(command.callback)).splitlines():
             # Checks every line for elements
             # of the perm_list
@@ -30,8 +31,6 @@ def retrieve_checks(command):
                     req.append(
                         permi
                     )
-    except Exception:
-        pass
     return ', '.join(req)
 
 
@@ -94,10 +93,6 @@ class PaginatedHelpCommand(commands.HelpCommand):
         super().__init__(command_attrs={
             'help': 'Shows help.'
         })
-
-    async def on_help_command_error(self, ctx, error):
-        if isinstance(error, commands.CommandInvokeError):
-            await ctx.propagate_to_eh(self.bot, ctx, str(error.original))
 
     def get_command_signature(self, command):
         parent = command.full_parent_name
