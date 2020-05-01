@@ -119,7 +119,7 @@ class Info(commands.Cog):
             bot_tag = '<:verified1:704885163003478069><:verified2:704885180162244749>' if 'verified_bot' in \
                 [*flag_vals] else '<:bot:699991045886312488>'
         tagline += f'{bot_tag} '
-        if ctx.guild:
+        if ctx.guild and isinstance(target, discord.Member):
             if target.premium_since:
                 tagline += '<:booster:705917670691700776>'
         embed = discord.Embed(
