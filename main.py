@@ -22,6 +22,7 @@ def warn(*args, **kwargs):
 # Ignores deprecation warnings
 warnings.warn = warn
 
+# noinspection SpellCheckingInspection
 discord.Color.pornhub = discord.Color(0xffa31a)
 discord.Color.main = discord.Color(0x84cdff)
 

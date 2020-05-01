@@ -22,11 +22,20 @@ class Data(commands.Cog):
 
     # BEGIN HIGHLIGHTS GROUP ~
 
-    @commands.group(aliases=['hl'])
+    @commands.group(aliases=['hl'], invoke_without_command=True)
     async def highlight(self, ctx):
         """
-        Notifications upon certain keywords being used
+        Base command for keyword highlights. Run with no arguments to list your active highlights.
         """
+        hl_list = []
+        async with asq.connect('./database.db') as db:
+            async with db.execute('SELECT kw FROM highlights WHERE user_id=$1', (ctx.author.id,)) as cur:
+                iterable_hls = [item[0] async for item in cur]
+                for i in range(5):
+                    to_append = f"`{(i+1)}` {iterable_hls[i]}" if i<len(iterable_hls) else f"Unused Slot {i+1}"
+                    hl_list.append(to_append)
+        await ctx.send(embed=discord.Embed(
+            description='\n'.join(hl_list), color=discord.Color.main))
 
     @highlight.command()
     async def add(self, ctx, *, highlight_words):
@@ -51,21 +60,6 @@ class Data(commands.Cog):
             await db.execute('INSERT INTO highlights(user_id, kw) VALUES ( $1, $2 )', (ctx.author.id, fr"{highlight_words}"))
             await db.commit()
         await ctx.message.add_reaction(ctx.tick(True))
-
-    @highlight.command(name='list', aliases=['view', 'ls'])
-    async def view_highlights(self, ctx):
-        """
-        View all of your highlights
-        """
-        hl_list = []
-        async with asq.connect('./database.db') as db:
-            async with db.execute('SELECT kw FROM highlights WHERE user_id=$1', (ctx.author.id,)) as cur:
-                iterable_hls = [item[0] async for item in cur]
-                for i in range(5):
-                    to_append = f"`{(i+1)}` {iterable_hls[i]}" if i<len(iterable_hls) else f"Unused Slot {i+1}"
-                    hl_list.append(to_append)
-        await ctx.send(embed=discord.Embed(
-            description='\n'.join(hl_list), color=discord.Color.main))
 
     @highlight.command(name='exclude', aliases=['mute', 'ignore', 'exc'])
     async def exclude_guild(self, ctx, highlight_index: int, guild_id: str = None):
@@ -162,26 +156,10 @@ class Data(commands.Cog):
     # END HIGHLIGHTS GROUP ~
     # BEGIN TODOS GROUP ~
 
-    @commands.group(name='todo')
+    @commands.group(name='todo', invoke_without_command=True)
     async def todo_rw(self, ctx):
         """
-        Todo commands, rewritten and better than ever
-        """
-
-    @todo_rw.command(name='add')
-    async def create_todo(self, ctx, *, content: str):
-        """
-        Add an item to your todo list
-        """
-        async with asq.connect('./database.db') as db:
-            await db.execute('INSERT INTO todo VALUES($1, $2)', (ctx.author.id, content))
-            await db.commit()
-        await ctx.message.add_reaction(ctx.tick(True))
-
-    @todo_rw.command(name='list', aliases=['view'])
-    async def view_todo(self, ctx):
-        """
-        View all of your todos
+        Base todo command, run with now arguments to see a list of all your active todos
         """
         todo_list = []
         async with asq.connect('./database.db') as db:
@@ -194,6 +172,16 @@ class Data(commands.Cog):
         source = BareBonesMenu(todo_list, per_page=10)
         menu = CSMenu(source, delete_message_after=True)
         await menu.start(ctx)
+
+    @todo_rw.command(name='add')
+    async def create_todo(self, ctx, *, content: str):
+        """
+        Add an item to your todo list
+        """
+        async with asq.connect('./database.db') as db:
+            await db.execute('INSERT INTO todo VALUES($1, $2)', (ctx.author.id, content))
+            await db.commit()
+        await ctx.message.add_reaction(ctx.tick(True))
 
     @todo_rw.command(name='remove', aliases=['rm', 'delete', 'del', 'yeet'])
     async def remove_todo(self, ctx, todo_index: commands.Greedy[int]):

@@ -68,14 +68,14 @@ class Listeners(commands.Cog):
         await ctx.propagate_to_eh(self.bot, ctx, error)
 
     async def build_hl_cache(self):
-        self.hl_cache = []
+        self.bot.hl_cache = []
         async with asq.connect('database.db') as db:
             async with db.execute('SELECT user_id, kw, exclude_guild FROM highlights') as cur:
                 async for c in cur:
                     c = list(c)
                     c[1] = re.compile(c[1], re.I)
                     c = tuple(c)
-                    self.hl_cache.append(c)
+                    self.bot.hl_cache.append(c)
 
     @commands.Cog.listener()
     async def on_command(self, ctx):
@@ -94,7 +94,7 @@ class Listeners(commands.Cog):
         await self.bot.wait_until_ready()
         if not hasattr(self, 'hl_cache'):
             return
-        for c in self.hl_cache:
+        for c in self.bot.hl_cache:
             if match := re.search(c[1], message.content):
                 if c[2]:
                     if str(message.guild.id) in c[2].split(','):

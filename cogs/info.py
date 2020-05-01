@@ -73,6 +73,7 @@ async def member_info(self, ctx, target, act, e):
     return status_display, acts, act, join_pos
 
 
+# noinspection SpellCheckingInspection
 class Info(commands.Cog):
     """Informational commands category"""
 
@@ -203,8 +204,7 @@ class Info(commands.Cog):
                 e.set_thumbnail(url=ac.album_cover_url)
                 e.add_field(
                     name='**Song Title**',
-                    value=f'[{ac.title}](https://open.s'
-                    f'potify.com/track/{ac.track_id})')
+                    value=f'[{ac.title}](https://open.spotify.com/track/{ac.track_id})')
                 e.add_field(
                     name='**Song Artist(s)**',
                     value=', '.join(ac.artists))
