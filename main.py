@@ -15,7 +15,7 @@ import utils.context
 load_dotenv()
 
 
-def warn():
+def warn(*args, **kwargs):
     pass
 
 
@@ -73,7 +73,7 @@ class NickOfOBot(commands.Bot):
         return await super().get_context(message, cls=cls)
 
     async def on_ready(self):
-        user = self.get_user(self.owner_id)
+        user = self.get_user(680835476034551925)
         await self.change_presence(
             activity=discord.Activity(
                 type=discord.ActivityType.watching,
@@ -86,7 +86,7 @@ class NickOfOBot(commands.Bot):
 **Guilds** {len(self.guilds)}
 **Users** {len(self.users)}
             """,
-            colour=0x01f907).set_thumbnail(url=self.user.avatar_url_as(static_format='png'))
+            colour=discord.Color.main).set_thumbnail(url=self.user.avatar_url_as(static_format='png'))
         embed.timestamp = datetime.utcnow()
         await user.send(embed=embed)
 
