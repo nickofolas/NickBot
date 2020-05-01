@@ -131,24 +131,19 @@ class Dev(commands.Cog):
                 ret = await func()
         except Exception:
             value = stdout.getvalue()
-            ret_msg = await ctx.safe_send(f'```py\n{value}{traceback.format_exc()}\n```')
+            await ctx.safe_send(f'```py\n{value}{traceback.format_exc()}\n```')
         else:
             value = stdout.getvalue()
             try:
-                ret_msg = await ctx.message.add_reaction(ctx.tick(True))
+                await ctx.message.add_reaction(ctx.tick(True))
             except Exception:
                 pass
             if ret is None:
                 if value:
-                    ret_msg = await ctx.safe_send(f'{value}')
+                    await ctx.safe_send(f'{value}')
             else:
                 self._last_result = ret
-                ret_msg = await ctx.safe_send(f'{value}{ret}')
-        await ret_msg.add_reaction(ctx.tick(False))
-        reaction, user = await self.bot.wait_for('reaction_add', check=lambda r, u: u.id == ctx.author.id)
-        if str(reaction.emoji) == ctx.tick(False):
-            await ret_msg.delete()
-
+                await ctx.safe_send(f'{value}{ret}')
 
     @commands.command()
     @commands.is_owner()
@@ -368,28 +363,6 @@ class Dev(commands.Cog):
                 self.bot.reload_extension(f'cogs.{e.lower()}')
                 errored.append(e)
             await ctx.send(f'Succesfully reloaded {pluralize("cog", errored)} {", ".join(errored)}')
-
-    '''
-    @commands.command(name='socketstats')
-    async def view_socket_stats(self, ctx):
-        """View the websocket status for the bot"""
-        stats, out = (self.bot.socket_stats, [])
-        delta = datetime.datetime.utcnow() - self.bot.launch_time
-        mins = round(delta.total_seconds() / 60)
-        total_events = sum(stats.values())
-        per_min = round(total_events / mins)
-        for en in sorted(stats, key=stats.get, reverse=True):
-            if en is None:
-                continue
-            out.append(f'{en:<30}' + f' │ {stats[en]:,}')
-        await ctx.safe_send(
-            embed=discord.Embed(
-                title=f'{total_events:,} socket events in '
-                f'{humanize.naturaldelta(delta)}\n'
-                f'*{per_min:,} events per minute*\n',
-                description='```' + '\n'.join(out) + '```',
-                color=discord.Color.main))
-    '''
 
 
 def setup(bot):

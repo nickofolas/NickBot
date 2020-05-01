@@ -114,14 +114,16 @@ class Info(commands.Cog):
             f"\n**Join Position **{join_pos}" \
             if isinstance(target, discord.Member) and ctx.guild else ''
         bot_tag = ''
+        tagline = f'{target} '
         if target.bot:
-            if 'verified_bot' in list(flag_vals):
-                bot_tag = '<:verified1:704885163003478069><:verified2:704885180162244749>'
-            else:
-                bot_tag = '<:bot:699991045886312488>'
+            bot_tag = '<:verified1:704885163003478069><:verified2:704885180162244749>' if 'verified_bot' in \
+                [*flag_vals] else '<:bot:699991045886312488>'
+        tagline += f'{bot_tag} '
+        if ctx.guild:
+            if target.premium_since:
+                tagline += '<:booster:705917670691700776>'
         embed = discord.Embed(
-            title=f"{target}"
-            f" {bot_tag}",
+            title=tagline,
             colour=discord.Color.main)
         embed.set_thumbnail(url=target.avatar_url_as(static_format='png'))
         status_display = status_display or ''
