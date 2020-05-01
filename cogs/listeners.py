@@ -28,7 +28,7 @@ class Listeners(commands.Cog):
         self.status_updater.start()
         self.hl_mailer.start()
         self.update_hl_cache.start()
-        self.hl_msgs = list()
+        self.hl_queue = list()
 
     def cog_unload(self):
         self.status_updater.cancel()
@@ -44,13 +44,13 @@ class Listeners(commands.Cog):
 
     @tasks.loop(seconds=10)
     async def hl_mailer(self):
-        for person, embed in set(self.hl_msgs):
+        for person, embed in set(self.hl_queue):
             try:
                 await person.send(embed=embed)
                 await asyncio.sleep(0.25)
             except Exception:
                 continue
-        self.hl_msgs = list()
+        self.hl_queue = list()
 
     @tasks.loop(minutes=1.0)
     async def update_hl_cache(self):
@@ -94,12 +94,14 @@ class Listeners(commands.Cog):
     @commands.Cog.listener()
     async def on_message(self, message):
         await self.bot.wait_until_ready()
+        if not hasattr(self, 'hl_cache'):
+            return
         for c in self.hl_cache:
             if match := re.search(c[1], message.content):
                 if c[2]:
                     if str(message.guild.id) in c[2].split(','):
                         continue
-                if re.search(re.compile(r'([a-zA-Z0-9]{24}\.[a-zA-Z0-9]{6}\.[a-zA-Z0-9_\-]{27}|mfa\.[a-zA-Z0-9_\-]{84})'), message.content) or not hasattr(self, 'hl_cache'):
+                if re.search(re.compile(r'([a-zA-Z0-9]{24}\.[a-zA-Z0-9]{6}\.[a-zA-Z0-9_\-]{27}|mfa\.[a-zA-Z0-9_\-]{84})'), message.content):
                     continue
                 alerted = self.bot.get_user(c[0])
                 context_list = []
@@ -118,8 +120,8 @@ class Listeners(commands.Cog):
                     alerted in message.guild.members and alerted.id != message.author.id and message.channel
                         .permissions_for(message.guild.get_member(alerted.id)).read_messages and not message.author.bot
                 ):
-                    if len(self.hl_msgs) < 40 and [i[0] for i in self.hl_msgs].count(alerted) < 5:
-                        self.hl_msgs.append((alerted, embed))
+                    if len(self.hl_queue) < 40 and [i[0] for i in self.hl_queue].count(alerted) < 5:
+                        self.hl_queue.append((alerted, embed))
 
     @commands.Cog.listener()
     async def on_message_edit(self, before, after):
