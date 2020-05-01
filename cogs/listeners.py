@@ -1,15 +1,12 @@
-import math
-from datetime import datetime
-import re
-import random
 import asyncio
+import math
+import re
+from datetime import datetime
 
-import unidecode as ud
+import aiosqlite as asq
 import discord
 from discord.ext import commands, tasks
-import aiosqlite as asq
 
-from utils.context import Context
 from utils.config import conf
 
 ignored_cmds = re.compile(r'\.+')
@@ -107,7 +104,7 @@ class Listeners(commands.Cog):
                 context_list = []
                 async for m in message.channel.history(limit=5):
                     avatar_index = m.author.default_avatar.value
-                    hl_underline = m.content.replace(match.group(0), f'__{match.group(0)}__')
+                    hl_underline = m.content.replace(match.group(0), f'**__{match.group(0)}__**')
                     repl = r'<a?:\w*:\d*>'
                     context_list.append(f"{conf['default_discord_users'][avatar_index]} **{m.author.name}:** {re.sub(repl, ':question:', hl_underline)}")
                 context_list = reversed(context_list)
