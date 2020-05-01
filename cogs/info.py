@@ -26,11 +26,6 @@ badges = {
     'early_supporter': '<:early:699986111975391302>'
 }
 
-perm_dict = {
-    "True": '<:c_:703740667926675536>',
-    "False": '<:x_:703739402094117004>'
-}
-
 activity_type_mapping = {
     discord.ActivityType.watching: 'Watching',
     discord.ActivityType.playing: 'Playing',
@@ -111,8 +106,7 @@ class Info(commands.Cog):
         flag_vals = UserFlags(
             (await self.bot.http.get_user(target.id))['public_flags'])
         for i in badges.keys():
-            if i in [
-                    f for f in flag_vals]:
+            if i in [*flag_vals]:
                 badge_list.append(badges[i])
         badge_list = ' '.join(badge_list)
         guild_level_stats = f"**Joined Guild **" \

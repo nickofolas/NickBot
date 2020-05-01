@@ -131,19 +131,24 @@ class Dev(commands.Cog):
                 ret = await func()
         except Exception:
             value = stdout.getvalue()
-            await ctx.safe_send(f'```py\n{value}{traceback.format_exc()}\n```')
+            ret_msg = await ctx.safe_send(f'```py\n{value}{traceback.format_exc()}\n```')
         else:
             value = stdout.getvalue()
             try:
-                await ctx.message.add_reaction(ctx.tick(True))
+                ret_msg = await ctx.message.add_reaction(ctx.tick(True))
             except Exception:
                 pass
             if ret is None:
                 if value:
-                    await ctx.safe_send(f'{value}')
+                    ret_msg = await ctx.safe_send(f'{value}')
             else:
                 self._last_result = ret
-                await ctx.safe_send(f'{value}{ret}')
+                ret_msg = await ctx.safe_send(f'{value}{ret}')
+        await ret_msg.add_reaction(ctx.tick(False))
+        reaction, user = await self.bot.wait_for('reaction_add', check=lambda r, u: u.id == ctx.author.id)
+        if str(reaction.emoji) == ctx.tick(False):
+            await ret_msg.delete()
+
 
     @commands.command()
     @commands.is_owner()
