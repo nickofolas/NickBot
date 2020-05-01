@@ -55,16 +55,17 @@ all copies or substantial portions of the Software.
 
 
 class HelpPaginator(Pages):
-    def __init__(self, help_command, ctx, entries, *, per_page=4):
+    def __init__(self, help_command, ctx, entries, *, per_page=4, footer_extra:str=None):
         super().__init__(ctx, entries=entries, per_page=per_page)
         self.total = len(entries)
         self.help_command = help_command
         self.prefix = help_command.clean_prefix
         self.is_bot = False
+        self.footer_extra = footer_extra
 
     def get_bot_page(self, page):
         cog, description, commands = self.entries[page - 1]
-        self.title = f'{cog} Commands'
+        self.title = f'Category: {cog}'
         self.description = description
         return commands
 
@@ -82,13 +83,16 @@ class HelpPaginator(Pages):
                 inline=False)
 
         if self.maximum_pages:
-            self.embed.set_author(name=f'Page {page}/{self.maximum_pages} ({self.total} commands)')
+            if self.footer_extra:
+                self.embed.set_footer(text=f'Page {page}/{self.maximum_pages}{self.footer_extra}')
+            else:
+                self.embed.set_footer(text=f'Page {page}/{self.maximum_pages}')
 
 
 class PaginatedHelpCommand(commands.HelpCommand):
     def __init__(self):
         super().__init__(command_attrs={
-            'help': 'Shows help about the bot, a command, or a category'
+            'help': 'Shows help.'
         })
 
     async def on_help_command_error(self, ctx, error):
@@ -140,7 +144,7 @@ class PaginatedHelpCommand(commands.HelpCommand):
     async def send_cog_help(self, cog):
         entries = await self.filter_commands(cog.get_commands(), sort=True)
         pages = HelpPaginator(self, self.context, entries)
-        pages.title = f'{cog.qualified_name} Commands'
+        pages.title = f'Category: {cog.qualified_name}'
         pages.description = cog.description
 
         await pages.paginate()
@@ -154,7 +158,7 @@ class PaginatedHelpCommand(commands.HelpCommand):
 
     async def send_command_help(self, command):
         # No pagination necessary for a single command.
-        embed = discord.Embed(colour=0x84cdff)
+        embed = discord.Embed(colour=discord.Color.main)
         self.common_command_formatting(embed, command)
         if retrieve_checks(command):
             embed.set_footer(text=f'Checks: {retrieve_checks(command)}')
@@ -166,11 +170,13 @@ class PaginatedHelpCommand(commands.HelpCommand):
             return await self.send_command_help(group)
 
         entries = await self.filter_commands(subcommands, sort=True)
-        pages = HelpPaginator(self, self.context, entries)
+        checks = None
+        if c := retrieve_checks(group):
+            checks = f' | Checks: {c}' 
+        pages = HelpPaginator(self, self.context, entries, footer_extra=checks)
         self.common_command_formatting(pages, group)
-        if retrieve_checks(group):
-            pages.embed.set_footer(text=f'Checks: {retrieve_checks(group)}')
-
+        if c:
+            pages.embed.set_footer(text=f'Checks: {c}')
         await pages.paginate()
 
 
