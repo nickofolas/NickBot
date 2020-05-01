@@ -117,7 +117,7 @@ class Info(commands.Cog):
         badge_list = ' '.join(badge_list)
         guild_level_stats = f"**Joined Guild **" \
             f"{humanize.naturaltime(datetime.utcnow() - target.joined_at)}"\
-            f"\n**Join Position **{join_pos}\n" \
+            f"\n**Join Position **{join_pos}" \
             if isinstance(target, discord.Member) and ctx.guild else ''
         bot_tag = ''
         if target.bot:
