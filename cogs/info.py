@@ -136,13 +136,13 @@ class Info(commands.Cog):
 {badge_list or ''}
             """
         # **Shared w/ Bot **{str(shared)} guilds
+        stats_disp = str()
+        stats_disp += f'**Registered **{humanize.naturaltime(datetime.utcnow() - target.created_at)}'
+        stats_disp += f'\n{guild_level_stats}' if guild_level_stats else ''
+        stats_disp += f'\n{shared_display}' if shared_display else ''
         embed.add_field(
             name='Stats',
-            value=f"""
-**Registered **{humanize.naturaltime(datetime.utcnow() - target.created_at)}
-{guild_level_stats}{shared_display}
-            """,
-            inline=True
+            value=stats_disp
             )
         if act:
             embed.add_field(
@@ -189,8 +189,7 @@ class Info(commands.Cog):
     @commands.guild_only()
     async def spotify(self, ctx, target: discord.Member = None):
         """Get info about someone's Spotify status, if they have one"""
-        if not target:
-            target = ctx.author
+        target = target or ctx.author
         for activity in target.activities:
             if isinstance(activity, discord.Spotify):
                 ac = activity
@@ -216,8 +215,8 @@ class Info(commands.Cog):
                     name='**Song Progress**',
                     value=f'`{(val.seconds//60)%60:>02}:{val.seconds%60:>02}` '
                     + bar
-                    + f' `{((g.seconds)//60)%60:>02}:'
-                    f'{(g.seconds)%60:>02}`', inline=False)
+                    + f' `{(g.seconds // 60) % 60:>02}:'
+                    f'{g.seconds % 60:>02}`', inline=False)
                 return await ctx.send(embed=e)
         else:
             await ctx.send("A Spotify status couldn't be detected!")
@@ -230,11 +229,7 @@ class Info(commands.Cog):
         """Get info about the current server"""
         guild = self.bot.get_guild(guild) or ctx.guild
         feats = str(', '.join(guild.features)).replace('_', ' ').title()
-        ctx_roles = list(itertools.islice((
-            r for r in reversed(guild.roles) if '@everyone' != r.name
-            ), 10)) if guild == ctx.guild else None
-        admins = [
-            m for m in guild.members if m.guild_permissions.administrator]
+        admins = [m for m in guild.members if m.guild_permissions.administrator]
         embed = discord.Embed(
             title=' ',
             description=f'**{guild.name} | {guild.id}**',
@@ -268,11 +263,6 @@ class Info(commands.Cog):
 {utils.data_vis.bar_make(guild.premium_subscription_count, 30, '<:nitrobar_filled:698019974832324608>', '<:nitrobar_empty:698019957983674459>', False, 5)}
             """,
             inline=True)
-        if ctx_roles:
-            embed.add_field(
-                name=f'**Top 10 Roles ({len(guild.roles)} total)**',
-                value=''.join([rt.mention for rt in ctx_roles]),
-                inline=False)
         await ctx.send(embed=embed)
 
     @serverinfo.command()
@@ -323,7 +313,7 @@ class Info(commands.Cog):
     @serverinfo.command()
     @commands.guild_only()
     async def roles(self, ctx):
-        """Returns member distribution for roles in the current guild"""
+        """Returns a list of all roles in the guild"""
         await ctx.quick_menu(list(reversed([r.mention for r in ctx.guild.roles[1:]])), 20, delete_message_after=True)
 
 
