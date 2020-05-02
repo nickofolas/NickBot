@@ -35,7 +35,7 @@ class Data(commands.Cog):
                     to_append = f"`{(i+1)}` {iterable_hls[i]}" if i<len(iterable_hls) else ''
                     hl_list.append(to_append)
         await ctx.send(embed=discord.Embed(
-            description='\n'.join(hl_list), color=discord.Color.main))
+            description='\n'.join(hl_list), color=discord.Color.main).set_footer(text=f'{len(iterable_hls)}/10 slots used'))
 
     @highlight.command()
     async def add(self, ctx, *, highlight_words):
