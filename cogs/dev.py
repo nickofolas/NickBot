@@ -196,9 +196,6 @@ class Dev(commands.Cog):
             except Exception:
                 await db.execute("INSERT INTO guild_prefs (guild_id, prefix) VALUES ($1, $2)", (ctx.guild.id, new_prefix))
                 await db.commit()
-
-        await ctx.guild.get_member(
-            self.bot.user.id).edit(nick=f'{self.bot.user.name} [{new_prefix}]')
         await ctx.send(f'Prefix successfully changed to `{new_prefix}`')
 
     @commands.command()

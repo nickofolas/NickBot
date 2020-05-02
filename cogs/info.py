@@ -58,6 +58,8 @@ async def member_info(self, ctx, target, act, e):
             act.append(f'Playing **{a.name}**')
         elif isinstance(a, discord.activity.Activity):
             act.append(f'{activity_type_mapping.get(a.type)} **{a.name}**')
+        elif a is None:
+            continue
     acts = '\n'.join(sorted(act))
     for m in ctx.guild.members:
         e.append(m)
