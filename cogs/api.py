@@ -3,6 +3,7 @@ import os
 import time
 from typing import Union
 import textwrap
+from contextlib import suppress
 
 import discord
 from discord.ext import commands
@@ -127,13 +128,12 @@ class Api(commands.Cog):
         await ctx.send(embed=embed)
 
     @commands.group(invoke_without_command=True, aliases=['r'])
-    async def redditor(self, ctx, *, user: Union[discord.Member, discord.User, int, str] = None):
+    async def redditor(self, ctx, *, user: str = None):
         """Overview of a reddit user"""
         user = user or ctx.author
-        if user is None or isinstance(user, (discord.Member, discord.User, int)):
-            id = user.id if not isinstance(user, int) else user
+        if user == ctx.author:
             async with asq.connect('./database.db') as db:
-                usr_get = await db.execute("SELECT default_reddit FROM user_data WHERE user_id=$1", (id,))
+                usr_get = await db.execute("SELECT default_reddit FROM user_data WHERE user_id=$1", (ctx.author.id,))
                 user = (await usr_get.fetchone())[0]
         else:
             user = user.replace('u/', '')
@@ -169,13 +169,12 @@ class Api(commands.Cog):
         await ctx.send(embed=embed)
 
     @redditor.command(aliases=['mod'])
-    async def modstats(self, ctx, user: Union[discord.Member, discord.User, int, str] = None):
+    async def modstats(self, ctx, user: str = None):
         """View moderator stats for a redditor"""
         user = user or ctx.author
-        if user is None or isinstance(user, (discord.Member, discord.User, int)):
-            id = user.id if not isinstance(user, int) else user
+        if user == ctx.author:
             async with asq.connect('./database.db') as db:
-                usr_get = await db.execute("SELECT default_reddit FROM user_data WHERE user_id=$1", (id,))
+                usr_get = await db.execute("SELECT default_reddit FROM user_data WHERE user_id=$1", (ctx.author.id,))
                 user = (await usr_get.fetchone())[0]
         else:
             user = user.replace('u/', '')
