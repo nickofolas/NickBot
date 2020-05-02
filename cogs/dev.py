@@ -181,8 +181,14 @@ class Dev(commands.Cog):
 
     @commands.command()
     @is_owner_or_administrator()
-    async def prefix(self, ctx, new_prefix):
+    async def prefix(self, ctx, new_prefix=None):
         """Change the prefix for the current server"""
+        if new_prefix is None:
+            return await ctx.send(embed=discord.Embed(
+                title='Prefixes for this guild',
+                description='\n'.join(
+                    sorted(set([p.replace('@!', '@') for p in await self.bot.get_prefix(ctx.message)]), key=lambda p: len(p))),
+                color=discord.Color.main))
         async with asq.connect('./database.db') as db:
             try:
                 await db.execute("UPDATE guild_prefs SET prefix=$1 WHERE guild_id=$2", (new_prefix, ctx.guild.id))
