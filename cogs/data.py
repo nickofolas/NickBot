@@ -32,7 +32,7 @@ class Data(commands.Cog):
             async with db.execute('SELECT kw FROM highlights WHERE user_id=$1', (ctx.author.id,)) as cur:
                 iterable_hls = [item[0] async for item in cur]
                 for i in range(10):
-                    to_append = f"`{(i+1)}` {iterable_hls[i]}" if i<len(iterable_hls) else f"`{i+1}` Unused"
+                    to_append = f"`{(i+1)}` {iterable_hls[i]}" if i<len(iterable_hls) else ''
                     hl_list.append(to_append)
         await ctx.send(embed=discord.Embed(
             description='\n'.join(hl_list), color=discord.Color.main))
