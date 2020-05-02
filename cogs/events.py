@@ -33,7 +33,7 @@ class Events(commands.Cog):
         self.hl_mailer.cancel()
         self.update_hl_cache.cancel()
 
-    @tasks.loop(minutes=5.0)
+    @tasks.loop(minutes=5)
     async def status_updater(self):
         if not self.bot.persistent_status:
             await self.bot.change_presence(

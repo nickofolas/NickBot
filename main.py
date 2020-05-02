@@ -75,6 +75,10 @@ class NeoBot(commands.Bot):
 
     async def on_ready(self):
         user = self.get_user(680835476034551925)
+        try:
+            await self.change_presence(activity=discord.Activity(type=discord.ActivityType.watching,name=f"{len(self.guilds):,} servers | {len(self.users):,} members"))
+        except Exception as e:
+            print(e)
         embed = discord.Embed(
             title='Bot is now running',
             description=f"""
