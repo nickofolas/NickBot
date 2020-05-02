@@ -116,12 +116,14 @@ class Info(commands.Cog):
         bot_tag = ''
         tagline = f'{target} '
         if target.bot:
-            bot_tag = '<:verified1:704885163003478069><:verified2:704885180162244749>' if 'verified_bot' in \
-                [*flag_vals] else '<:bot:699991045886312488>'
+            bot_tag = '<:verified1:704885163003478069><:verified2:704885180162244749> ' if 'verified_bot' in \
+                [*flag_vals] else '<:bot:699991045886312488> '
         tagline += f'{bot_tag} '
         if ctx.guild and isinstance(target, discord.Member):
+            if target == ctx.guild.owner:
+                tagline += '<:serverowner:706224911500181546> '
             if target.premium_since:
-                tagline += '<:booster:705917670691700776>'
+                tagline += '<:booster:705917670691700776> '
         embed = discord.Embed(
             title=tagline,
             colour=discord.Color.main)
@@ -204,8 +206,8 @@ class Info(commands.Cog):
                     value=', '.join(ac.artists))
                 e.add_field(name='**Album Name**', value=discord.utils.escape_markdown(ac.album))
                 bar = utils.data_vis.bar_make(
-                    val.seconds, g.seconds, '▭', '─', True, 5) if ctx.author.is_on_mobile() else utils.data_vis.bar_make(
-                        val.seconds, g.seconds, '▭', '─', True, 25)
+                    val.seconds, g.seconds, '◉', '─', True, 5) if ctx.author.is_on_mobile() else utils.data_vis.bar_make(
+                        val.seconds, g.seconds, '◉', '─', True, 25)
                 e.add_field(
                     name='**Song Progress**',
                     value=f'`{(val.seconds//60)%60:>02}:{val.seconds%60:>02}` '
