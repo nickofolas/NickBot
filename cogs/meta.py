@@ -17,18 +17,16 @@ from utils.config import conf
 from utils.paginator import ShellMenu, Pages, CSMenu
 
 
+checked_perms = ['is_owner', 'guild_only', 'dm_only', 'is_nsfw']
+checked_perms.extend([p[0] for p in discord.Permissions()])
+
+
 def retrieve_checks(command):
-    checked_perms = ['is_owner', 'guild_only', 'dm_only', 'is_nsfw']
-    checked_perms.extend([p[0] for p in discord.Permissions()])
     req = []
     with suppress(Exception):
         for line in inspect.getsource(command.callback).splitlines():
-            # Checks every line for elements
-            # of the perm_list
             for permi in checked_perms:
-                # Confirms the perm is in a decorator
-                # and appends it to required perms
-                if permi in line and '@' in line:
+                if permi in line and line.lstrip().startswith('@'):
                     req.append(permi)
     return ', '.join(req)
 

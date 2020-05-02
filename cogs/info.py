@@ -198,14 +198,14 @@ class Info(commands.Cog):
                 e.set_thumbnail(url=ac.album_cover_url)
                 e.add_field(
                     name='**Song Title**',
-                    value=f'[{ac.title}](https://open.spotify.com/track/{ac.track_id})')
+                    value=f'[{discord.utils.escape_markdown(ac.title)}](https://open.spotify.com/track/{ac.track_id})')
                 e.add_field(
                     name='**Song Artist(s)**',
                     value=', '.join(ac.artists))
-                e.add_field(name='**Album Name**', value=ac.album)
+                e.add_field(name='**Album Name**', value=discord.utils.escape_markdown(ac.album))
                 bar = utils.data_vis.bar_make(
-                    val.seconds, g.seconds, '◉', '─', True, 5) if ctx.author.is_on_mobile() else utils.data_vis.bar_make(
-                        val.seconds, g.seconds, '◉', '─', True, 25)
+                    val.seconds, g.seconds, '▭', '─', True, 5) if ctx.author.is_on_mobile() else utils.data_vis.bar_make(
+                        val.seconds, g.seconds, '▭', '─', True, 25)
                 e.add_field(
                     name='**Song Progress**',
                     value=f'`{(val.seconds//60)%60:>02}:{val.seconds%60:>02}` '
