@@ -45,7 +45,7 @@ class NeoBot(commands.Bot):
     """The bot itself"""
 
     def __init__(self):
-        super().__init__(command_prefix=get_prefix, case_insensitive=True,
+        super().__init__(command_prefix=commands.when_mentioned_or(get_prefix), case_insensitive=True,
                          allowed_mentions=discord.AllowedMentions(everyone=False, users=False, roles=False))
         self.session = aiohttp.ClientSession()
         self.deleted = {}

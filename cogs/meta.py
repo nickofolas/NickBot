@@ -19,19 +19,17 @@ from utils.paginator import ShellMenu, Pages, CSMenu
 
 def retrieve_checks(command):
     checked_perms = ['is_owner', 'guild_only', 'dm_only', 'is_nsfw']
-    checked_perms.extend([p[0] for p in discord.Permissions.all()])
+    checked_perms.extend([p[0] for p in discord.Permissions()])
     req = []
     with suppress(Exception):
-        for line in (source := inspect.getsource(command.callback)).splitlines():
+        for line in inspect.getsource(command.callback).splitlines():
             # Checks every line for elements
             # of the perm_list
             for permi in checked_perms:
                 # Confirms the perm is in a decorator
                 # and appends it to required perms
                 if permi in line and '@' in line:
-                    req.append(
-                        permi
-                    )
+                    req.append(permi)
     return ', '.join(req)
 
 
@@ -199,7 +197,7 @@ class Meta(commands.Cog):
                 line for line in inspect.getsource(cb)
                 .replace('```', '`\N{zero width space}`')
             ]
-        except Exception:
+        except AttributeError:
             func = import_expression.eval(cmd)
             lines = [
                 line for line in inspect.getsource(func)
@@ -221,29 +219,14 @@ class Meta(commands.Cog):
         await ctx.send(f'<https://github.com/nickofolas/NickBot/blob/master/{location}#L{first_line}-L{last_line}>')
 
     @commands.command()
-    @commands.cooldown(1, 240, commands.BucketType.user)
-    async def suggest(self, ctx, *, suggestion):
-        """Make a suggestion to the bot's dev"""
-        owner = (await self.bot.application_info()).owner
-        embed = discord.Embed(title='', description=f'> {suggestion}', color=discord.Color.main)
-        embed.set_author(name=ctx.author.display_name, icon_url=ctx.author.avatar_url_as(static_format='png'))
-        embed.timestamp = ctx.message.created_at
-        embed.set_footer(text=ctx.guild)
-        await owner.send(embed=embed)
-        await ctx.message.add_reaction(ctx.tick(True))
-
-    @commands.command()
     async def cogs(self, ctx):
         """List all active cogs"""
         cog_listing = []
         for each_cog in sorted(self.bot.all_cogs):
             if each_cog in self.bot.cogs:
-                cog_listing.append(
-                    '<:c_:703740667926675536> ' + each_cog)
+                cog_listing.append(ctx.tick(True) + each_cog)
             elif each_cog not in self.bot.cogs:
-                cog_listing.append(
-                    '<:x_:703739402094117004> ' + each_cog
-                )  # This bit gets the different cogs and
+                cog_listing.append(ctx.tick(False) + each_cog)  # This bit gets the different cogs and
                 # marks them as active or disabled
         embed = discord.Embed(
             title="All Cogs",
@@ -281,8 +264,8 @@ class Meta(commands.Cog):
         com_msg = self.last_commit_cache['commit']['message']
         embed.add_field(
             name=f'**Latest Commit -** `{self.last_commit_cache["sha"][:7]}`',
-            value='\n'.join(['\n'.join(textwrap.wrap(line, 25, break_long_words=False, replace_whitespace=False)) for line in com_msg.splitlines() if line.strip() != '']),
-            inline=True
+            value='\n'.join(['\n'.join(textwrap.wrap(line, 25, break_long_words=False, replace_whitespace=False))
+                             for line in com_msg.splitlines() if line.strip() != ''])
         )
         if ctx.author not in self.bot.get_guild(696739356815392779).members:
             embed.add_field(
