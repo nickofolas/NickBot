@@ -56,21 +56,6 @@ class Fun(commands.Cog):
     async def say(self, ctx, *, message):
         """Say something as the bot"""
         await ctx.safe_send(f'**{ctx.author.display_name} says:** {message}')
-        try:
-            await ctx.message.delete()
-        except Exception:
-            pass
-
-    @say.command()
-    @commands.cooldown(1, 60, commands.BucketType.user)
-    async def echo(self, ctx, channel: discord.TextChannel, *, message):
-        """Echo a message to the specified channel"""
-        per = channel.permissions_for(ctx.author)
-        if per.send_messages:
-            await channel.send(discord.utils.escape_mentions(f'> {message}'))
-            await ctx.message.add_reaction(ctx.tick(True))
-        else:
-            raise commands.MissingPermissions(["send_messages"])
 
     @say.command()
     @commands.cooldown(1, 15, commands.BucketType.user)
@@ -85,10 +70,6 @@ class Fun(commands.Cog):
             else:
                 out.append(letter)
         await ctx.send(f'**{ctx.author.name} says: **' + ' '.join(out) + '_ _')
-        try:
-            await ctx.message.delete()
-        except Exception:
-            pass
 
     @say.group(invoke_without_command=True)
     async def embed(self, ctx, title, description):
@@ -99,10 +80,6 @@ class Fun(commands.Cog):
             name=ctx.author.display_name,
             icon_url=ctx.author.avatar_url_as(static_format='png'))
         await ctx.send(embed=embed)
-        try:
-            await ctx.message.delete()
-        except Exception:
-            pass
 
     @embed.command(name='dict')
     async def dict_(self, ctx, *, data):
@@ -123,10 +100,6 @@ class Fun(commands.Cog):
         vote = await ctx.send(embed=embed)
         await vote.add_reaction('<:upvote:655880245047459853>')
         await vote.add_reaction('<:downvote:655880259358687252>')
-        try:
-            await ctx.message.delete()
-        except Exception:
-            pass
 
     @commands.command(aliases=['md'])
     async def markdown(self, ctx, message_id: str = None):

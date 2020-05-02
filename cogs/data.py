@@ -31,7 +31,7 @@ class Data(commands.Cog):
         async with asq.connect('./database.db') as db:
             async with db.execute('SELECT kw FROM highlights WHERE user_id=$1', (ctx.author.id,)) as cur:
                 iterable_hls = [item[0] async for item in cur]
-                for i in range(5):
+                for i in range(10):
                     to_append = f"`{(i+1)}` {iterable_hls[i]}" if i<len(iterable_hls) else f"Unused Slot {i+1}"
                     hl_list.append(to_append)
         await ctx.send(embed=discord.Embed(
@@ -45,16 +45,16 @@ class Data(commands.Cog):
         supported.
         NOTE: It may take up to a minute for a new highlight to take effect
         """
-        if len(highlight_words) < 2:
-            raise commands.CommandError('Highlights must be at least 2 characters long')
+        if len(highlight_words) < 2 or len(highlight_words) > 60:
+            raise commands.CommandError('Highlights must be at least 2 characters long and at most 60 characters long')
         content_check = re.compile(fr'{highlight_words}', re.I)
         for i in ('afssafasfa', '12421', '\n', ' ', string.ascii_letters, string.digits):
             if re.search(content_check, i):
                 raise commands.CommandError('This trigger is too general')
         async with asq.connect('./database.db') as db:
             check = await db.execute('SELECT kw FROM highlights WHERE user_id=$1', (ctx.author.id,))
-            if len(active := await check.fetchall()) == 5:
-                raise commands.CommandError('You may only have 5 highlights at a time')
+            if len(active := await check.fetchall()) == 10:
+                raise commands.CommandError('You may only have 10 highlights at a time')
             if highlight_words in [a[0] for a in active]:
                 raise commands.CommandError('You already have a highlight with this trigger')
             await db.execute('INSERT INTO highlights(user_id, kw) VALUES ( $1, $2 )', (ctx.author.id, fr"{highlight_words}"))

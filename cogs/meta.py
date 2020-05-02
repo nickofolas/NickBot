@@ -110,7 +110,7 @@ class PaginatedHelpCommand(commands.HelpCommand):
         bot = self.context.bot
         entries = await self.filter_commands(bot.commands, sort=True, key=key)
         nested_pages = []
-        per_page = 9
+        per_page = 7
         total = 0
 
         for cog, commands in itertools.groupby(entries, key=key):

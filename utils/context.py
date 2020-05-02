@@ -40,8 +40,7 @@ class Context(commands.Context):
                     post = await post.json()
                     url = f"https://mystb.in/{post['key']}"
                     await self.send(
-                        f'The output was too long for discord, so it can'
-                        f' be found here: <{url}>'
+                        f'Output: <{url}>'
                     )
             else:
                 return await self.send(content, **kwargs)

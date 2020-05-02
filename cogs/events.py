@@ -18,7 +18,7 @@ def round_up(n, decimals=0):
 
 
 # noinspection PyCallingNonCallable
-class Listeners(commands.Cog):
+class Events(commands.Cog):
     """Contains the listeners for the bot"""
 
     def __init__(self, bot):
@@ -171,4 +171,4 @@ class Listeners(commands.Cog):
 
 
 def setup(bot):
-    bot.add_cog(Listeners(bot))
+    bot.add_cog(Events(bot))
