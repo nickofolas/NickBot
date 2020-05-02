@@ -18,13 +18,14 @@ from utils.paginator import ShellMenu, Pages, CSMenu
 
 
 def retrieve_checks(command):
+    checked_perms = ['is_owner', 'guild_only', 'dm_only', 'is_nsfw']
+    checked_perms.extend([p[0] for p in discord.Permissions.all()])
     req = []
     with suppress(Exception):
         for line in (source := inspect.getsource(command.callback)).splitlines():
             # Checks every line for elements
             # of the perm_list
-            for permi in conf[
-                    'perm_list']:
+            for permi in checked_perms:
                 # Confirms the perm is in a decorator
                 # and appends it to required perms
                 if permi in line and '@' in line:

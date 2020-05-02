@@ -163,8 +163,7 @@ class Info(commands.Cog):
     @commands.guild_only()
     async def perms(self, ctx, target: discord.Member = None):
         """Show the allowed and denied permissions for a user"""
-        if target is None:
-            target = ctx.author
+        target = target or ctx.author
         embed = discord.Embed(color=discord.Color.main)
         ls = sorted(
             [p for p in ctx.channel.permissions_for(target)],
