@@ -252,26 +252,40 @@ class Dev(commands.Cog):
             - streaming
             - listening
             - watching
-            - none (this will reset the status and reenable tasks loop)
+            - none (this will reset the bot's presence)
         """
         type_dict = {
             'playing': 0,
             'streaming': 1,
             'listening': 2,
             'watching': 3,
-            'none': 4
+            'none': None
         }
         async with ctx.ExHandler(
                 exception_type=KeyError,
                 propagate=(self.bot, ctx),
                 message='Not a valid activity type'):
-            if type_dict[act_type] == 4:
-                self.bot.persistent_status = False
-            else:
-                self.bot.persistent_status = True
             await self.bot.change_presence(
                 activity=discord.Activity(
                     type=type_dict[act_type], name=message))
+            await ctx.message.add_reaction(ctx.tick(True))
+
+    @edit_bot.command(name='status')
+    @commands.is_owner()
+    async def change_status(self, ctx, status_type):
+        status_dict = {
+            'online': discord.Status.online,
+            'offline': discord.Status.offline,
+            'dnd': discord.Status.dnd,
+            'idle': discord.Status.idle
+        }
+        async with ctx.ExHandler(
+                exception_type=KeyError,
+                propagate=(self.bot, ctx),
+                message='Not a valid status type'):
+            await self.bot.change_presence(
+                activity=discord.Activity(
+                    type=status_dict[status_type.lower()]))
             await ctx.message.add_reaction(ctx.tick(True))
 
     @commands.group(invoke_without_command=True)
