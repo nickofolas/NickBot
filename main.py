@@ -30,12 +30,12 @@ discord.Color.main = discord.Color(0x84cdff)
 async def get_prefix(bot, message):
     prefix = 'n/'
     if not message.guild:
-        return prefix
+        return commands.when_mentioned_or(prefix)(bot, message)
     async with asq.connect('./database.db') as db:
         async with db.execute('SELECT prefix FROM guild_prefs WHERE guild_id=?', (message.guild.id,)) as cur:
             async for r in cur:
                 prefix = r[0]
-        return prefix
+        return commands.when_mentioned_or(prefix)(bot, message)
 
 
 # Bot class itself, kinda important
@@ -45,7 +45,7 @@ class NeoBot(commands.Bot):
     """The bot itself"""
 
     def __init__(self):
-        super().__init__(command_prefix=commands.when_mentioned_or(get_prefix), case_insensitive=True,
+        super().__init__(command_prefix=get_prefix, case_insensitive=True,
                          allowed_mentions=discord.AllowedMentions(everyone=False, users=False, roles=False))
         self.session = aiohttp.ClientSession()
         self.deleted = {}
