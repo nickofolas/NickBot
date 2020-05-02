@@ -23,23 +23,13 @@ class Events(commands.Cog):
 
     def __init__(self, bot):
         self.bot = bot
-        self.status_updater.start()
         self.hl_mailer.start()
         self.update_hl_cache.start()
         self.hl_queue = list()
 
     def cog_unload(self):
-        self.status_updater.cancel()
         self.hl_mailer.cancel()
         self.update_hl_cache.cancel()
-
-    @tasks.loop(minutes=5)
-    async def status_updater(self):
-        if not self.bot.persistent_status:
-            await self.bot.change_presence(
-                activity=discord.Activity(
-                    type=discord.ActivityType.watching,
-                    name=f"{len(self.bot.guilds):,} servers | {len(self.bot.users):,} members"))
 
     @tasks.loop(seconds=10)
     async def hl_mailer(self):
@@ -56,7 +46,6 @@ class Events(commands.Cog):
         await self.build_hl_cache()
 
     @hl_mailer.before_loop
-    @status_updater.before_loop
     @update_hl_cache.before_loop
     async def before_task_loops(self):
         await self.bot.wait_until_ready()
