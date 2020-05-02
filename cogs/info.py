@@ -44,7 +44,9 @@ async def member_info(self, ctx, target, act, e):
         f"{str(target.status).title().replace('Dnd', 'DND')}"\
         f" {('(' + ', '.join(multi_status) + ')' if multi_status else '')}"
     for a in target.activities:
-        if isinstance(a, discord.Spotify):
+        if a is None:
+            continue
+        elif isinstance(a, discord.Spotify):
             act.append('Listening to **Spotify**')
         elif isinstance(a, discord.CustomActivity):
             emoji = ''
@@ -58,8 +60,6 @@ async def member_info(self, ctx, target, act, e):
             act.append(f'Playing **{a.name}**')
         elif isinstance(a, discord.activity.Activity):
             act.append(f'{activity_type_mapping.get(a.type)} **{a.name}**')
-        elif a is None:
-            continue
     acts = '\n'.join(sorted(act))
     for m in ctx.guild.members:
         e.append(m)
