@@ -285,7 +285,7 @@ class Dev(commands.Cog):
                 message='Not a valid status type'):
             await self.bot.change_presence(
                 activity=discord.Activity(
-                    type=status_dict[status_type.lower()]))
+                    status=status_dict[status_type.lower()]))
             await ctx.message.add_reaction(ctx.tick(True))
 
     @commands.group(invoke_without_command=True)
