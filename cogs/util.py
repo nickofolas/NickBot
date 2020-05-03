@@ -61,7 +61,7 @@ class Util(commands.Cog):
             send_dict[i] = self.bot.deleted[i]
         await ctx.safe_send(
             ('```\n' + pprint.pformat(send_dict).replace('```', '``')
-                + '\n```'))
+             + '\n```'))
 
     @commands.command()
     @commands.cooldown(1, 15, commands.BucketType.user)
@@ -74,13 +74,13 @@ class Util(commands.Cog):
         message = await ctx.send("_ _")
         end = time.perf_counter()
         duration = (end - start) * 1000
-        typing_duration = (typing_end-typing_start) * 1000
+        typing_duration = (typing_end - typing_start) * 1000
         embed = discord.Embed(
             title=' ',
             description=':ping_pong: Pong!\n'
-            f' Actual response time: {duration:.3f}ms\n'
-            f' Websocket Latency: {round(self.bot.latency * 1000, 3)}ms\n'
-            f' Typing latency: {typing_duration:.3f}ms',
+                        f' Actual response time: {duration:.3f}ms\n'
+                        f' Websocket Latency: {round(self.bot.latency * 1000, 3)}ms\n'
+                        f' Typing latency: {typing_duration:.3f}ms',
             color=discord.Color.main)
         await message.edit(embed=embed)
 
@@ -98,10 +98,13 @@ class Util(commands.Cog):
             permissions.update(**dict.fromkeys(permission_names, True))
         else:
             permissions = discord.Permissions(1878523719)
-        # ideally you'd fetch this once and store it in bot.client_id
-        await ctx.send('**Use this link to invite me to your server: **<'
-                       + discord.utils.oauth_url(self.bot.user.id, permissions)
-                       + '>')
+        invite_url = discord.utils.oauth_url(self.bot.user.id, permissions)
+        embed = discord.Embed(
+            title='Invite me to your server with this link!',
+            description=f'{invite_url}\n**Permissions Value** {permissions.value}',
+            color=discord.Color.main
+        ).set_image(url=self.bot.user.avatar_url_as(static_format='png'))
+        await ctx.send(embed=embed)
 
     @commands.command(aliases=['av'])
     async def avatar(self, ctx, *, target: Union[discord.Member, discord.User, int] = None):
@@ -121,16 +124,16 @@ class Util(commands.Cog):
     async def playing(self, ctx, *, game):
         """Get the number of people playing a game in the server"""
         mem = [
-                str(m.activity.name) for m in ctx.guild.members
-                if m.activity and m.activity.name == game
-            ]
+            str(m.activity.name) for m in ctx.guild.members
+            if m.activity and m.activity.name == game
+        ]
         await ctx.send(embed=discord.Embed(
-                title='',
-                description=(
-                    f'{len(mem)} members are playing {game}'
-                    if not len(mem) == 1 else f'1 member is playing {game}'
-                    ),
-                color=discord.Color.main))
+            title='',
+            description=(
+                f'{len(mem)} members are playing {game}'
+                if not len(mem) == 1 else f'1 member is playing {game}'
+            ),
+            color=discord.Color.main))
 
     @commands.command()
     async def statuslist(self, ctx):
@@ -140,18 +143,20 @@ class Util(commands.Cog):
                 f'{ud.unidecode(m.display_name):<40}' + str(m.activity.name)
                 for m in ctx.guild.members if m.activity
             ]
-            ))
+        ))
         await ctx.safe_send('```\n' + mem + '\n```')
 
     @commands.command(aliases=['charinfo'])
     async def unichar(self, ctx, *, characters: str):
         """Get information about inputted unicode characters"""
+
         def to_string(c):
             digit = f'{ord(c):X}'  # :X} means uppercase hex formatting
             name = unicodedata.name(c, 'Name not found.')
-            return f'`\\U{digit:>08}`: '\
-                f'[{name}](http://www.fileformat.info/info/unicode/char/'\
-                f'{digit}) - `{c}`'
+            return f'`\\U{digit:>08}`: ' \
+                   f'[{name}](http://www.fileformat.info/info/unicode/char/' \
+                   f'{digit}) - `{c}`'
+
         embed = discord.Embed(
             title='',
             description='\n'.join(map(to_string, characters)),
@@ -166,14 +171,18 @@ class Util(commands.Cog):
         image = image or await ctx.message.attachments[0].read()
         headers = {'Authorization': f"Client-ID {os.getenv('IMGUR_ID')}"}
         data = {'image': image}
-        async with ctx.typing(), self.bot.session.post('https://api.imgur.com/3/image', headers=headers, data=data) as resp:
+        async with ctx.typing(), self.bot.session.post('https://api.imgur.com/3/image', headers=headers,
+                                                       data=data) as resp:
             re = await resp.json()
             await ctx.send('<' + re['data'].get('link') + '>')
 
     @commands.command(name='shorten')
     async def shorten(self, ctx, *, link):
         """Shorten a link into a compact redirect"""
-        resp = await self.bot.session.post('https://api.rebrandly.com/v1/links', headers={'Content-type': 'application/json', 'apikey': os.getenv('REBRANDLY_KEY')}, data=json.dumps({'destination': link}))
+        resp = await self.bot.session.post('https://api.rebrandly.com/v1/links',
+                                           headers={'Content-type': 'application/json',
+                                                    'apikey': os.getenv('REBRANDLY_KEY')},
+                                           data=json.dumps({'destination': link}))
         await ctx.send(f'Shortened URL: <https://{(await resp.json())["shortUrl"]}>')
 
 
