@@ -234,7 +234,7 @@ class Dev(commands.Cog):
         menu = CSMenu(source, delete_message_after=True)
         await menu.start(ctx)
 
-    @commands.command(name='cedit')
+    @commands.command(name='edit')
     @commands.is_owner()
     async def args_edit(self, ctx, *, args: str):
         status_dict = {
@@ -257,8 +257,6 @@ class Dev(commands.Cog):
         parser.add_argument('--nick', nargs='+')
 
         args = parser.parse_args(shlex.split(args))
-        if args.status:
-            await self.bot.change_presence(status=status_dict[args.status.lower()])
         if args.presence:
             if type_dict.get(args.presence[0]) is None:
                 await self.bot.change_presence(activity=discord.Activity())
@@ -268,65 +266,8 @@ class Dev(commands.Cog):
                         type=type_dict[args.presence.pop(0)], name=' '.join(args.presence)))
         if args.nick:
             await ctx.me.edit(nick=' '.join(args.nick) if args.nick != [] else None)
-
-    @commands.group(name='edit')
-    @commands.is_owner()
-    async def edit_bot(self, ctx):
-        """Edit various parts of the bot's user"""
-        pass
-
-    @edit_bot.command()
-    @commands.is_owner()
-    async def nick(self, ctx, *, new_nickname=None):
-        """
-        Change the bot's nickname in the current guild
-        Pass nothing to reset nickname
-        """
-        await ctx.me.edit(nick=new_nickname)
-        await ctx.message.add_reaction(ctx.tick(True))
-
-    @edit_bot.command()
-    @commands.is_owner()
-    async def presence(self, ctx, act_type, *, message=None):
-        """Edit the bot's presence
-        Available activity types:
-            - playing
-            - streaming
-            - listening
-            - watching
-            - none (this will reset the bot's presence)
-        """
-        type_dict = {
-            'playing': 0,
-            'streaming': 1,
-            'listening': 2,
-            'watching': 3,
-            'none': None
-        }
-        async with ctx.ExHandler(
-                exception_type=KeyError,
-                propagate=(self.bot, ctx),
-                message='Not a valid activity type'):
-            await self.bot.change_presence(
-                activity=discord.Activity(
-                    type=type_dict[act_type], name=message))
-            await ctx.message.add_reaction(ctx.tick(True))
-
-    @edit_bot.command(name='status')
-    @commands.is_owner()
-    async def change_status(self, ctx, status_type):
-        status_dict = {
-            'online': discord.Status.online,
-            'offline': discord.Status.offline,
-            'dnd': discord.Status.dnd,
-            'idle': discord.Status.idle
-        }
-        async with ctx.ExHandler(
-                exception_type=KeyError,
-                propagate=(self.bot, ctx),
-                message='Not a valid status type'):
-            await self.bot.change_presence(status=status_dict[status_type.lower()])
-            await ctx.message.add_reaction(ctx.tick(True))
+        if args.status:
+            await self.bot.change_presence(status=status_dict[args.status.lower()])
 
     @commands.group(invoke_without_command=True)
     @commands.is_owner()
