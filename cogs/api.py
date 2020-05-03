@@ -350,7 +350,7 @@ class Api(commands.Cog):
 
         def _gather():
             for cat, grp in itertools.groupby([*js], lambda c: c.get('storeCategory')):
-                yield f'**__{cat}__**\n', '\n'.join(
+                yield f'**__{cat}__**\n__<:vbuck:706533872460103731> Price {ctx.tab(12)} Item__', '\n'.join(
                     sorted(
                         [f"{g.get('vBucks')} <:vbuck:706533872460103731> [`{g.get('name')}`]({g.get('imageUrl')})"
                          for g in [*grp]]))
