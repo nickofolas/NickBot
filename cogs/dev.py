@@ -21,6 +21,7 @@ from utils.checks import is_owner_or_administrator
 from utils.paginator import ShellMenu, CSMenu
 from utils.helpers import return_lang_hl, pluralize
 import utils
+from utils.config import conf
 
 
 class Arguments(argparse.ArgumentParser):
@@ -257,26 +258,29 @@ class Dev(commands.Cog):
             'watching': 3,
             'none': None
         }
-
+        updated_list = []
         parser = Arguments(add_help=False, allow_abbrev=False)
         parser.add_argument('-s', '--status', nargs='?', const='online', dest='status')
         parser.add_argument('-p', '--presence', nargs='+', dest='presence')
-        parser.add_argument('-n', '--nick', nargs='?', const=None, dest='nick')
-
+        parser.add_argument('-n', '--nick', nargs='?', const='None', dest='nick')
         args = parser.parse_args(shlex.split(args))
         if args.presence:
             if type_dict.get(args.presence[0]) is None:
                 await self.bot.change_presence(status=ctx.me.status)
+                ptype = 'None'
             else:
                 await self.bot.change_presence(
                     status=ctx.me.status,
                     activity=discord.Activity(
-                        type=type_dict[args.presence.pop(0)], name=' '.join(args.presence)))
+                        type=type_dict[ptype := args.presence.pop(0)], name=' '.join(args.presence)))
+            updated_list.append(f'Changed presence to {ptype} {" ".join(args.presence)}')
         if args.nick:
-            await ctx.me.edit(nick=args.nick)
+            await ctx.me.edit(nick=args.nick if args.nick != 'None' else None)
+            updated_list.append(f'Changed nickname to {args.nick}')
         if args.status:
-            await self.bot.change_presence(status=status_dict[args.status.lower()], activity=ctx.me.activity)
-        await ctx.message.add_reaction(ctx.tick(True))
+            await self.bot.change_presence(status=status_dict[new_status := args.status.lower()], activity=ctx.me.activity)
+            updated_list.append(f'Changed status to {conf["emoji_dict"][new_status]}')
+        await ctx.send(embed=discord.Embed(title='Edited bot', description='\n'.join(updated_list), color=discord.Color.main))
 
     @commands.group(invoke_without_command=True)
     @commands.is_owner()
