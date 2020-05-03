@@ -139,7 +139,7 @@ class Dev(commands.Cog):
                 ret = await func()
         except Exception:
             value = stdout.getvalue()
-            await ctx.safe_send(f'```py\n{value}{traceback.format_exc()}\n```')
+            sent = await ctx.safe_send(f'```py\n{value}{traceback.format_exc()}\n```')
         else:
             value = stdout.getvalue()
             try:
@@ -148,15 +148,20 @@ class Dev(commands.Cog):
                 pass
             if ret is None:
                 if value:
-                    await ctx.safe_send(f'{value}')
+                    sent = await ctx.safe_send(f'{value}')
             else:
                 self._last_result = ret 
                 if isinstance(ret, discord.Embed):
-                    await ctx.send(embed=ret)
+                    sent = await ctx.send(embed=ret)
                 elif isinstance(ret, discord.File):
-                    await ctx.send(file=ret)
+                    sent = await ctx.send(file=ret)
                 else:
-                    await ctx.safe_send(f'{value}{ret}')
+                    sent = await ctx.safe_send(f'{value}{ret}')
+        await sent.add_reaction(ctx.tick(False))
+        reaction, user = await self.bot.wait_for('reaction_add',
+                                                 check = lambda r, u: r.message.id == sent.id and u.id == ctx.author.id)
+        if str(reaction.emoji) == str(ctx.tick(False)):
+            await reaction.message.delete()
 
     @commands.command()
     @commands.is_owner()
