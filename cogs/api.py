@@ -350,7 +350,10 @@ class Api(commands.Cog):
 
         def _gather():
             for cat, grp in itertools.groupby([*js], lambda c: c.get('storeCategory')):
-                yield f'**__{cat}__**\n', '\n'.join(sorted([f"[`{g.get('name')}`]({g.get('imageUrl')}) - {g.get('vBucks')}" for g in [*grp]]))
+                yield f'**__{cat}__**\n', '\n'.join(
+                    sorted(
+                        [f"{g.get('vBucks')} <:vbuck:706533872460103731> [`{g.get('name')}`]({g.get('imageUrl')})"
+                         for g in [*grp]]))
         await ctx.quick_menu(
             [*_gather()],
             1,
