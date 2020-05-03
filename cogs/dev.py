@@ -125,6 +125,7 @@ class Dev(commands.Cog):
 
         body = cleanup_code(self, body)
         stdout = io.StringIO()
+        sent = None
 
         to_compile = f'async def func():\n{textwrap.indent(body, "  ")}'
 
@@ -157,11 +158,18 @@ class Dev(commands.Cog):
                     sent = await ctx.send(file=ret)
                 else:
                     sent = await ctx.safe_send(f'{value}{ret}')
-        await sent.add_reaction(ctx.tick(False))
-        reaction, user = await self.bot.wait_for('reaction_add',
-                                                 check = lambda r, u: r.message.id == sent.id and u.id == ctx.author.id)
-        if str(reaction.emoji) == str(ctx.tick(False)):
-            await reaction.message.delete()
+        if sent:
+            await sent.add_reaction(ctx.tick(False))
+            try:
+                reaction, user = await self.bot.wait_for(
+                    'reaction_add',
+                    check=lambda r, u: r.message.id == sent.id and u.id == ctx.author.id,
+                    timeout=5)
+            except asyncio.TimeoutError:
+                await sent.remove_reaction(ctx.tick(False), ctx.me)
+            else:
+                if str(reaction.emoji) == str(ctx.tick(False)):
+                    await reaction.message.delete()
 
     @commands.command()
     @commands.is_owner()
