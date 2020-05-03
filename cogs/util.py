@@ -100,10 +100,10 @@ class Util(commands.Cog):
             permissions = discord.Permissions(1878523719)
         invite_url = discord.utils.oauth_url(self.bot.user.id, permissions)
         embed = discord.Embed(
-            title='Invite me to your server with this link!',
-            description=f'{invite_url}\n**Permissions Value** {permissions.value}',
+            title='Invite me to your server!',
+            description=f'[`Invite Link`]({invite_url})\n**Permissions Value** {permissions.value}',
             color=discord.Color.main
-        ).set_image(url=self.bot.user.avatar_url_as(static_format='png'))
+        ).set_thumbnail(url=self.bot.user.avatar_url_as(static_format='png'))
         await ctx.send(embed=embed)
 
     @commands.command(aliases=['av'])
