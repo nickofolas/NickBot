@@ -383,10 +383,8 @@ class Api(commands.Cog):
         checked_recents = ['matches', 'kills', 'top1', 'top5', 'playersOutlived', 'minutesPlayed']
         e2 = max(checked_recents, key=lambda x: len(x))
         if rstats := js.get('recentMatches'):
-            while len(recents) < 500:
-                for i in rstats:
-                    for c in checked_recents:
-                        recents += f"{c.title().ljust(len(e2))} {i.get(c)}\n"
+            for c in checked_recents:
+                recents += f"{c.title().ljust(len(e2))} {rstats[0].get(c)}\n"
             embed.add_field(
                 name='Recents',
                 value=f'```{recents}```'
