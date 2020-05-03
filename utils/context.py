@@ -64,8 +64,8 @@ class Context(commands.Context):
             tabs.append(' \u200b')
         return ''.join(tabs)
 
-    async def quick_menu(self, entries, per_page, **kwargs):
-        source = pages.BareBonesMenu(entries, per_page=per_page)
+    async def quick_menu(self, entries, per_page, *, template: discord.Embed = None, **kwargs):
+        source = pages.BareBonesMenu(entries, per_page=per_page, embed=template)
         menu = pages.CSMenu(source, **kwargs)
         await menu.start(self)
 

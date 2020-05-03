@@ -1,4 +1,5 @@
 import asyncio
+import copy
 
 import discord
 from discord.ext.commands import Paginator as CommandPaginator
@@ -301,13 +302,17 @@ class GoogleMenu(menus.ListPageSource):
 
 
 class BareBonesMenu(menus.ListPageSource):
+    def __init__(self, entr, per_page, *, embed: discord.Embed = None):
+        super().__init__(entr, per_page=per_page)
+        self.embed = embed
+
     async def format_page(self, menu, page):
-        if isinstance(page, str):
-            return discord.Embed(
-                title='', description=''.join(page), color=discord.Color.main)
+        if self.embed:
+            embed = copy.copy(self.embed)
+            embed.description = '\n'.join(page)
+            return embed
         else:
-            return discord.Embed(
-                title='', description='\n'.join(page), color=discord.Color.main)
+            return discord.Embed(description='\n'.join(page), color=discord.Color.main)
 
 
 class ShellMenu(menus.ListPageSource):

@@ -1,3 +1,4 @@
+import itertools
 import random
 import os
 import time
@@ -335,6 +336,21 @@ class Api(commands.Cog):
 
     def cog_unload(self):
         self.bot.loop.create_task(self.bot.cleverbot.close())
+
+    @commands.group()
+    async def fortnite(self, ctx):
+        pass
+
+    @fortnite.command()
+    async def itemshop(self, ctx):
+        async with self.bot.session.get(
+                'https://api.fortnitetracker.com/v1/store', headers={'TRN-Api-Key': os.getenv('FORTNITE_KEY')}) as resp:
+            js = await resp.json()
+
+        def _gather():
+            for cat, grp in itertools.groupby([*js], lambda c: c.get('storeCategory')):
+                yield f'**__{cat}__**', '\n'.join(sorted([g.get('name') for g in [*grp]]))
+        await ctx.quick_menu([*_gather()], 1)
 
 
 def setup(bot):
