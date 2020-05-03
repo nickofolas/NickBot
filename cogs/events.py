@@ -12,11 +12,6 @@ from utils.config import conf
 ignored_cmds = re.compile(r'\.+')
 
 
-def round_up(n, decimals=0):
-    multiplier = 10**decimals
-    return math.ceil(n * multiplier) / multiplier
-
-
 # noinspection PyCallingNonCallable
 class Events(commands.Cog):
     """Contains the listeners for the bot"""

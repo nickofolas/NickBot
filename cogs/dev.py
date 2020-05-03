@@ -258,7 +258,7 @@ class Dev(commands.Cog):
         }
         type_dict = {
             'playing': 0,
-            'streaming': 1,
+            'streaming': 'streaming',
             'listening': 2,
             'watching': 3,
             'none': None
@@ -272,6 +272,9 @@ class Dev(commands.Cog):
         if args.presence:
             if type_dict.get(args.presence[0]) is None:
                 await self.bot.change_presence(status=ctx.me.status)
+            elif type_dict.get(args.presence.pop(0)) == 'streaming':
+                await self.bot.change_presence(activity=discord.Streaming(
+                    name=' '.join(args.presence), url='https://www.twitch.tv/#'))
             else:
                 await self.bot.change_presence(
                     status=ctx.me.status,
@@ -284,7 +287,11 @@ class Dev(commands.Cog):
         if args.status:
             await self.bot.change_presence(status=status_dict[args.status.lower()], activity=ctx.me.activity)
             updated_list.append(f'Changed status to {conf["emoji_dict"][args.status.lower()]}')
-        await ctx.send(embed=discord.Embed(title='Edited bot', description='\n'.join(updated_list), color=discord.Color.main))
+        await ctx.send(
+            embed=discord.Embed(
+                title='Edited bot', description='\n'.join(updated_list), color=discord.Color.main),
+            delete_after=7.5
+        )
 
     @commands.group(invoke_without_command=True)
     @commands.is_owner()
