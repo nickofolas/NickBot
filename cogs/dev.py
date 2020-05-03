@@ -272,7 +272,7 @@ class Dev(commands.Cog):
                     status=ctx.me.status,
                     activity=discord.Activity(
                         type=type_dict[args.presence.pop(0)], name=' '.join(args.presence)))
-            updated_list.append(f'Changed presence to {str(ctx.me.activity)}')
+            updated_list.append(f'Changed presence to {ctx.me.activity.name}')
         if args.nick:
             await ctx.me.edit(nick=args.nick if args.nick != 'None' else None)
             updated_list.append(f'Changed nickname to {args.nick}')
