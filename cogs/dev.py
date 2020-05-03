@@ -150,8 +150,13 @@ class Dev(commands.Cog):
                 if value:
                     await ctx.safe_send(f'{value}')
             else:
-                self._last_result = ret
-                await ctx.safe_send(f'{value}{ret}')
+                self._last_result = ret 
+                if isinstance(ret, discord.Embed):
+                    await ctx.send(embed=ret)
+                elif isinstance(ret, discord.File):
+                    await ctx.send(file=ret)
+                else:
+                    await ctx.safe_send(f'{value}{ret}')
 
     @commands.command()
     @commands.is_owner()
