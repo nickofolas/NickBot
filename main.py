@@ -92,10 +92,7 @@ class NeoBot(commands.Bot):
         bucket = self._cd.get_bucket(ctx.message)
         retry_after = bucket.update_rate_limit()
         if retry_after:
-            # you're rate limited
-            # helpful message here
-            pass
-        # you're not rate limited
+            raise commands.CommandOnCooldown(bucket, retry_after)
 
     async def close(self):
         await self.session.close()
