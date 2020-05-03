@@ -1,3 +1,4 @@
+import datetime
 import itertools
 import random
 import os
@@ -354,7 +355,7 @@ class Api(commands.Cog):
             [*_gather()],
             1,
             template=discord.Embed(color=discord.Color.main).set_author(
-                name='', icon_url='https://i.imgur.com/XMTZAQT.jpg'), delete_message_after=True)
+                name=str(datetime.date.today()), icon_url='https://i.imgur.com/XMTZAQT.jpg'), delete_message_after=True)
 
 
 def setup(bot):
