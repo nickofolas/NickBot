@@ -360,6 +360,24 @@ class Api(commands.Cog):
             template=discord.Embed(color=discord.Color.main).set_author(
                 name=str(datetime.date.today()), icon_url='https://i.imgur.com/XMTZAQT.jpg'), delete_message_after=True)
 
+    @fortnite.command(name='stats')
+    async def _fnstats(self, ctx, platform, *, epic_name):
+        async with self.bot.session.get(
+                f'https://api.fortnitetracker.com/v1/profile/{platform}/{epic_name}',
+                headers={'TRN-Api-Key': os.getenv('FORTNITE_KEY')}) as resp:
+            js = await resp.json()
+        embed = discord.Embed(color=discord.Color.main).set_author(
+                name=js.get('epicUserHandle'), icon_url='https://i.imgur.com/XMTZAQT.jpg')
+        stats = str()
+        for i in js.get('lifeTimeStats'):
+            if i.get('key') == 'Wins':
+                stats += f"**Lifetime Wins** {i.get('value')}\n"
+        embed.add_field(
+            name='Stats',
+            value=stats
+        )
+        await ctx.send(embed=embed)
+
 
 def setup(bot):
     bot.add_cog(Api(bot))
