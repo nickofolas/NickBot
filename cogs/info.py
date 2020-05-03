@@ -56,6 +56,8 @@ async def member_info(self, ctx, target, act, e):
             act.append(f'{emoji} {a.name or ""}')
         elif isinstance(a, discord.Game):
             act.append(f'Playing **{a.name}**')
+        elif isinstance(a, discord.Streaming):
+            act.append(f'Streaming **{a.name}**')
         elif isinstance(a, discord.activity.Activity):
             act.append(f'{activity_type_mapping.get(a.type)} **{a.name}**')
     acts = '\n'.join(sorted(act))
