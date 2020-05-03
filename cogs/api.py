@@ -376,20 +376,20 @@ class Api(commands.Cog):
             for i in lstats:
                 if i.get('key') in checked_status:
                     stats += f"{i.get('key').ljust(len(e))} {i.get('value')}\n"
-        embed.add_field(
-            name='Stats',
-            value=f'```{stats}```'
-        )
+            embed.add_field(
+                name='Stats',
+                value=f'```{stats}```'
+            )
         checked_recents = ['matches', 'kills', 'top1', 'top5', 'playersOutlived', 'minutesPlayed']
         e2 = max(checked_recents, key=lambda x: len(x))
         if rstats := js.get('recentMatches'):
             for i in rstats:
                 for c in checked_recents:
                     recents += f"{c.title().ljust(len(e2))} {i.get(c)}\n"
-        embed.add_field(
-            name='Recents',
-            value=f'```{recents}```'
-        )
+            embed.add_field(
+                name='Recents',
+                value=f'```{recents}```'
+            )
         await ctx.send(embed=embed)
 
 
