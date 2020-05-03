@@ -237,6 +237,13 @@ class Dev(commands.Cog):
     @commands.command(name='edit')
     @commands.is_owner()
     async def args_edit(self, ctx, *, args: str):
+        """
+        Edit the bot's aspects using a command-line syntax.
+        Available arguments:
+            -p --presence: edits the bot's presence (playing, listening, streaming, watching, none)
+            -n --nick: edits the bot's nickname for the current guild
+            -s --status: edits the bot's status (dnd, idle, online, offline)
+        """
         status_dict = {
             'online': discord.Status.online,
             'offline': discord.Status.offline,
@@ -254,7 +261,7 @@ class Dev(commands.Cog):
         parser = Arguments(add_help=False, allow_abbrev=False)
         parser.add_argument('-s', '--status', nargs='?', const='online', dest='status')
         parser.add_argument('-p', '--presence', nargs='+', dest='presence')
-        parser.add_argument('-n', '--nick', nargs='+', dest='nick')
+        parser.add_argument('-n', '--nick', nargs='*', dest='nick')
 
         args = parser.parse_args(shlex.split(args))
         if args.presence:
@@ -269,6 +276,7 @@ class Dev(commands.Cog):
             await ctx.me.edit(nick=' '.join(args.nick) if args.nick != [] else None)
         if args.status:
             await self.bot.change_presence(status=status_dict[args.status.lower()], activity=ctx.me.activity)
+        await ctx.message.add_reaction(ctx.tick(True))
 
     @commands.group(invoke_without_command=True)
     @commands.is_owner()
