@@ -119,6 +119,8 @@ class Info(commands.Cog):
             bot_tag = '<:verified1:704885163003478069><:verified2:704885180162244749> ' if 'verified_bot' in \
                 [*flag_vals] else '<:bot:699991045886312488> '
         tagline += f'{bot_tag} '
+        if 'system' in [*flag_vals]:
+            tagline += f'<:system1:706565390712701019><:system2:706565410463678485> '
         if ctx.guild and isinstance(target, discord.Member):
             if target == ctx.guild.owner:
                 tagline += '<:serverowner:706224911500181546> '
