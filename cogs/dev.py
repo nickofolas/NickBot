@@ -261,7 +261,7 @@ class Dev(commands.Cog):
         parser = Arguments(add_help=False, allow_abbrev=False)
         parser.add_argument('-s', '--status', nargs='?', const='online', dest='status')
         parser.add_argument('-p', '--presence', nargs='+', dest='presence')
-        parser.add_argument('-n', '--nick', nargs='*', dest='nick')
+        parser.add_argument('-n', '--nick', nargs='?', const=None, dest='nick')
 
         args = parser.parse_args(shlex.split(args))
         if args.presence:
@@ -273,7 +273,7 @@ class Dev(commands.Cog):
                     activity=discord.Activity(
                         type=type_dict[args.presence.pop(0)], name=' '.join(args.presence)))
         if args.nick:
-            await ctx.me.edit(nick=' '.join(args.nick) if args.nick != [] else None)
+            await ctx.me.edit(nick=args.nick)
         if args.status:
             await self.bot.change_presence(status=status_dict[args.status.lower()], activity=ctx.me.activity)
         await ctx.message.add_reaction(ctx.tick(True))
