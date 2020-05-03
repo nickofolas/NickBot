@@ -267,13 +267,12 @@ class Dev(commands.Cog):
         if args.presence:
             if type_dict.get(args.presence[0]) is None:
                 await self.bot.change_presence(status=ctx.me.status)
-                ptype = 'None'
             else:
                 await self.bot.change_presence(
                     status=ctx.me.status,
                     activity=discord.Activity(
-                        type=type_dict[ptype := args.presence.pop(0)], name=' '.join(args.presence)))
-            updated_list.append(f'Changed presence to {ptype} {" ".join(args.presence)}')
+                        type=type_dict[args.presence.pop(0)], name=' '.join(args.presence)))
+            updated_list.append(f'Changed presence to {ctx.me.activity}')
         if args.nick:
             await ctx.me.edit(nick=args.nick if args.nick != 'None' else None)
             updated_list.append(f'Changed nickname to {args.nick}')
