@@ -386,7 +386,7 @@ class Api(commands.Cog):
                 recents += f"{i.get('key').ljust(len(e))} {i.get('value')}\n"
         embed.add_field(
             name='Recents',
-            value=f'```{stats}```'
+            value=f'```{recents}```'
         )
         await ctx.send(embed=embed)
 
