@@ -277,8 +277,8 @@ class Dev(commands.Cog):
             await ctx.me.edit(nick=args.nick if args.nick != 'None' else None)
             updated_list.append(f'Changed nickname to {args.nick}')
         if args.status:
-            await self.bot.change_presence(status=status_dict[new_status := args.status.lower()], activity=ctx.me.activity)
-            updated_list.append(f'Changed status to {conf["emoji_dict"][new_status]}')
+            await self.bot.change_presence(status=status_dict[args.status.lower()], activity=ctx.me.activity)
+            updated_list.append(f'Changed status to {conf["emoji_dict"][args.status.lower()]}')
         await ctx.send(embed=discord.Embed(title='Edited bot', description='\n'.join(updated_list), color=discord.Color.main))
 
     @commands.group(invoke_without_command=True)
