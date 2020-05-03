@@ -1,4 +1,5 @@
 import re
+from contextlib import suppress
 
 from discord.ext import commands
 import discord
@@ -71,14 +72,15 @@ class Context(commands.Context):
 
     @staticmethod
     async def propagate_to_eh(bot, ctx, error):
-        await ctx.message.add_reaction('<:blue_warn:703822784660373564>')
-        reaction, user = await bot.wait_for(
-            'reaction_add',
-            check=lambda r, u: r.message.id == ctx.message.id
-            and u.id in [ctx.author.id, 680835476034551925]
-        )
-        if str(reaction.emoji) == '<:blue_warn:703822784660373564>':
-            return await ctx.send(error)
+        with suppress(Exception):
+            await ctx.message.add_reaction('<:blue_warn:703822784660373564>')
+            reaction, user = await bot.wait_for(
+                'reaction_add',
+                check=lambda r, u: r.message.id == ctx.message.id
+                and u.id in [ctx.author.id, 680835476034551925]
+            )
+            if str(reaction.emoji) == '<:blue_warn:703822784660373564>':
+                return await ctx.send(error)
 
     class ExHandler:
         """

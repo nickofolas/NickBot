@@ -59,7 +59,6 @@ class NeoBot(commands.Bot):
             ac.Emotion.fear, ac.Emotion.joy, ac.Emotion.anger])
         self.all_cogs = list()
         self.persistent_status = False
-        self._cd = commands.CooldownMapping.from_cooldown(1.0, 1.0, commands.BucketType.user)
 
         for filename in os.listdir('./cogs'):
             if filename.endswith('.py'):
@@ -87,12 +86,6 @@ class NeoBot(commands.Bot):
             colour=discord.Color.main).set_thumbnail(url=self.user.avatar_url_as(static_format='png'))
         embed.timestamp = datetime.utcnow()
         await user.send(embed=embed)
-
-    async def bot_check(self, ctx):
-        bucket = self._cd.get_bucket(ctx.message)
-        retry_after = bucket.update_rate_limit()
-        if retry_after:
-            raise commands.CommandOnCooldown(bucket, retry_after)
 
     async def close(self):
         await self.session.close()
