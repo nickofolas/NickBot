@@ -258,11 +258,14 @@ class Dev(commands.Cog):
 
         args = parser.parse_args(shlex.split(args))
         if args.status:
-            await self.bot.change_presence(status=status_dict[args.status[0].lower()])
+            await self.bot.change_presence(status=status_dict[args.status.lower()])
         if args.presence:
-            await self.bot.change_presence(
-                activity=discord.Activity(
-                    type=type_dict[args.presence.pop(0)], name=' '.join(args.presence)))
+            if type_dict.get(args.presence[0]) is None:
+                await self.bot.change_presence(activity=discord.Activity())
+            else:
+                await self.bot.change_presence(
+                    activity=discord.Activity(
+                        type=type_dict[args.presence.pop(0)], name=' '.join(args.presence)))
         if args.nick:
             await ctx.me.edit(nick=' '.join(args.nick) if args.nick != [] else None)
 
