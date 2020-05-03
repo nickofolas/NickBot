@@ -35,14 +35,12 @@ activity_type_mapping = {
 
 
 async def member_info(self, ctx, target, act, e):
+    status_icon = conf['emoji_dict'][str(target.status)]
     multi_status = [
         e[0] for e in [
             ('Mobile', target.mobile_status),
             ('Desktop', target.desktop_status),
             ('Web', target.web_status)] if str(e[1]) != 'offline']
-    status_display = f"{conf['emoji_dict'][str(target.status)]} " \
-        f"{str(target.status).title().replace('Dnd', 'DND')}"\
-        f" {('(' + ', '.join(multi_status) + ')' if multi_status else '')}"
     for a in target.activities:
         if isinstance(a, discord.Spotify):
             act.append('Listening to **Spotify**')
@@ -58,6 +56,7 @@ async def member_info(self, ctx, target, act, e):
             act.append(f'Playing **{a.name}**')
         elif isinstance(a, discord.Streaming):
             act.append(f'Streaming **{a.name}**')
+            status_icon = '<:streaming:706635761000251442>'
         elif isinstance(a, discord.activity.Activity):
             act.append(f'{activity_type_mapping.get(a.type)} **{a.name}**')
     acts = '\n'.join(sorted(act))
@@ -67,6 +66,9 @@ async def member_info(self, ctx, target, act, e):
     for count, val in enumerate(e, 1):
         if val == target:
             join_pos = f'{count:,}'
+    status_display = f"{status_icon} " \
+                     f"{str(target.status).title().replace('Dnd', 'DND')}" \
+                     f" {('(' + ', '.join(multi_status) + ')' if multi_status else '')}"
     return status_display, acts, act, join_pos
 
 
