@@ -370,9 +370,10 @@ class Api(commands.Cog):
                 name=js.get('epicUserHandle'), icon_url='https://i.imgur.com/XMTZAQT.jpg')
         stats = str()
         checked_status = ['Wins', 'K/d', 'Matches Played', 'Kills', 'Top 5s', 'Win%']
+        e = max(checked_status, key=lambda x: len(x))
         for i in js.get('lifeTimeStats'):
             if i.get('key') in checked_status:
-                stats += f"{i.get('value')} **{i.get('key')}**\n"
+                stats += f"{i.get('value').ljust(len(e))} {i.get('key')}\n"
         embed.add_field(
             name='Stats',
             value=f'```{stats}```'
