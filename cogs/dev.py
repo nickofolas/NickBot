@@ -8,6 +8,8 @@ import os
 import copy
 from typing import Union
 import re
+import argparse
+import shlex
 
 import discord
 from discord.ext import commands
@@ -19,6 +21,11 @@ from utils.checks import is_owner_or_administrator
 from utils.paginator import ShellMenu, CSMenu
 from utils.helpers import return_lang_hl, pluralize
 import utils
+
+
+class Arguments(argparse.ArgumentParser):
+    def error(self, message):
+        raise RuntimeError(message)
 
 
 async def do_shell(args):
@@ -226,6 +233,38 @@ class Dev(commands.Cog):
         source = ShellMenu(entries, code_lang='sh', per_page=1985)
         menu = CSMenu(source, delete_message_after=True)
         await menu.start(ctx)
+
+    @commands.command(name='cedit')
+    @commands.is_owner()
+    async def args_edit(self, ctx, *, args: str):
+        status_dict = {
+            'online': discord.Status.online,
+            'offline': discord.Status.offline,
+            'dnd': discord.Status.dnd,
+            'idle': discord.Status.idle
+        }
+        type_dict = {
+            'playing': 0,
+            'streaming': 1,
+            'listening': 2,
+            'watching': 3,
+            'none': None
+        }
+
+        parser = Arguments(add_help=False, allow_abbrev=False)
+        parser.add_argument('--status', nargs='+')
+        parser.add_argument('--presence', nargs='+')
+        parser.add_argument('--nick', nargs='+')
+
+        args = parser.parse_args(shlex.split(args))
+        if args.status:
+            await self.bot.change_presence(status=status_dict[args.status.lower()])
+        if args.presence:
+            await self.bot.change_presence(
+                activity=discord.Activity(
+                    type=type_dict[args.presence.pop(0)], name=' '.join(args.status)))
+        if args.nick:
+            await ctx.me.edit(nick=' '.join(args.nick) if args.nick != [] else None)
 
     @commands.group(name='edit')
     @commands.is_owner()
