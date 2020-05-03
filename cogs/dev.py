@@ -272,7 +272,8 @@ class Dev(commands.Cog):
         if args.presence:
             if type_dict.get(args.presence[0]) is None:
                 await self.bot.change_presence(status=ctx.me.status)
-            elif type_dict.get(args.presence.pop(0)) == 'streaming':
+            elif type_dict.get(args.presence[0]) == 'streaming':
+                args.presence.pop(0)
                 await self.bot.change_presence(activity=discord.Streaming(
                     name=' '.join(args.presence), url='https://www.twitch.tv/#'))
             else:
