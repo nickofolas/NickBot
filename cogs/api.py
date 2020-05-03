@@ -341,7 +341,7 @@ class Api(commands.Cog):
     async def fortnite(self, ctx):
         pass
 
-    @fortnite.command()
+    @fortnite.command(aliases='shop')
     async def itemshop(self, ctx):
         async with self.bot.session.get(
                 'https://api.fortnitetracker.com/v1/store', headers={'TRN-Api-Key': os.getenv('FORTNITE_KEY')}) as resp:
@@ -349,8 +349,12 @@ class Api(commands.Cog):
 
         def _gather():
             for cat, grp in itertools.groupby([*js], lambda c: c.get('storeCategory')):
-                yield f'**__{cat}__**', '\n'.join(sorted([g.get('name') for g in [*grp]]))
-        await ctx.quick_menu([*_gather()], 1)
+                yield f'**__{cat}__**', '\n'.join(sorted([f"[`{g.get('name')}`]({g.get('imageUrl')}) - {g.get('vBucks')}" for g in [*grp]]))
+        await ctx.quick_menu(
+            [*_gather()],
+            1,
+            template=discord.Embed(color=discord.Color.main).set_author(
+                name='', icon_url='https://i.imgur.com/XMTZAQT.jpg'), delete_message_after=True)
 
 
 def setup(bot):
