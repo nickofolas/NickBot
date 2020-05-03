@@ -373,7 +373,7 @@ class Api(commands.Cog):
         e = max(checked_status, key=lambda x: len(x))
         for i in js.get('lifeTimeStats'):
             if i.get('key') in checked_status:
-                stats += f"{i.get('key')} {i.get('value').ljust(len(e))}\n"
+                stats += f"{i.get('key').ljust(len(e))} {i.get('value')}\n"
         embed.add_field(
             name='Stats',
             value=f'```{stats}```'
