@@ -252,14 +252,14 @@ class Dev(commands.Cog):
         }
 
         parser = Arguments(add_help=False, allow_abbrev=False)
-        parser.add_argument('--status', nargs='?', const='online')
-        parser.add_argument('--presence', nargs='+')
-        parser.add_argument('--nick', nargs='+')
+        parser.add_argument('-s', '--status', nargs='?', const='online', dest='status')
+        parser.add_argument('-p', '--presence', nargs='+', dest='presence')
+        parser.add_argument('-n', '--nick', nargs='+', dest='nick')
 
         args = parser.parse_args(shlex.split(args))
         if args.presence:
             if type_dict.get(args.presence[0]) is None:
-                await self.bot.change_presence(status=ctx.me.status, activity=discord.Activity())
+                await self.bot.change_presence(status=ctx.me.status)
             else:
                 await self.bot.change_presence(
                     status=ctx.me.status,
