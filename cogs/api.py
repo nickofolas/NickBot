@@ -369,6 +369,7 @@ class Api(commands.Cog):
         embed = discord.Embed(color=discord.Color.main).set_author(
                 name=js.get('epicUserHandle'), icon_url='https://i.imgur.com/XMTZAQT.jpg')
         stats = str()
+        recents = str()
         checked_status = ['Wins', 'K/d', 'Matches Played', 'Kills', 'Top 5s', 'Win%']
         e = max(checked_status, key=lambda x: len(x))
         for i in js.get('lifeTimeStats'):
@@ -376,6 +377,15 @@ class Api(commands.Cog):
                 stats += f"{i.get('key').ljust(len(e))} {i.get('value')}\n"
         embed.add_field(
             name='Stats',
+            value=f'```{stats}```'
+        )
+        checked_recents = ['matches', 'kills', 'top1', 'top5', 'playersOutlived', 'minutesPlayed']
+        e2 = max(checked_recents, key=lambda x: len(x))
+        for i in js.get('recentMatches'):
+            if i.get('key') in checked_status:
+                recents += f"{i.get('key').ljust(len(e))} {i.get('value')}\n"
+        embed.add_field(
+            name='Recents',
             value=f'```{stats}```'
         )
         await ctx.send(embed=embed)
