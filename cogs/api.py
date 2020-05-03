@@ -353,7 +353,7 @@ class Api(commands.Cog):
                 yield f'<:vbuck:706533872460103731> **__{cat}__**', '\n'.join(
                     sorted(
                         [f"`{g.get('vBucks'):<4}` [`{g.get('name')}`]({g.get('imageUrl')})"
-                         for g in [*grp]], key=lambda p: int(g.get('vBucks') for g in [*grp])))
+                         for g in [*grp]]))
         await ctx.quick_menu(
             [*_gather()],
             1,
