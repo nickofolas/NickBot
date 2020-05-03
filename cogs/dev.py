@@ -164,7 +164,7 @@ class Dev(commands.Cog):
                 reaction, user = await self.bot.wait_for(
                     'reaction_add',
                     check=lambda r, u: r.message.id == sent.id and u.id == ctx.author.id,
-                    timeout=5)
+                    timeout=30)
             except asyncio.TimeoutError:
                 await sent.remove_reaction(ctx.tick(False), ctx.me)
             else:
