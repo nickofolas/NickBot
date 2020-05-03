@@ -369,9 +369,10 @@ class Api(commands.Cog):
         embed = discord.Embed(color=discord.Color.main).set_author(
                 name=js.get('epicUserHandle'), icon_url='https://i.imgur.com/XMTZAQT.jpg')
         stats = str()
+        checked_status = ['Wins', 'K/d', 'Matches Played']
         for i in js.get('lifeTimeStats'):
-            if i.get('key') == 'Wins':
-                stats += f"**Lifetime Wins** {i.get('value')}\n"
+            if i.get('key') in checked_status:
+                stats += f"**{i.get('key')}** {i.get('value')}\n"
         embed.add_field(
             name='Stats',
             value=stats
