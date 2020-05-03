@@ -307,12 +307,20 @@ class BareBonesMenu(menus.ListPageSource):
         self.embed = embed
 
     async def format_page(self, menu, page):
-        if self.embed:
-            embed = copy.copy(self.embed)
-            embed.description = '\n'.join(page)
-            return embed
+        if isinstance(page, str):
+            if self.embed:
+                embed = copy.copy(self.embed)
+                embed.description = ''.join(page)
+                return embed
+            else:
+                return discord.Embed(description=''.join(page), color=discord.Color.main)
         else:
-            return discord.Embed(description='\n'.join(page), color=discord.Color.main)
+            if self.embed:
+                embed = copy.copy(self.embed)
+                embed.description = '\n'.join(page)
+                return embed
+            else:
+                return discord.Embed(description='\n'.join(page), color=discord.Color.main)
 
 
 class ShellMenu(menus.ListPageSource):
