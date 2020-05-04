@@ -152,7 +152,7 @@ class Api(commands.Cog):
         alt_disp_name = alt_name if alt_name != usr['name'] else ''
         embed = discord.Embed(
             title=alt_disp_name,
-            description=textwrap.fill(' '.join(set(trophy_list)), 45),
+            description=textwrap.fill(' '.join(set(trophy_list)), 225),
             color=discord.Color.main).set_author(
                 name=usr['subreddit']['display_name_prefixed'],
                 url=f'https://www.reddit.com/user/{user}',
