@@ -213,12 +213,11 @@ class Data(commands.Cog):
         """View a tag with the specified name"""
         async with ctx.ExHandler(propagate=(self.bot, ctx), message='Tag not found'):
             async with asq.connect('./database.db') as db:
-                sel = await db.execute('SELECT tagbody FROM tags WHERE tagname=$1', (tag_name.lower(),))
-                res = await sel.fetchone()
-                await ctx.safe_send(res[0])
-                await db.execute('UPDATE tags SET times_used=times_used+1, usage_epoch=$1 WHERE tagname=$2',
-                                 (time.time(), tag_name))
-                await db.commit()
+                rec = await self.bot.conn.execute('SELECT tagbody FROM tags WHERE tagname=$1', tag_name.lower())
+                await ctx.safe_send(rec[0]['tagbody'])
+                await self.bot.conn.execute(
+                    'UPDATE tags SET times_used=times_used+1, usage_epoch=$1 WHERE tagname=$2',
+                    datetime.utcnow(), tag_name)
 
     @tag.command(name='create')
     async def create_tag(self, ctx, name: str = None, *, body: str = None):
@@ -235,58 +234,49 @@ class Data(commands.Cog):
             are **not** required
         If desired, images can also be appended to the tag's content"""
         msg = ctx.message
-        async with asq.connect('./database.db') as db:
-            if name is None and body is None:
-                async with ctx.ExHandler(
-                        propagate=(self.bot, ctx),
-                        exception_type=asyncio.TimeoutError,
-                        message='Prompt timed out!'):
-                    await ctx.send('What would you like the tag to be named?')
-                    msg = await self.bot.wait_for(
-                        'message',
-                        check=lambda m: m.author.id == ctx.author.id,
-                        timeout=60.0)
-                    name = msg.content
-                    await ctx.send(f'The tag is named **{name}**. What is its content?')
-                    msg = await self.bot.wait_for(
-                        'message',
-                        check=lambda m: m.author.id == ctx.author.id,
-                        timeout=300.0)
-                    body = msg.content
-            if name in ('create', 'delete', 'del', 'info', 'edit', 'list'):
-                raise commands.CommandError('This name cannot be used')
-            res = await db.execute('SELECT EXISTS(SELECT 1 FROM tags WHERE tagname=$1)', (name.lower(),))
-            if attach := msg.attachments:
-                body = (body + ' ' + attach[0].url) if body else attach[0].url
-            if (await res.fetchone())[0] >= 1:
-                raise commands.CommandError('A tag with this name already exists!')
-            await db.execute('INSERT INTO tags (owner_id, tagname, tagbody, usage_epoch) VALUES ($1, $2, $3, $4)',
-                             (ctx.author.id, name.lower(), body, time.time()))
-            await db.commit()
+        if name is None and body is None:
+            async with ctx.ExHandler(
+                    propagate=(self.bot, ctx),
+                    exception_type=asyncio.TimeoutError,
+                    message='Prompt timed out!'):
+                await ctx.send('What would you like the tag to be named?')
+                msg = await self.bot.wait_for(
+                    'message',
+                    check=lambda m: m.author.id == ctx.author.id,
+                    timeout=60.0)
+                name = msg.content
+                await ctx.send(f'The tag is named **{name}**. What is its content?')
+                msg = await self.bot.wait_for(
+                    'message',
+                    check=lambda m: m.author.id == ctx.author.id,
+                    timeout=300.0)
+                body = msg.content
+        if name in ('create', 'delete', 'del', 'info', 'edit', 'list'):
+            raise commands.CommandError('This name cannot be used')
+        if attach := msg.attachments:
+            body = (body + ' ' + attach[0].url) if body else attach[0].url
+        await self.bot.conn.execute(
+            'INSERT INTO tags (owner_id, tagname, tagbody, usage_epoch) VALUES ($1, $2, $3, $4)',
+            ctx.author.id, name.lower(), body, datetime.utcnow())
         await ctx.send('Tag successfully created')
 
     @tag.command(name='delete', aliases=['del'])
     async def delete_tag(self, ctx, *, tag_name: str):
         """Delete an owned tag"""
-        async with asq.connect('./database.db') as db:
-            res = await db.execute('DELETE FROM tags WHERE owner_id=$1 AND tagname=$2',
-                                   (ctx.author.id, tag_name.lower()))
-            if res.rowcount < 1:
-                if ctx.author.id == self.bot.owner_id:
-                    await db.execute('DELETE FROM tags WHERE tagname=$2', (tag_name.lower(),))
-                else:
-                    raise commands.CommandError("Couldn't find this tag in your list of tags!")
-            await db.commit()
+        await self.bot.conn.execute(
+            'DELETE FROM tags WHERE owner_id=$1 AND tagname=$2',
+            ctx.author.id, tag_name.lower())
         await ctx.message.add_reaction(ctx.tick(True))
 
     @tag.command(name='info')
     async def view_tag_info(self, ctx, *, tag_name):
         """View details on a tag, such as times used and tag owner"""
-        async with asq.connect('./database.db') as db:
-            sel = await db.execute('SELECT * FROM tags WHERE tagname=$1', (tag_name.lower(),))
-            res = await sel.fetchone()
-            if res:
-                owner_id, tagname, tagcontent, tagusage, tagepoch = res
+        rec = await self.bot.conn.fetch('SELECT * FROM tags WHERE tagname=$1', tag_name.lower())
+        if r := rec[0]:
+            owner_id, tagname, tagcontent, tagusage, tagepoch = \
+                r['owner_id'], r['tagname'], r['tagcontent'], r['tagusage'], r['tagepoch']
+        else:
+            return
         last_used = humanize.naturaltime(
             datetime.utcnow() - datetime.utcfromtimestamp(tagepoch)
         ) if tagepoch else None
@@ -302,10 +292,9 @@ class Data(commands.Cog):
     @tag.command(name='edit')
     async def edit_tag(self, ctx, tag_name: str, *, new_content):
         """Change the content of a specified tag that you own"""
-        async with asq.connect('./database.db') as db:
-            await db.execute('UPDATE tags SET tagbody=$1 WHERE tagname=$2 AND owner_id=$3',
-                             (new_content, tag_name.lower(), ctx.author.id))
-            await db.commit()
+        await self.bot.conn.execute(
+            'UPDATE tags SET tagbody=$1 WHERE tagname=$2 AND owner_id=$3',
+            new_content, tag_name.lower(), ctx.author.id)
         await ctx.message.add_reaction(ctx.tick(True))
 
     @tag.command(name='list')
@@ -313,13 +302,12 @@ class Data(commands.Cog):
         """View all of your, or another's owned tags"""
         target = target or ctx.author
         tag_list = []
-        async with asq.connect('./database.db') as db:
-            async with db.execute('SELECT tagname FROM tags WHERE owner_id=$1', (target.id,)) as cur:
-                iterable_tags = [item[0] async for item in cur]
-                for count, value in enumerate(iterable_tags, 1):
-                    tag_list.append(f'`{count}` {value}')
-                if tag_list == []:
-                    tag_list.append('No tags')
+        fetched = [rec['tagname'] for rec in await self.bot.conn.fetch('SELECT tagname from tags WHERE owner_id=$1',
+                                                                       target.id)]
+        for count, value in enumerate(fetched, 1):
+            tag_list.append(f'`{count}` {value}')
+        if not tag_list:
+            tag_list.append('No todos')
         source = BareBonesMenu(tag_list, per_page=10)
         menu = CSMenu(source, delete_message_after=True)
         await menu.start(ctx)
@@ -329,15 +317,12 @@ class Data(commands.Cog):
     async def purge_inactive_tags(self, ctx, days: int = 7):
         """Purge tags, defaults to tags that haven't been used for 7 days and less than 10 times"""
         seven_days_epoch = datetime.timestamp(datetime.utcnow() - timedelta(days=days))
-        async with asq.connect('./database.db') as db:
-            async with db.execute('SELECT * FROM tags WHERE usage_epoch<$1', (seven_days_epoch,)) as re:
-                to_purge = await re.fetchall()
-                prompt = await ctx.prompt(
-                    f'Are you sure you want to purge {len(to_purge)} {pluralize("tag", to_purge)}?')
-                if prompt:
-                    await db.execute('DELETE FROM tags WHERE usage_epoch<$1 AND times_used<10', (seven_days_epoch,))
-                    await db.commit()
-                    await self.bot.get_user(self.bot.owner_id).send(f'Deleted tags: {to_purge}')
+        to_purge = await self.bot.conn.fetch('SELECT * FROM tags WHERE usage_epoch<$1', seven_days_epoch)
+        prompt = await ctx.prompt(
+            f'Are you sure you want to purge {len(to_purge)} {pluralize("tag", to_purge)}?')
+        if prompt:
+            await self.bot.conn.execute('DELETE FROM tags WHERE usage_epoch<$1 AND times_used<10', seven_days_epoch)
+            await self.bot.get_user(self.bot.owner_id).send(f'Deleted tags: {to_purge}')
 
     # END TAGS GROUP ~
 
