@@ -73,7 +73,8 @@ class NeoBot(commands.Bot):
         self.run(TOKEN)
 
     async def ainit(self):
-        cn = {"user":os.getenv('DBUSER'),"password":os.getenv('DBPASS'),"database":os.getenv('DB'),"host":os.getenv('DBHOST')}
+        cn = {"user": os.getenv('DBUSER'), "password": os.getenv('DBPASS'), "database": os.getenv('DB'),
+              "host": os.getenv('DBHOST')}
         self.conn = await asyncpg.create_pool(**cn)
 
     async def get_context(self, message, *, cls=utils.context.Context):

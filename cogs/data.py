@@ -32,10 +32,11 @@ class Data(commands.Cog):
             async with db.execute('SELECT kw FROM highlights WHERE user_id=$1', (ctx.author.id,)) as cur:
                 iterable_hls = [item[0] async for item in cur]
                 for i in range(10):
-                    to_append = f"`{(i+1)}` {iterable_hls[i]}" if i<len(iterable_hls) else ''
+                    to_append = f"`{(i + 1)}` {iterable_hls[i]}" if i < len(iterable_hls) else ''
                     hl_list.append(to_append)
         await ctx.send(embed=discord.Embed(
-            description='\n'.join(hl_list), color=discord.Color.main).set_footer(text=f'{len(iterable_hls)}/10 slots used'))
+            description='\n'.join(hl_list), color=discord.Color.main).set_footer(
+            text=f'{len(iterable_hls)}/10 slots used'))
 
     @highlight.command()
     async def add(self, ctx, *, highlight_words):
@@ -57,7 +58,8 @@ class Data(commands.Cog):
                 raise commands.CommandError('You may only have 10 highlights at a time')
             if highlight_words in [a[0] for a in active]:
                 raise commands.CommandError('You already have a highlight with this trigger')
-            await db.execute('INSERT INTO highlights(user_id, kw) VALUES ( $1, $2 )', (ctx.author.id, fr"{highlight_words}"))
+            await db.execute('INSERT INTO highlights(user_id, kw) VALUES ( $1, $2 )',
+                             (ctx.author.id, fr"{highlight_words}"))
             await db.commit()
         await ctx.message.add_reaction(ctx.tick(True))
 
@@ -76,11 +78,11 @@ class Data(commands.Cog):
         async with asq.connect('./database.db') as db:
             async with db.execute('SELECT kw, exclude_guild FROM highlights WHERE user_id=$1', (ctx.author.id,)) as cur:
                 iterable_hls = [item async for item in cur]
-            current = iterable_hls[highlight_index-1][1]
+            current = iterable_hls[highlight_index - 1][1]
             if current is not None:
                 current = current.split(',')
                 if guild_id in current:
-                    del(current[current.index(guild_id)])
+                    del (current[current.index(guild_id)])
                 else:
                     current.append(guild_id)
                 current = ','.join(current)
@@ -88,7 +90,7 @@ class Data(commands.Cog):
                 current = guild_id
             await db.execute(
                 'UPDATE highlights SET exclude_guild=$1 WHERE user_id=$2 AND kw=$3',
-                (current, ctx.author.id, iterable_hls[highlight_index-1][0]))
+                (current, ctx.author.id, iterable_hls[highlight_index - 1][0]))
             await db.commit()
             await ctx.message.add_reaction(ctx.tick(True))
 
@@ -97,7 +99,7 @@ class Data(commands.Cog):
         """Display info on what triggers a specific highlight, or what guilds are muted from it"""
         async with asq.connect('./database.db') as db:
             async with db.execute('SELECT * FROM highlights WHERE user_id=$1', (ctx.author.id,)) as cur:
-                hl_data = [item async for item in cur][highlight_index-1]
+                hl_data = [item async for item in cur][highlight_index - 1]
         excluded_list = None
         if hl_data[2] not in (None, ''):
             excluded_list = hl_data[2].split(',')
@@ -123,7 +125,8 @@ class Data(commands.Cog):
             async with db.execute('SELECT kw FROM highlights WHERE user_id=$1', (ctx.author.id,)) as cur:
                 iterable_hls = [item[0] async for item in cur]
             for num in highlight_index:
-                await db.execute('DELETE FROM highlights WHERE user_id=$1 AND kw=$2', (ctx.author.id, iterable_hls[num-1]))
+                await db.execute('DELETE FROM highlights WHERE user_id=$1 AND kw=$2',
+                                 (ctx.author.id, iterable_hls[num - 1]))
                 await db.commit()
                 await ctx.message.add_reaction(ctx.tick(True))
 
@@ -162,13 +165,12 @@ class Data(commands.Cog):
         Base todo command, run with now arguments to see a list of all your active todos
         """
         todo_list = []
-        async with asq.connect('./database.db') as db:
-            async with db.execute('SELECT content FROM todo WHERE user_id=$1', (ctx.author.id,)) as cur:
-                iterable_todos = [item[0] async for item in cur]
-                for count, value in enumerate(iterable_todos, 1):
-                    todo_list.append(f'`{count}` {value}')
-                if todo_list == []:
-                    todo_list.append('No todos')
+        fetched = [rec['content'] for rec in
+                   await self.bot.conn.fetch("SELECT content from todo WHERE user_id=$1", ctx.author.id)]
+        for count, value in enumerate(fetched, 1):
+            todo_list.append(f'`{count}` {value}')
+        if not todo_list:
+            todo_list.append('No todos')
         source = BareBonesMenu(todo_list, per_page=10)
         menu = CSMenu(source, delete_message_after=True)
         await menu.start(ctx)
@@ -178,9 +180,7 @@ class Data(commands.Cog):
         """
         Add an item to your todo list
         """
-        async with asq.connect('./database.db') as db:
-            await db.execute('INSERT INTO todo VALUES($1, $2)', (ctx.author.id, content))
-            await db.commit()
+        await self.bot.conn.execute('INSERT INTO todo VALUES ($1, $2)', ctx.author.id, content)
         await ctx.message.add_reaction(ctx.tick(True))
 
     @todo_rw.command(name='remove', aliases=['rm', 'delete', 'del', 'yeet'])
@@ -188,12 +188,11 @@ class Data(commands.Cog):
         """
         Remove one, or multiple todos by index
         """
-        async with asq.connect('./database.db') as db:
-            async with db.execute('SELECT content FROM todo WHERE user_id=$1', (ctx.author.id,)) as cur:
-                iterable_todos = [item[0] async for item in cur]
-            for num in todo_index:
-                await db.execute('DELETE FROM todo WHERE user_id=$1 AND content=$2', (ctx.author.id, iterable_todos[num-1]))
-                await db.commit()
+        fetched = [rec['content'] for rec in
+                   await self.bot.conn.fetch("SELECT content from todo WHERE user_id=$1", ctx.author.id)]
+        for num in todo_index:
+            await self.bot.conn.execute('DELETE FROM todo WHERE user_id=$1 AND content=$2',
+                                        ctx.author.id, fetched[num - 1])
         await ctx.message.add_reaction(ctx.tick(True))
 
     @todo_rw.command(name='clear')
@@ -203,12 +202,7 @@ class Data(commands.Cog):
         """
         conf = await ctx.prompt('Are you sure you want to clear all todos?')
         if conf:
-            async with asq.connect('./database.db') as db:
-                await db.execute('DELETE FROM todo WHERE user_id=$1', (ctx.author.id,))
-                await db.commit()
-            return
-        else:
-            return
+            await self.bot.conn.execute('DELETE FROM todo WHERE user_id=$1', ctx.author.id)
 
     # END TODOS GROUP ~
     # BEGIN TAGS GROUP ~
@@ -222,7 +216,8 @@ class Data(commands.Cog):
                 sel = await db.execute('SELECT tagbody FROM tags WHERE tagname=$1', (tag_name.lower(),))
                 res = await sel.fetchone()
                 await ctx.safe_send(res[0])
-                await db.execute('UPDATE tags SET times_used=times_used+1, usage_epoch=$1 WHERE tagname=$2', (time.time(), tag_name))
+                await db.execute('UPDATE tags SET times_used=times_used+1, usage_epoch=$1 WHERE tagname=$2',
+                                 (time.time(), tag_name))
                 await db.commit()
 
     @tag.command(name='create')
@@ -265,7 +260,8 @@ class Data(commands.Cog):
                 body = (body + ' ' + attach[0].url) if body else attach[0].url
             if (await res.fetchone())[0] >= 1:
                 raise commands.CommandError('A tag with this name already exists!')
-            await db.execute('INSERT INTO tags (owner_id, tagname, tagbody, usage_epoch) VALUES ($1, $2, $3, $4)', (ctx.author.id, name.lower(), body, time.time()))
+            await db.execute('INSERT INTO tags (owner_id, tagname, tagbody, usage_epoch) VALUES ($1, $2, $3, $4)',
+                             (ctx.author.id, name.lower(), body, time.time()))
             await db.commit()
         await ctx.send('Tag successfully created')
 
@@ -273,7 +269,8 @@ class Data(commands.Cog):
     async def delete_tag(self, ctx, *, tag_name: str):
         """Delete an owned tag"""
         async with asq.connect('./database.db') as db:
-            res = await db.execute('DELETE FROM tags WHERE owner_id=$1 AND tagname=$2', (ctx.author.id, tag_name.lower()))
+            res = await db.execute('DELETE FROM tags WHERE owner_id=$1 AND tagname=$2',
+                                   (ctx.author.id, tag_name.lower()))
             if res.rowcount < 1:
                 if ctx.author.id == self.bot.owner_id:
                     await db.execute('DELETE FROM tags WHERE tagname=$2', (tag_name.lower(),))
@@ -292,7 +289,7 @@ class Data(commands.Cog):
                 owner_id, tagname, tagcontent, tagusage, tagepoch = res
         last_used = humanize.naturaltime(
             datetime.utcnow() - datetime.utcfromtimestamp(tagepoch)
-            ) if tagepoch else None
+        ) if tagepoch else None
         embed = discord.Embed(color=discord.Color.main)
         embed.add_field(name='Tag Info', value=f"""
 **Name** {tagname}
@@ -306,7 +303,8 @@ class Data(commands.Cog):
     async def edit_tag(self, ctx, tag_name: str, *, new_content):
         """Change the content of a specified tag that you own"""
         async with asq.connect('./database.db') as db:
-            await db.execute('UPDATE tags SET tagbody=$1 WHERE tagname=$2 AND owner_id=$3', (new_content, tag_name.lower(), ctx.author.id))
+            await db.execute('UPDATE tags SET tagbody=$1 WHERE tagname=$2 AND owner_id=$3',
+                             (new_content, tag_name.lower(), ctx.author.id))
             await db.commit()
         await ctx.message.add_reaction(ctx.tick(True))
 
@@ -334,7 +332,8 @@ class Data(commands.Cog):
         async with asq.connect('./database.db') as db:
             async with db.execute('SELECT * FROM tags WHERE usage_epoch<$1', (seven_days_epoch,)) as re:
                 to_purge = await re.fetchall()
-                prompt = await ctx.prompt(f'Are you sure you want to purge {len(to_purge)} {pluralize("tag", to_purge)}?')
+                prompt = await ctx.prompt(
+                    f'Are you sure you want to purge {len(to_purge)} {pluralize("tag", to_purge)}?')
                 if prompt:
                     await db.execute('DELETE FROM tags WHERE usage_epoch<$1 AND times_used<10', (seven_days_epoch,))
                     await db.commit()
