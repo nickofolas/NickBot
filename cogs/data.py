@@ -73,7 +73,7 @@ class Data(commands.Cog):
             and passing that guild a second time will remove it from the list
         NOTE: It may take up to a minute for this to take effect"""
         guild_id = guild_id or str(ctx.guild.id)
-        iterable_hls = [(rec['kw'], rec['exclude_guilds'])
+        iterable_hls = [(rec['kw'], rec['exclude_guild'])
                         for rec in
                         await self.bot.conn.fetch(
                             'SELECT kw, exclude_guild FROM highlights WHERE user_id=$1', ctx.author.id)]
