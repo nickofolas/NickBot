@@ -9,6 +9,7 @@ import discord
 import aiohttp
 from dotenv import load_dotenv
 import async_cleverbot as ac
+import asyncpg
 
 import utils.context
 
@@ -59,6 +60,7 @@ class NeoBot(commands.Bot):
             ac.Emotion.fear, ac.Emotion.joy, ac.Emotion.anger])
         self.all_cogs = list()
         self.persistent_status = False
+        self.loop.create_task(self.ainit())
 
         for filename in os.listdir('./cogs'):
             if filename.endswith('.py'):
@@ -69,6 +71,10 @@ class NeoBot(commands.Bot):
             # self.load_extension('jishaku')
         TOKEN = os.getenv("TOKEN")
         self.run(TOKEN)
+
+    async def ainit(self):
+        cn = {"user":os.getenv('DBUSER'),"password":os.getenv('DBPASS'),"database":os.getenv('DB'),"host":os.getenv('DBHOST')}
+        self.conn = await asyncpg.create_pool(**cn)
 
     async def get_context(self, message, *, cls=utils.context.Context):
         return await super().get_context(message, cls=cls)

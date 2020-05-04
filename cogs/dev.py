@@ -98,6 +98,8 @@ class Dev(commands.Cog):
         hl_lang = 'sh'
         if 'cat' in args:
             hl_lang = return_lang_hl(args)
+        if 'git diff' in args:
+            hl_lang = 'diff'
         await ctx.trigger_typing()
         stdout, stderr = await do_shell(args)
         output = stdout + stderr
