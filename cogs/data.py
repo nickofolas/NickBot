@@ -277,7 +277,7 @@ class Data(commands.Cog):
         else:
             return
         last_used = humanize.naturaltime(
-            datetime.utcnow() - datetime.utcfromtimestamp(tagepoch)
+            datetime.utcnow() - tagepoch
         ) if tagepoch else None
         embed = discord.Embed(color=discord.Color.main)
         embed.add_field(name='Tag Info', value=f"""
