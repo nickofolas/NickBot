@@ -315,7 +315,7 @@ class Data(commands.Cog):
     @commands.is_owner()
     async def purge_inactive_tags(self, ctx, days: int = 7):
         """Purge tags, defaults to tags that haven't been used for 7 days and less than 10 times"""
-        seven_days_epoch = datetime.timestamp(datetime.utcnow() - timedelta(days=days))
+        seven_days_epoch = datetime.utcnow() - timedelta(days=days)
         to_purge = await self.bot.conn.fetch('SELECT * FROM tags WHERE usage_epoch<$1', seven_days_epoch)
         prompt = await ctx.prompt(
             f'Are you sure you want to purge {len(to_purge)} {pluralize("tag", to_purge)}?')
