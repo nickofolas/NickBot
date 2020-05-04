@@ -211,13 +211,12 @@ class Data(commands.Cog):
     @commands.cooldown(1, 2.5, commands.BucketType.user)
     async def tag(self, ctx, *, tag_name: str):
         """View a tag with the specified name"""
-        async with ctx.ExHandler(propagate=(self.bot, ctx), message='Tag not found'):
-            async with asq.connect('./database.db') as db:
-                rec = await self.bot.conn.execute('SELECT tagbody FROM tags WHERE tagname=$1', tag_name.lower())
-                await ctx.safe_send(rec[0]['tagbody'])
-                await self.bot.conn.execute(
-                    'UPDATE tags SET times_used=times_used+1, usage_epoch=$1 WHERE tagname=$2',
-                    datetime.utcnow(), tag_name)
+        # async with ctx.ExHandler(propagate=(self.bot, ctx), message='Tag not found'):
+        rec = await self.bot.conn.execute('SELECT tagbody FROM tags WHERE tagname=$1', tag_name.lower())
+        await ctx.safe_send(rec[0]['tagbody'])
+        await self.bot.conn.execute(
+            'UPDATE tags SET times_used=times_used+1, usage_epoch=$1 WHERE tagname=$2',
+            datetime.utcnow(), tag_name)
 
     @tag.command(name='create')
     async def create_tag(self, ctx, name: str = None, *, body: str = None):
@@ -307,7 +306,7 @@ class Data(commands.Cog):
         for count, value in enumerate(fetched, 1):
             tag_list.append(f'`{count}` {value}')
         if not tag_list:
-            tag_list.append('No todos')
+            tag_list.append('No tags')
         source = BareBonesMenu(tag_list, per_page=10)
         menu = CSMenu(source, delete_message_after=True)
         await menu.start(ctx)
