@@ -7,6 +7,7 @@ import copy
 import re
 import string
 
+import asyncpg
 import discord
 from discord.ext import commands
 import aiosqlite as asq
@@ -28,15 +29,13 @@ class Data(commands.Cog):
         Base command for keyword highlights. Run with no arguments to list your active highlights.
         """
         hl_list = []
-        async with asq.connect('./database.db') as db:
-            async with db.execute('SELECT kw FROM highlights WHERE user_id=$1', (ctx.author.id,)) as cur:
-                iterable_hls = [item[0] async for item in cur]
-                for i in range(10):
-                    to_append = f"`{(i + 1)}` {iterable_hls[i]}" if i < len(iterable_hls) else ''
-                    hl_list.append(to_append)
+        fetched = [rec['kw'] for rec in await self.bot.conn.fetch('SELECT kw FROM highlights WHERE user_id=$1', ctx.author.id)]
+        for i in range(10):
+            to_append = f"`{(i + 1)}` {fetched[i]}" if i < len(fetched) else ''
+            hl_list.append(to_append)
         await ctx.send(embed=discord.Embed(
             description='\n'.join(hl_list), color=discord.Color.main).set_footer(
-            text=f'{len(iterable_hls)}/10 slots used'))
+            text=f'{len(fetched)}/10 slots used'))
 
     @highlight.command()
     async def add(self, ctx, *, highlight_words):
@@ -52,15 +51,14 @@ class Data(commands.Cog):
         for i in ('afssafasfa', '12421', '\n', ' ', string.ascii_letters, string.digits):
             if re.search(content_check, i):
                 raise commands.CommandError('This trigger is too general')
-        async with asq.connect('./database.db') as db:
-            check = await db.execute('SELECT kw FROM highlights WHERE user_id=$1', (ctx.author.id,))
-            if len(active := await check.fetchall()) == 10:
-                raise commands.CommandError('You may only have 10 highlights at a time')
-            if highlight_words in [a[0] for a in active]:
-                raise commands.CommandError('You already have a highlight with this trigger')
-            await db.execute('INSERT INTO highlights(user_id, kw) VALUES ( $1, $2 )',
-                             (ctx.author.id, fr"{highlight_words}"))
-            await db.commit()
+        active = await self.bot.conn.fetch('SELECT kw FROM highlights WHERE user_id=$1', ctx.author.id)
+        if len(active) >= 10:
+            raise commands.CommandError('You may only have 10 highlights at a time')
+        if highlight_words in [rec['kw'] for rec in active]:
+            raise commands.CommandError('You already have a highlight with this trigger')
+        await self.bot.conn.execute(
+            'INSERT INTO highlights(user_id, kw) VALUES ( $1, $2 )',
+            ctx.author.id, fr"{highlight_words}")
         await ctx.message.add_reaction(ctx.tick(True))
 
     @highlight.command(name='exclude', aliases=['mute', 'ignore', 'exc'])
@@ -75,31 +73,30 @@ class Data(commands.Cog):
             and passing that guild a second time will remove it from the list
         NOTE: It may take up to a minute for this to take effect"""
         guild_id = guild_id or str(ctx.guild.id)
-        async with asq.connect('./database.db') as db:
-            async with db.execute('SELECT kw, exclude_guild FROM highlights WHERE user_id=$1', (ctx.author.id,)) as cur:
-                iterable_hls = [item async for item in cur]
-            current = iterable_hls[highlight_index - 1][1]
-            if current is not None:
-                current = current.split(',')
-                if guild_id in current:
-                    del (current[current.index(guild_id)])
-                else:
-                    current.append(guild_id)
-                current = ','.join(current)
+        iterable_hls = [(rec['kw'], rec['exclude_guilds'])
+                        for rec in
+                        await self.bot.conn.fetch(
+                            'SELECT kw, exclude_guild FROM highlights WHERE user_id=$1', ctx.author.id)]
+        current = iterable_hls[highlight_index - 1][1]
+        if current is not None:
+            current = current.split(',')
+            if guild_id in current:
+                del (current[current.index(guild_id)])
             else:
-                current = guild_id
-            await db.execute(
-                'UPDATE highlights SET exclude_guild=$1 WHERE user_id=$2 AND kw=$3',
-                (current, ctx.author.id, iterable_hls[highlight_index - 1][0]))
-            await db.commit()
-            await ctx.message.add_reaction(ctx.tick(True))
+                current.append(guild_id)
+            current = ','.join(current)
+        else:
+            current = guild_id
+        await self.bot.conn.execute(
+            'UPDATE highlights SET exclude_guild=$1 WHERE user_id=$2 AND kw=$3',
+            current, ctx.author.id, iterable_hls[highlight_index - 1][0])
+        await ctx.message.add_reaction(ctx.tick(True))
 
     @highlight.command(name='info')
     async def view_highlight_info(self, ctx, highlight_index: int):
         """Display info on what triggers a specific highlight, or what guilds are muted from it"""
-        async with asq.connect('./database.db') as db:
-            async with db.execute('SELECT * FROM highlights WHERE user_id=$1', (ctx.author.id,)) as cur:
-                hl_data = [item async for item in cur][highlight_index - 1]
+        hl_data = tuple(
+            (await self.bot.conn.fetch('SELECT * FROM highlights WHERE user_id=$1',ctx.author.id))[highlight_index-1])
         excluded_list = None
         if hl_data[2] not in (None, ''):
             excluded_list = hl_data[2].split(',')
@@ -121,14 +118,12 @@ class Data(commands.Cog):
                 int(i)
             except Exception:
                 raise TypeError
-        async with asq.connect('./database.db') as db:
-            async with db.execute('SELECT kw FROM highlights WHERE user_id=$1', (ctx.author.id,)) as cur:
-                iterable_hls = [item[0] async for item in cur]
-            for num in highlight_index:
-                await db.execute('DELETE FROM highlights WHERE user_id=$1 AND kw=$2',
-                                 (ctx.author.id, iterable_hls[num - 1]))
-                await db.commit()
-                await ctx.message.add_reaction(ctx.tick(True))
+        fetched = [rec['content'] for rec in
+                   await self.bot.conn.fetch("SELECT kw from highlights WHERE user_id=$1", ctx.author.id)]
+        for num in highlight_index:
+            await self.bot.conn.execute('DELETE FROM highlights WHERE user_id=$1 AND kw=$2',
+                                        ctx.author.id, fetched[num - 1])
+        await ctx.message.add_reaction(ctx.tick(True))
 
     @highlight.command(name='test')
     async def test_highlight(self, ctx, *, message):
@@ -151,10 +146,7 @@ class Data(commands.Cog):
         """
         conf = await ctx.prompt('Are you sure you want to clear all highlights?')
         if conf:
-            async with asq.connect('./database.db') as db:
-                await db.execute('DELETE FROM highlights WHERE user_id=$1', (ctx.author.id,))
-                await db.commit()
-            return
+            await self.bot.conn.execute('DELETE FROM highlights WHERE user_id=$1', ctx.author.id)
 
     # END HIGHLIGHTS GROUP ~
     # BEGIN TODOS GROUP ~
@@ -254,9 +246,12 @@ class Data(commands.Cog):
             raise commands.CommandError('This name cannot be used')
         if attach := msg.attachments:
             body = (body + ' ' + attach[0].url) if body else attach[0].url
-        await self.bot.conn.execute(
-            'INSERT INTO tags (owner_id, tagname, tagbody, usage_epoch) VALUES ($1, $2, $3, $4)',
-            ctx.author.id, name.lower(), body, datetime.utcnow())
+        try:
+            await self.bot.conn.execute(
+                'INSERT INTO tags (owner_id, tagname, tagbody, usage_epoch) VALUES ($1, $2, $3, $4)',
+                ctx.author.id, name.lower(), body, datetime.utcnow())
+        except asyncpg.exceptions.UniqueViolationError:
+            raise commands.CommandError('A tag with this name already exists')
         await ctx.send('Tag successfully created')
 
     @tag.command(name='delete', aliases=['del'])

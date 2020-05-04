@@ -54,13 +54,11 @@ class Events(commands.Cog):
 
     async def build_hl_cache(self):
         self.hl_cache = []
-        async with asq.connect('database.db') as db:
-            async with db.execute('SELECT user_id, kw, exclude_guild FROM highlights') as cur:
-                async for c in cur:
-                    c = list(c)
-                    c[1] = re.compile(c[1], re.I)
-                    c = tuple(c)
-                    self.hl_cache.append(c)
+        fetched = await self.bot.conn.fetch('SELECT user_id, kw, exclude_guild FROM highlights')
+        for rec in fetched:
+            rec[1] = re.compule(rec[1], re.I)
+            rec = tuple(rec)
+            self.hl_cache.append(rec)
 
     @commands.Cog.listener()
     async def on_command(self, ctx):
