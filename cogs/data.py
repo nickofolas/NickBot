@@ -212,8 +212,8 @@ class Data(commands.Cog):
     async def tag(self, ctx, *, tag_name: str):
         """View a tag with the specified name"""
         # async with ctx.ExHandler(propagate=(self.bot, ctx), message='Tag not found'):
-        rec = await self.bot.conn.execute('SELECT tagbody FROM tags WHERE tagname=$1', tag_name.lower())
-        await ctx.safe_send(rec)
+        rec = await self.bot.conn.fetch('SELECT tagbody FROM tags WHERE tagname=$1', tag_name.lower())
+        await ctx.safe_send(rec[0]['tagbody'])
         await self.bot.conn.execute(
             'UPDATE tags SET times_used=times_used+1, usage_epoch=$1 WHERE tagname=$2',
             datetime.utcnow(), tag_name)
