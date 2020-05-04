@@ -273,7 +273,7 @@ class Data(commands.Cog):
         rec = await self.bot.conn.fetch('SELECT * FROM tags WHERE tagname=$1', tag_name.lower())
         if r := rec[0]:
             owner_id, tagname, tagcontent, tagusage, tagepoch = \
-                r['owner_id'], r['tagname'], r['tagcontent'], r['tagusage'], r['tagepoch']
+                r['owner_id'], r['tagname'], r['tagbody'], r['times_used'], r['usage_epoch']
         else:
             return
         last_used = humanize.naturaltime(
