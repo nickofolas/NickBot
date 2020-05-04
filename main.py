@@ -32,11 +32,8 @@ async def get_prefix(bot, message):
     prefix = 'n/'
     if not message.guild:
         return commands.when_mentioned_or(prefix)(bot, message)
-    async with asq.connect('./database.db') as db:
-        async with db.execute('SELECT prefix FROM guild_prefs WHERE guild_id=?', (message.guild.id,)) as cur:
-            async for r in cur:
-                prefix = r[0]
-        return commands.when_mentioned_or(prefix)(bot, message)
+    prefix = (await bot.conn.fetch('SELECT prefix FROM guild_prefs WHERE guild_id=$1', message.guild.id))[0]['prefix']
+    return commands.when_mentioned_or(prefix)(bot, message)
 
 
 # Bot class itself, kinda important

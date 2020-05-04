@@ -217,13 +217,9 @@ class Dev(commands.Cog):
                 description='\n'.join(
                     sorted(set([p.replace('@!', '@') for p in await self.bot.get_prefix(ctx.message)]), key=lambda p: len(p))),
                 color=discord.Color.main))
-        async with asq.connect('./database.db') as db:
-            try:
-                await db.execute("UPDATE guild_prefs SET prefix=$1 WHERE guild_id=$2", (new_prefix, ctx.guild.id))
-                await db.commit()
-            except Exception:
-                await db.execute("INSERT INTO guild_prefs (guild_id, prefix) VALUES ($1, $2)", (ctx.guild.id, new_prefix))
-                await db.commit()
+        await self.bot.conn.execute(
+            'INSERT INTO guild_prefs (guild_id, prefix) VALUES ($1, $2) ON CONFLICT (guild_id) DO UPDATE SET prefix=$2',
+            ctx.guild.id, new_prefix)
         await ctx.send(f'Prefix successfully changed to `{new_prefix}`')
 
     @commands.command()

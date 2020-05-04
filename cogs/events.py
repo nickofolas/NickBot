@@ -132,20 +132,16 @@ class Events(commands.Cog):
         except Exception:
             pass
 
-        async with asq.connect('./database.db') as db:
-            res = await db.execute("UPDATE guild_prefs SET prefix=$1 WHERE guild_id=$2", ('n/', guild.id))
-            if res.rowcount < 1:
-                await db.execute("INSERT INTO guild_prefs (guild_id, prefix) VALUES ($1, $2)", (guild.id, 'n/'))
-            await db.commit()
+        await self.bot.conn.execute(
+            'INSERT INTO guild_prefs (guild_id, prefix) VALUES ($1, $2) ON CONFLICT (guild_id) DO UPDATE SET prefix=$2',
+            guild.id, 'n/')
 
         await guild.get_member(self.bot.user.id).edit(nick=f'{self.bot.user.name} [n/]')
         await (await self.bot.application_info()).owner.send(embed=embed)
 
     @commands.Cog.listener()
     async def on_guild_remove(self, guild):
-        async with asq.connect('./database.db') as db:
-            await db.execute("DELETE FROM guild_prefs WHERE guild_id=$1", (guild.id,))
-            await db.commit()
+        await self.bot.conn.execute('DELETE FROM guild_prefs WHERE guild_id=$1', guild.id)
 
 
 def setup(bot):
