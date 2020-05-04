@@ -1,9 +1,10 @@
 import asyncio
-import math
+from contextlib import suppress
 import re
 from datetime import datetime
 
 import aiosqlite as asq
+import asyncpg
 import discord
 from discord.ext import commands, tasks
 
@@ -63,14 +64,8 @@ class Events(commands.Cog):
 
     @commands.Cog.listener()
     async def on_command(self, ctx):
-        async with asq.connect('./database.db') as db:
-            attempt = await db.execute('SELECT * FROM user_data WHERE user_id=$1', (ctx.author.id,))
-            fetch_try = await attempt.fetchall()
-            if fetch_try:
-                return
-            else:
-                await db.execute('INSERT INTO user_data(user_id) VALUES ($1)', (ctx.author.id,))
-                await db.commit()
+        with suppress(asyncpg.exceptions.UniqueViolationError):
+            await self.bot.conn.execute('INSERT INTO user_data (user_id) VALUES ($1)', ctx.author.id)
 
     # Message events
     @commands.Cog.listener()

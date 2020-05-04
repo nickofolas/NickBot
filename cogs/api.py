@@ -134,9 +134,7 @@ class Api(commands.Cog):
         """Overview of a reddit user"""
         user = user or ctx.author
         if user == ctx.author:
-            async with asq.connect('./database.db') as db:
-                usr_get = await db.execute("SELECT default_reddit FROM user_data WHERE user_id=$1", (ctx.author.id,))
-                user = (await usr_get.fetchone())[0]
+            user = (await self.bot.conn.fetch('SELECT default_reddit FROM user_data WHERE user_id=$1', ctx.author.id))[0]['default_reddit']
         else:
             user = user.replace('u/', '')
         async with self.bot.session.get(f'https://www.reddit.com/user/{user}/about/.json') as resp:
@@ -175,9 +173,7 @@ class Api(commands.Cog):
         """View moderator stats for a redditor"""
         user = user or ctx.author
         if user == ctx.author:
-            async with asq.connect('./database.db') as db:
-                usr_get = await db.execute("SELECT default_reddit FROM user_data WHERE user_id=$1", (ctx.author.id,))
-                user = (await usr_get.fetchone())[0]
+            user = (await self.bot.conn.fetch('SELECT default_reddit FROM user_data WHERE user_id=$1', ctx.author.id))[0]['default_reddit']
         else:
             user = user.replace('u/', '')
         async with self.bot.session.get(f'https://www.reddit.com/user/{user}/moderated_subreddits/.json') as r:
@@ -207,9 +203,7 @@ class Api(commands.Cog):
     async def default(self, ctx, *, reddit_user):
         """Set a shortcut to your reddit user for reddit commands
         This will allow you to access your reddit acc info without passing an argument"""
-        async with asq.connect('./database.db') as db:
-            await db.execute("UPDATE user_data SET default_reddit=$1 WHERE user_id=$2", (reddit_user, ctx.author.id))
-            await db.commit()
+        await self.bot.conn.execute("UPDATE user_data SET default_reddit=$1 WHERE user_id=$2", reddit_user, ctx.author.id)
         await ctx.message.add_reaction(ctx.tick(True))
 
     @commands.command()

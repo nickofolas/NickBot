@@ -257,9 +257,15 @@ class Data(commands.Cog):
     @tag.command(name='delete', aliases=['del'])
     async def delete_tag(self, ctx, *, tag_name: str):
         """Delete an owned tag"""
-        await self.bot.conn.execute(
-            'DELETE FROM tags WHERE owner_id=$1 AND tagname=$2',
-            ctx.author.id, tag_name.lower())
+        if ctx.author.id == self.bot.owner_id:
+            await self.bot.con.execute(
+                'DELETE FROM tags WHERE tagname=$1',
+                tag_name.lower()
+            )
+        else:
+            await self.bot.conn.execute(
+                'DELETE FROM tags WHERE owner_id=$1 AND tagname=$2',
+                ctx.author.id, tag_name.lower())
         await ctx.message.add_reaction(ctx.tick(True))
 
     @tag.command(name='info')
