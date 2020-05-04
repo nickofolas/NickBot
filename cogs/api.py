@@ -192,7 +192,7 @@ class Api(commands.Cog):
             top_20.append(f'[{sub["sr_display_name_prefixed"]}](https://www.reddit.com{sub["url"]})')
         embed = discord.Embed(
             title='',
-            description=f'**Mod Stats for [u/{profile_js["data"]["subreddit"]["display_name_prefixed"]}](https://www.reddit.com/user/{user})**',
+            description=f'**Mod Stats for [{profile_js["data"]["subreddit"]["display_name_prefixed"]}](https://www.reddit.com/user/{user})**',
             color=discord.Color.main)
         embed.set_thumbnail(url=profile_js['data']['icon_img'])
         if data := js.get('data'):
