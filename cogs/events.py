@@ -56,9 +56,10 @@ class Events(commands.Cog):
         self.hl_cache = []
         fetched = await self.bot.conn.fetch('SELECT user_id, kw, exclude_guild FROM highlights')
         for rec in fetched:
-            rec[1] = re.compile(rec[1], re.I)
-            rec = tuple(rec)
-            self.hl_cache.append(rec)
+            i = list(tuple(rec))
+            i[1] = re.compile(i[1], re.I)
+            i = tuple(i)
+            self.hl_cache.append(i)
 
     @commands.Cog.listener()
     async def on_command(self, ctx):
