@@ -50,7 +50,7 @@ class Fun(commands.Cog):
                 '**Converted from binary: **'
                 + n.to_bytes((n.bit_length() + 7) // 8, 'big').decode())
         except Exception:
-            await ctx.send(str(bin(int.from_bytes(input.encode(), 'big'))))
+            await ctx.safe_send(str(bin(int.from_bytes(input.encode(), 'big'))))
 
     @commands.group(invoke_without_command=True)
     async def say(self, ctx, *, message):
