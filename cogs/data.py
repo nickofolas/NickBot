@@ -337,7 +337,7 @@ class Data(commands.Cog):
     async def tag_leaderboard(self, ctx):
         top_tags = [(rec['tagname'], rec['times_used']) for rec in
                     await self.bot.conn.fetch('SELECT tagname, times_used FROM tags ORDER BY times_used DESC LIMIT 3')]
-        top_owner = [(rec['owner_id'], rec['sum']) for rec in
+        top_owner = [(rec['owner_id'], rec['s']) for rec in
                      await self.bot.conn.fetch('SELECT owner_id, SUM(times_used) as S FROM tags GROUP BY owner_id'
                                                ' ORDER BY SUM(times_used) DESC LIMIT 3')]
         embed = discord.Embed(title='Tag Leaderboard', color=discord.Color.main)
