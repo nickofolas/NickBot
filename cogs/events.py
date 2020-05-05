@@ -22,6 +22,7 @@ class Events(commands.Cog):
         self.hl_mailer.start()
         self.update_hl_cache.start()
         self.hl_queue = list()
+        self.bot.loop.create_task(self.build_hl_cache())
 
     def cog_unload(self):
         self.hl_mailer.cancel()
@@ -39,13 +40,7 @@ class Events(commands.Cog):
 
     @tasks.loop(minutes=1.0)
     async def update_hl_cache(self):
-        self.hl_cache = []
-        fetched = await self.bot.conn.fetch('SELECT user_id, kw, exclude_guild FROM highlights')
-        for rec in fetched:
-            i = list(tuple(rec))
-            i[1] = re.compile(i[1], re.I)
-            i = tuple(i)
-            self.hl_cache.append(i)
+        await self.build_hl_cache()
 
     @hl_mailer.before_loop
     @update_hl_cache.before_loop
@@ -58,6 +53,15 @@ class Events(commands.Cog):
         if isinstance(error, (commands.CommandNotFound, commands.NotOwner)):
             return
         await ctx.propagate_to_eh(self.bot, ctx, error)
+
+    async def build_hl_cache(self):
+        self.hl_cache = []
+        fetched = await self.bot.conn.fetch('SELECT user_id, kw, exclude_guild FROM highlights')
+        for rec in fetched:
+            i = list(tuple(rec))
+            i[1] = re.compile(i[1], re.I)
+            i = tuple(i)
+            self.hl_cache.append(i)
 
     @commands.Cog.listener()
     async def on_command(self, ctx):

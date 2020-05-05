@@ -163,6 +163,12 @@ class Data(commands.Cog):
     async def view_hl_cache(self, ctx):
         await ctx.safe_send(str(self.bot.get_cog('Events').hl_cache))
 
+    @hl_dev.command(name='build')
+    @commands.is_owner()
+    async def hl_cache_build_cmd(self, ctx):
+        await self.bot.get_cog('Events').build_hl_cache()
+        await ctx.message.add_reaction(ctx.tick(True))
+
     # END HIGHLIGHTS GROUP ~
     # BEGIN TODOS GROUP ~
 
