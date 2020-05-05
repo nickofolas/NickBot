@@ -244,7 +244,7 @@ class Dev(commands.Cog):
         paginator = commands.Paginator(prefix='', suffix=f'\nReturned {rows} {pluralize("row", rows)} in {dt:.2f}ms')
         for line in table.splitlines():
             paginator.add_line(line)
-        source = ShellMenu(paginator.pages, per_page=1500)
+        source = ShellMenu(paginator.pages, per_page=1)
         menu = CSMenu(source, delete_message_after=True)
         await menu.start(ctx)
 
