@@ -135,8 +135,6 @@ class Events(commands.Cog):
         await self.bot.conn.execute(
             'INSERT INTO guild_prefs (guild_id, prefix) VALUES ($1, $2) ON CONFLICT (guild_id) DO UPDATE SET prefix=$2',
             guild.id, 'n/')
-
-        await guild.get_member(self.bot.user.id).edit(nick=f'{self.bot.user.name} [n/]')
         await (await self.bot.application_info()).owner.send(embed=embed)
 
     @commands.Cog.listener()

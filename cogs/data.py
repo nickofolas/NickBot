@@ -118,7 +118,7 @@ class Data(commands.Cog):
                 int(i)
             except Exception:
                 raise TypeError
-        fetched = [rec['content'] for rec in
+        fetched = [rec['kw'] for rec in
                    await self.bot.conn.fetch("SELECT kw from highlights WHERE user_id=$1", ctx.author.id)]
         for num in highlight_index:
             await self.bot.conn.execute('DELETE FROM highlights WHERE user_id=$1 AND kw=$2',
