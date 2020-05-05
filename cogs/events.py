@@ -40,6 +40,8 @@ class Events(commands.Cog):
     @tasks.loop(minutes=1.0)
     async def update_hl_cache(self):
         await self.build_hl_cache()
+        if not self.hl_cache:
+            await self.build_hl_cache()
 
     @hl_mailer.before_loop
     @update_hl_cache.before_loop
