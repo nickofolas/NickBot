@@ -68,6 +68,15 @@ class Util(commands.Cog):
     async def edits(self, ctx, target_channel: Union[discord.TextChannel, int] = None):
         target_channel = self.bot.get_channel(target_channel) if \
             isinstance(target_channel, int) else target_channel or ctx.channel
+        entries = []
+        for before, after, when in sorted(self.bot.snipes[target_channel.id]['edited'], reverse=True):
+            if not before.content or not after.content:
+                continue
+            diff = difflib.ndiff(f'{before.content}\n'.splitlines(keepends=True),
+                                 f'{after.content}\n'.splitlines(keepends=True))
+            entries.append('```diff\n' + ''.join(diff) + '```')
+        await ctx.quick_menu(entries, 1)
+        '''
         before, after, when = self.bot.snipes[target_channel.id]['edited'][-1]
         diff = difflib.ndiff(f'{before.content}\n'.splitlines(keepends=True),
                              f'{after.content}\n'.splitlines(keepends=True))
@@ -77,6 +86,7 @@ class Util(commands.Cog):
             icon_url=after.author.avatar_url_as(static_format='png'))
         embed.set_footer(text=f'ID: {after.id} | In: {target_channel}')
         await ctx.send(embed=embed)
+        '''
 
     @commands.command()
     @commands.cooldown(1, 15, commands.BucketType.user)
