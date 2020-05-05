@@ -30,6 +30,8 @@ discord.Color.main = discord.Color(0x84cdff)
 
 
 async def get_prefix(bot, message):
+    if bot.is_closed():
+        return
     prefix = 'n/'
     if not message.guild:
         return commands.when_mentioned_or(prefix)(bot, message)
