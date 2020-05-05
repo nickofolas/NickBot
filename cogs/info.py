@@ -99,14 +99,7 @@ class Info(commands.Cog):
         if isinstance(target, discord.Member) and ctx.guild:
             status_display, acts, act, join_pos = \
                 await member_info(self, ctx, target, act, e)
-        async with asq.connect('./database.db') as db:
-            bio_get = await db.execute(
-                "SELECT user_bio FROM user_data WHERE user_id=$1", (target.id,)
-                )
-            try:
-                bio = (await bio_get.fetchone())[0]
-            except Exception:
-                bio = None
+        bio = (await self.bot.conn.fetch('SELECT user_bio FROM user_data WHERE user_id=$1', target.id))[0]['user_bio']
         flag_vals = UserFlags(
             (await self.bot.http.get_user(target.id))['public_flags'])
         for i in badges.keys():
@@ -160,12 +153,8 @@ class Info(commands.Cog):
 
     @userinfo.command()
     async def bio(self, ctx, *, message=None):
-        async with asq.connect('./database.db') as db:
-            await db.execute(
-                'UPDATE user_data SET user_bio=$1 WHERE user_id=$2',
-                (message, ctx.author.id))
-            await db.commit()
-            await ctx.message.add_reaction(ctx.tick(True))
+        await self.bot.conn.execute('UPDATE user_data SET user_bio=$1 WHERE user_id=$2', message, ctx.author.id)
+        await ctx.message.add_reaction(ctx.tick(True))
 
     @userinfo.command()
     @commands.guild_only()
