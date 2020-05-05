@@ -71,7 +71,12 @@ class Util(commands.Cog):
         before, after, when = self.bot.snipes[target_channel.id]['edited'][-1]
         diff = difflib.ndiff(f'{before.content}\n'.splitlines(keepends=True),
                              f'{after.content}\n'.splitlines(keepends=True))
-        await ctx.send(embed=discord.Embed(description='```diff\n' + ''.join(diff) + '```', color=discord.Color.main))
+        embed = discord.Embed(description='```diff\n' + ''.join(diff) + '```', color=discord.Color.main)
+        embed.set_author(
+            name=f'{after.author.display_name} - {humanize.naturaltime(datetime.utcnow() - when)}',
+            icon_url=after.author.avatar_url_as(static_format='png'))
+        embed.set_footer(text=f'ID: {after.id} | In: {target_channel}')
+        await ctx.send(embed=embed)
 
     @commands.command()
     @commands.cooldown(1, 15, commands.BucketType.user)
