@@ -67,9 +67,9 @@ class Util(commands.Cog):
     @snipe.command()
     async def edits(self, ctx):
         before, after, when = self.bot.edited[ctx.channel.id]
-        diff = difflib.unified_diff(before.splitlines(keepends=True),
-                                    after.splitlines(keepends=True))
-        await ctx.send('```diff\n' + ''.join(diff) + '```', end="")
+        diff = difflib.ndiff(f'{before.content}\n'.splitlines(keepends=True),
+                                    f'{after.content}\n'.splitlines(keepends=True))
+        await ctx.send(embed=discord.Embed(description='```diff\n' + ''.join(diff) + '```', color=discord.Color.main))
 
     @commands.command()
     @commands.cooldown(1, 15, commands.BucketType.user)
