@@ -239,10 +239,17 @@ class Dev(commands.Cog):
         rows = len(results)
         if is_multistatement or rows == 0:
             return await ctx.send(f'`{dt:.2f}ms: {results}`')
-
         headers = list(results[0].keys())
-        await ctx.safe_send('```\n' + tabulate(list(list(r.values()) for r in results), headers=headers,
-                                               tablefmt='pretty') + f'\n``` Returned {rows} rows in {dt:.2f}ms')
+        table = tabulate(list(list(r.values()) for r in results), headers=headers,
+                         tablefmt='pretty')
+        pages = commands.Paginator()
+        for line in table.splitlines():
+            pages.add_line(line)
+        await ctx.quick_menu(
+            pages.pages,
+            1,
+            template=discord.Embed(
+                title=f'Returned {rows} {pluralize("row", rows)} in {dt:.2f}ms', color=discord.Color.main))
 
     @commands.group(name='dev')
     @commands.is_owner()
