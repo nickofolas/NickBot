@@ -346,9 +346,8 @@ class Data(commands.Cog):
             value='\n'.join([f'`{t[0]}` - {t[1]} uses' for t in top_tags]))
         embed.add_field(
             name='Top Owners',
-            value='\n'.join([f'`{t[0]}` - {t[1]} uses' for t in top_owner]))
+            value='\n'.join([f'`{self.bot.get_user(t[0])}` - {t[1]} total uses' for t in top_owner]))
         await ctx.send(embed=embed)
-
 
     @tag.command(name='purge')
     @commands.is_owner()
