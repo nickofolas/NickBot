@@ -3,6 +3,7 @@ import warnings
 from datetime import datetime
 import random
 from contextlib import suppress
+import logging
 
 import aiosqlite as asq
 from discord.ext import commands
@@ -20,6 +21,8 @@ load_dotenv()
 def warn(*args, **kwargs):
     pass
 
+
+logging.basicConfig(level=logging.INFO)
 
 # Ignores deprecation warnings
 warnings.warn = warn

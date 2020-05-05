@@ -226,6 +226,7 @@ class Dev(commands.Cog):
     @commands.command()
     @commands.is_owner()
     async def sql(self, ctx, *, query: str):
+        """Run SQL statements"""
         is_multistatement = query.count(';') > 1
         if is_multistatement:
             strategy = self.bot.conn.execute
@@ -240,12 +241,8 @@ class Dev(commands.Cog):
         if is_multistatement or rows == 0:
             return await ctx.send(f'`{dt:.2f}ms: {results}`')
         headers = list(results[0].keys())
-        table = tabulate(list(list(r.values()) for r in results), headers=headers)
-        await ctx.quick_menu(
-            list(table),
-            1900,
-            template=discord.Embed(
-                title=f'Returned {rows} {pluralize("row", rows)} in {dt:.2f}ms', color=discord.Color.main))
+        table = tabulate(list(list(r.values()) for r in results), headers=headers, tablefmt='pretty')
+        await ctx.safe_send(f'```\n{table}```\nReturned {rows} {pluralize("row", rows)} in {dt:.2f}ms')
 
     @commands.group(name='dev')
     @commands.is_owner()
