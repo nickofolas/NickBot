@@ -107,14 +107,14 @@ class Events(commands.Cog):
         if after.content != before.content:
             await self.bot.process_commands(after)
         if not self.bot.snipes.get(after.channel.id):
-            self.bot.snipes[after.channel.id] = {'deleted': None, 'edited': None}
-        self.bot.snipes[after.channel.id]['edited'] = before, after, datetime.utcnow()
+            self.bot.snipes[after.channel.id] = {'deleted': [], 'edited': []}
+        self.bot.snipes[after.channel.id]['edited'].append((before, after, datetime.utcnow()))
 
     @commands.Cog.listener()
     async def on_message_delete(self, message):
         if not self.bot.snipes.get(message.channel.id):
-            self.bot.snipes[message.channel.id] = {'deleted': None, 'edited': None}
-        self.bot.snipes[message.channel.id]['deleted'] = message, datetime.utcnow()
+            self.bot.snipes[message.channel.id] = {'deleted': [], 'edited': []}
+        self.bot.snipes[message.channel.id]['deleted'].append((message, datetime.utcnow()))
         # Adds the message to the dict of messages for sniping
 
     @commands.Cog.listener()
