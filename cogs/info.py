@@ -34,7 +34,7 @@ activity_type_mapping = {
 }
 
 
-async def member_info(self, ctx, target, act, e):
+async def member_info(ctx, target, act, e):
     status_icon = conf['emoji_dict'][str(target.status)]
     multi_status = [
         e[0] for e in [
@@ -98,7 +98,7 @@ class Info(commands.Cog):
         act, e, status_display, badge_list, join_pos = ([], [], None, [], None)
         if isinstance(target, discord.Member) and ctx.guild:
             status_display, acts, act, join_pos = \
-                await member_info(self, ctx, target, act, e)
+                await member_info(ctx, target, act, e)
         try:
             bio = (await self.bot.conn.fetch('SELECT user_bio FROM user_data WHERE user_id=$1', target.id))[0]\
                 ['user_bio']

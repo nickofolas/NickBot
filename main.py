@@ -2,6 +2,7 @@ import os
 import warnings
 from datetime import datetime
 import random
+from contextlib import suppress
 
 import aiosqlite as asq
 from discord.ext import commands
@@ -32,8 +33,9 @@ async def get_prefix(bot, message):
     prefix = 'n/'
     if not message.guild:
         return commands.when_mentioned_or(prefix)(bot, message)
-    prefix = (await bot.conn.fetch('SELECT prefix FROM guild_prefs WHERE guild_id=$1', message.guild.id))[0]['prefix']
-    return commands.when_mentioned_or(prefix)(bot, message)
+    with suppress(IndexError):
+        prefix = (await bot.conn.fetch('SELECT prefix FROM guild_prefs WHERE guild_id=$1', message.guild.id))[0]['prefix']
+        return commands.when_mentioned_or(prefix)(bot, message)
 
 
 # Bot class itself, kinda important
