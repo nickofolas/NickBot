@@ -57,16 +57,18 @@ class Util(commands.Cog):
     @commands.is_owner()
     async def viewdict(self, ctx):
         """View the current dictionary for the snipe command"""
-        send_dict = dict.fromkeys([k for k in self.bot.deleted])
-        for i in self.bot.deleted:
-            send_dict[i] = self.bot.deleted[i]
+        send_dict = dict.fromkeys([k for k in self.bot.snipes])
+        for i in self.bot.snipes:
+            send_dict[i] = self.bot.snipes[i]
         await ctx.safe_send(
             ('```\n' + pprint.pformat(send_dict).replace('```', '``')
              + '\n```'))
 
     @snipe.command()
-    async def edits(self, ctx):
-        before, after, when = self.bot.snipes[ctx.channel.id]['edited'][-1]
+    async def edits(self, ctx, target_channel: Union[discord.TextChannel, int] = None):
+        target_channel = self.bot.get_channel(target_channel) if \
+            isinstance(target_channel, int) else target_channel or ctx.channel
+        before, after, when = self.bot.snipes[target_channel.id]['edited'][-1]
         diff = difflib.ndiff(f'{before.content}\n'.splitlines(keepends=True),
                              f'{after.content}\n'.splitlines(keepends=True))
         await ctx.send(embed=discord.Embed(description='```diff\n' + ''.join(diff) + '```', color=discord.Color.main))
