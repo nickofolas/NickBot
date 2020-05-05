@@ -156,12 +156,12 @@ class Data(commands.Cog):
     @hl_dev.command(name='queue')
     @commands.is_owner()
     async def view_hl_queue(self, ctx):
-        await ctx.safe_send(self.bot.get_cog('Events').hl_queue)
+        await ctx.safe_send(str(self.bot.get_cog('Events').hl_queue))
 
     @hl_dev.command(name='cache')
     @commands.is_owner()
     async def view_hl_cache(self, ctx):
-        await ctx.safe_send(self.bot.get_cog('Events').hl_cache)
+        await ctx.safe_send(str(self.bot.get_cog('Events').hl_cache))
 
     @hl_dev.command(name='build')
     @commands.is_owner()
