@@ -53,12 +53,6 @@ class NeoBot(commands.Bot):
         self.deleted = {}
         # self.socket_stats = {}
         self.launch_time = datetime.utcnow()
-
-        self.cleverbot = ac.Cleverbot(os.getenv("CLEVERBOT_KEY"))
-        self.cleverbot.set_context(ac.DictContext(self.cleverbot))
-        self.cleverbot.emotion = random.choice([
-            ac.Emotion.normal, ac.Emotion.sad,
-            ac.Emotion.fear, ac.Emotion.joy, ac.Emotion.anger])
         self.all_cogs = list()
         self.persistent_status = False
         self.loop.create_task(self.ainit())
@@ -97,7 +91,6 @@ class NeoBot(commands.Bot):
 
     async def close(self):
         await self.session.close()
-        await self.cleverbot.close()
         await self.conn.close()
         await super().close()
 

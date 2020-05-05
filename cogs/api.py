@@ -1,25 +1,21 @@
 import datetime
 import itertools
-import random
 import os
-import time
-from typing import Union
+import random
 import textwrap
-from contextlib import suppress
+import time
 
-import discord
-from discord.ext import commands
-import humanize
 import aiohttp
+import async_cse as cse
+import discord
+import humanize
 from aiogoogletrans import LANGUAGES as langs
 from aiogoogletrans import Translator
-import async_cse as cse
-import aiosqlite as asq
+from discord.ext import commands
 
 import utils.errors as errors
-from utils.paginator import GoogleMenu, CSMenu
 from utils.config import conf
-from utils.checks import exclude_channels
+from utils.paginator import GoogleMenu, CSMenu
 
 
 def filter_posts(obj):
@@ -319,18 +315,6 @@ class Api(commands.Cog):
         source = GoogleMenu(page_entries, per_page=1, image=True)
         menu = CSMenu(source, delete_message_after=True)
         await menu.start(ctx)
-
-    @commands.command(name="cleverbot", aliases=["cb", "ask"])
-    @commands.cooldown(1, 5, commands.BucketType.user)
-    @exclude_channels(665249180150792216)
-    async def cleverbot_(self, ctx, *, query: str):
-        """Ask Cleverbot a question!"""
-        async with ctx.ExHandler(propagate=(self.bot, ctx)), ctx.typing():
-            r = await self.bot.cleverbot.ask(query, ctx.author.id)
-            await ctx.send("{}, {}".format(ctx.author.mention, r.text), allowed_mentions=discord.AllowedMentions(users=True))
-
-    def cog_unload(self):
-        self.bot.loop.create_task(self.bot.cleverbot.close())
 
     @commands.group()
     async def fortnite(self, ctx):
