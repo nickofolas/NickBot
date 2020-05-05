@@ -243,7 +243,7 @@ class Dev(commands.Cog):
         table = tabulate(list(list(r.values()) for r in results), headers=headers)
         await ctx.quick_menu(
             list(table),
-            1985,
+            1900,
             template=discord.Embed(
                 title=f'Returned {rows} {pluralize("row", rows)} in {dt:.2f}ms', color=discord.Color.main))
 
