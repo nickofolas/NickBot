@@ -225,7 +225,6 @@ class Info(commands.Cog):
     async def serverinfo(self, ctx, guild: int = None):
         """Get info about the current server"""
         guild = self.bot.get_guild(guild) or ctx.guild
-        feats = str(', '.join(guild.features)).replace('_', ' ').title()
         embed = discord.Embed(
             color=discord.Color.main).set_footer(
                 text=f'Created '
@@ -237,7 +236,6 @@ class Info(commands.Cog):
 **Channels** <:text_channel:687064764421373954> {len(guild.text_channels)} | <:voice_channel:687064782167212165> {len(guild.voice_channels)}
 **Region** {str(guild.region).title()}
 **Verification Level** {str(guild.verification_level).capitalize()}
-**Features** {feats}
 **Emojis** {len([emoji for emoji in guild.emojis if not emoji.animated])}/{guild.emoji_limit}
 **Max Upload** {round(guild.filesize_limit * 0.00000095367432)}MB
             """,
@@ -246,7 +244,9 @@ class Info(commands.Cog):
         ls = sorted([m.status for m in guild.members])
         for key, group in itertools.groupby(ls, lambda x: x):
             statuses[conf['emoji_dict'][str(key)]] = len(list(group))
-        stat_disp = '\n'.join([f'{k}{v:,}' for k, v in statuses.items()])
+        s_members = [f'{k}{v:,}' for k, v in statuses.items()]
+        s_members.append(f'<:bot:699991045886312488>{sum(m.bot for m in guild.members):,}')
+        stat_disp = '\n'.join(s_members)
         embed.add_field(
             name=f'**Members ({len(guild.members):,})**',
             value=stat_disp,
