@@ -263,7 +263,7 @@ class Data(commands.Cog):
                     check=lambda m: m.author.id == ctx.author.id,
                     timeout=300.0)
                 body = msg.content
-        if name in ('create', 'delete', 'del', 'info', 'edit', 'list'):
+        if name in ('create', 'delete', 'del', 'info', 'edit', 'list', 'lb'):
             raise commands.CommandError('This name cannot be used')
         if attach := msg.attachments:
             body = (body + ' ' + attach[0].url) if body else attach[0].url
@@ -332,6 +332,23 @@ class Data(commands.Cog):
         source = BareBonesMenu(tag_list, per_page=10)
         menu = CSMenu(source, delete_message_after=True)
         await menu.start(ctx)
+
+    @tag.command(name='lb')
+    async def tag_leaderboard(self, ctx):
+        top_tags = [(rec['tagname'], rec['times_used']) for rec in
+                    await self.bot.conn.fetch('SELECT tagname, times_used FROM tags ORDER BY times_used DESC LIMIT 3')]
+        top_owner = [(rec['owner_id'], rec['sum']) for rec in
+                     await self.bot.conn.fetch('SELECT owner_id, SUM(times_used) as S FROM tags GROUP BY owner_id'
+                                               ' ORDER BY SUM(times_used) DESC LIMIT 3')]
+        embed = discord.Embed(title='Tag Leaderboard', color=discord.Color.main)
+        embed.add_field(
+            name='Top Tags',
+            value='\n'.join([f'`{t[0]}` - {t[1]} uses' for t in top_tags]))
+        embed.add_field(
+            name='Top Owners',
+            value='\n'.join([f'`{t[0]}` - {t[1]} uses' for t in top_owner]))
+        await ctx.send(embed=embed)
+
 
     @tag.command(name='purge')
     @commands.is_owner()
