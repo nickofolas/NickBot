@@ -153,7 +153,7 @@ class Dev(commands.Cog):
                 if value:
                     sent = await ctx.safe_send(f'{value}')
             else:
-                self._last_result = ret 
+                self._last_result = ret
                 if isinstance(ret, discord.Embed):
                     sent = await ctx.send(embed=ret)
                 elif isinstance(ret, discord.File):
@@ -193,7 +193,7 @@ class Dev(commands.Cog):
                 await ctx.author.send(page)
             return
         end = time.perf_counter()
-        await ctx.send(f'Cmd `{command_string}` executed in {end-start:.3f}s')
+        await ctx.send(f'Cmd `{command_string}` executed in {end - start:.3f}s')
 
     @commands.command()
     @commands.is_owner()
@@ -215,7 +215,8 @@ class Dev(commands.Cog):
             return await ctx.send(embed=discord.Embed(
                 title='Prefixes for this guild',
                 description='\n'.join(
-                    sorted(set([p.replace('@!', '@') for p in await self.bot.get_prefix(ctx.message)]), key=lambda p: len(p))),
+                    sorted(set([p.replace('@!', '@') for p in await self.bot.get_prefix(ctx.message)]),
+                           key=lambda p: len(p))),
                 color=discord.Color.main))
         await self.bot.conn.execute(
             'INSERT INTO guild_prefs (guild_id, prefix) VALUES ($1, $2) ON CONFLICT (guild_id) DO UPDATE SET prefix=$2',
@@ -225,16 +226,23 @@ class Dev(commands.Cog):
     @commands.command()
     @commands.is_owner()
     async def sql(self, ctx, *, query: str):
-        async with asq.connect('./database.db') as db:
-            out = await db.execute(query)
-            res = await out.fetchall()
-            try:
-                names = list(map(lambda x: x[0], out.description))
-                table = tabulate(list(res), headers=names, tablefmt='pretty')
-                await ctx.safe_send(f"```\n{table}```")
-            except Exception:
-                await db.commit()
-                await ctx.safe_send(f"Executed ```sql\n{query}```")
+        is_multistatement = query.count(';') > 1
+        if is_multistatement:
+            strategy = self.bot.conn.execute
+        else:
+            strategy = self.bot.conn.fetch
+
+        start = time.perf_counter()
+        results = await strategy(query)
+        dt = (time.perf_counter() - start) * 1000.0
+
+        rows = len(results)
+        if is_multistatement or rows == 0:
+            return await ctx.send(f'`{dt:.2f}ms: {results}`')
+
+        headers = list(results[0].keys())
+        await ctx.send('```' + tabulate(list(list(r.values()) for r in results), headers=headers,
+                                        tablefmt='pretty') + '```')
 
     @commands.group(name='dev')
     @commands.is_owner()
@@ -292,7 +300,8 @@ class Dev(commands.Cog):
                     status=ctx.me.status,
                     activity=discord.Activity(
                         type=type_dict[args.presence.pop(0)], name=' '.join(args.presence)))
-            updated_list.append(f'Changed presence to {ctx.me.activity.name if ctx.me.activity is not None else "None"}')
+            updated_list.append(
+                f'Changed presence to {ctx.me.activity.name if ctx.me.activity is not None else "None"}')
         if args.nick:
             await ctx.me.edit(nick=args.nick if args.nick != 'None' else None)
             updated_list.append(f'Changed nickname to {args.nick}')
@@ -389,7 +398,8 @@ class Dev(commands.Cog):
                     errored.append(filename[:-3])
             await ctx.message.remove_reaction('<a:loading:681628799376293912>', ctx.me)
             if errored:
-                await ctx.send(f'\nThe following {pluralize("extension", errored)} errored while reloading: ' + ', '.join(errored))
+                await ctx.send(
+                    f'\nThe following {pluralize("extension", errored)} errored while reloading: ' + ', '.join(errored))
             else:
                 await ctx.message.add_reaction(ctx.tick(True))
         else:
