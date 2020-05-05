@@ -241,12 +241,14 @@ class Dev(commands.Cog):
             return await ctx.send(f'`{dt:.2f}ms: {results}`')
         headers = list(results[0].keys())
         table = tabulate(list(list(r.values()) for r in results), headers=headers)
-        paginator = commands.Paginator(prefix='', suffix=f'\nReturned {rows} {pluralize("row", rows)} in {dt:.2f}ms')
+        pages = commands.Paginator(max_size=500)
         for line in table.splitlines():
-            paginator.add_line(line)
-        source = ShellMenu(paginator.pages, per_page=1)
-        menu = CSMenu(source, delete_message_after=True)
-        await menu.start(ctx)
+            pages.add_line(line)
+        await ctx.quick_menu(
+            pages.pages,
+            1,
+            template=discord.Embed(
+                title=f'Returned {rows} {pluralize("row", rows)} in {dt:.2f}ms', color=discord.Color.main))
 
     @commands.group(name='dev')
     @commands.is_owner()
