@@ -241,7 +241,7 @@ class Dev(commands.Cog):
             return await ctx.send(f'`{dt:.2f}ms: {results}`')
 
         headers = list(results[0].keys())
-        await ctx.send('```' + tabulate(list(list(r.values()) for r in results), headers=headers,
+        await ctx.safe_send('```' + tabulate(list(list(r.values()) for r in results), headers=headers,
                                         tablefmt='pretty') + '```')
 
     @commands.group(name='dev')
