@@ -53,8 +53,7 @@ class NeoBot(commands.Bot):
         super().__init__(command_prefix=get_prefix, case_insensitive=True,
                          allowed_mentions=discord.AllowedMentions(everyone=False, users=False, roles=False))
         self.session = aiohttp.ClientSession()
-        self.deleted = {}
-        self.edited = {}
+        self.snipes = {}
         # self.socket_stats = {}
         self.launch_time = datetime.utcnow()
         self.all_cogs = list()
