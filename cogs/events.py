@@ -104,9 +104,8 @@ class Events(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message_edit(self, before, after):
-        if after.content == before.content:
-            return
-        await self.bot.process_commands(after)
+        if after.content != before.content:
+            await self.bot.process_commands(after)
 
     @commands.Cog.listener()
     async def on_message_delete(self, message):
@@ -127,12 +126,10 @@ class Events(commands.Cog):
             + f'**Admins:** {len([m for m in guild.members if m.guild_permissions.administrator])}\n'
             + f'**Owner: ** {guild.owner}\n',
             inline=False)
-        try:
+        with suppress(Exception):
             embed.add_field(
                 name='**Guild Invite**',
                 value=(await guild.text_channels[0].create_invite()))
-        except Exception:
-            pass
 
         await self.bot.conn.execute(
             'INSERT INTO guild_prefs (guild_id, prefix) VALUES ($1, $2) ON CONFLICT (guild_id) DO UPDATE SET prefix=$2',

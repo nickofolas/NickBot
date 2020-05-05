@@ -99,7 +99,11 @@ class Info(commands.Cog):
         if isinstance(target, discord.Member) and ctx.guild:
             status_display, acts, act, join_pos = \
                 await member_info(self, ctx, target, act, e)
-        bio = (await self.bot.conn.fetch('SELECT user_bio FROM user_data WHERE user_id=$1', target.id))[0]['user_bio']
+        try:
+            bio = (await self.bot.conn.fetch('SELECT user_bio FROM user_data WHERE user_id=$1', target.id))[0]\
+                ['user_bio']
+        except IndexError:
+            bio = None
         flag_vals = UserFlags(
             (await self.bot.http.get_user(target.id))['public_flags'])
         for i in badges.keys():
