@@ -37,8 +37,8 @@ class Util(commands.Cog):
                 exception_type=KeyError,
                 propagate=(self.bot, ctx),
                 message='This channel cannot be sniped'):
-            msg = self.bot.snipes[target_channel.id]['deleted'][-1][0]
-            timestamp = self.bot.snipes[target_channel.id]['deleted'][-1][1]
+            msg = self.bot.snipes[target_channel.id]['deleted'][0]
+            timestamp = self.bot.snipes[target_channel.id]['deleted'][1]
             embed = discord.Embed(
                 title='',
                 description=(msg.content if msg.content else ''),
@@ -66,7 +66,7 @@ class Util(commands.Cog):
 
     @snipe.command()
     async def edits(self, ctx):
-        before, after, when = self.bot.snipes[ctx.channel.id]['edited'][-1]
+        before, after, when = self.bot.snipes[ctx.channel.id]['edited']
         diff = difflib.ndiff(f'{before.content}\n'.splitlines(keepends=True),
                              f'{after.content}\n'.splitlines(keepends=True))
         await ctx.send(embed=discord.Embed(description='```diff\n' + ''.join(diff) + '```', color=discord.Color.main))
