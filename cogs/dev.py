@@ -241,12 +241,9 @@ class Dev(commands.Cog):
             return await ctx.send(f'`{dt:.2f}ms: {results}`')
         headers = list(results[0].keys())
         table = tabulate(list(list(r.values()) for r in results), headers=headers)
-        pages = commands.Paginator()
-        for line in table.splitlines():
-            pages.add_line(line)
         await ctx.quick_menu(
-            pages.pages,
-            1,
+            list(table),
+            1985,
             template=discord.Embed(
                 title=f'Returned {rows} {pluralize("row", rows)} in {dt:.2f}ms', color=discord.Color.main))
 
