@@ -1,3 +1,4 @@
+import textwrap
 from datetime import datetime
 import io
 from typing import Union
@@ -225,21 +226,18 @@ class Info(commands.Cog):
         """Get info about the current server"""
         guild = self.bot.get_guild(guild) or ctx.guild
         feats = str(', '.join(guild.features)).replace('_', ' ').title()
-        admins = [m for m in guild.members if m.guild_permissions.administrator]
         embed = discord.Embed(
-            title=' ',
-            description=f'**{guild.name} | {guild.id}**',
             color=discord.Color.main).set_footer(
                 text=f'Created '
-                f'{humanize.naturaltime(datetime.utcnow() - guild.created_at)}')
-        embed.set_thumbnail(url=guild.icon_url_as(static_format='png'))
+                f'{humanize.naturaltime(datetime.utcnow() - guild.created_at)} | Owner: {guild.owner}')
+        embed.set_author(name=f'**{guild.name} | {guild.id}**', url=guild.icon_url_as(static_format='png'))
         embed.add_field(
             name='**General**',
             value=f"""
 **Channels** <:text_channel:687064764421373954> {len(guild.text_channels)} | <:voice_channel:687064782167212165> {len(guild.voice_channels)}
 **Region** {str(guild.region).title()}
 **Verification Level** {str(guild.verification_level).capitalize()}
-**Features** {feats}
+**Features** {textwrap.fill(feats, 25)}
 **Emojis** {len([emoji for emoji in guild.emojis if not emoji.animated])}/{guild.emoji_limit}
 **Max Upload** {round(guild.filesize_limit * 0.00000095367432)}MB
             """,
@@ -248,15 +246,15 @@ class Info(commands.Cog):
         ls = sorted([m.status for m in guild.members])
         for key, group in itertools.groupby(ls, lambda x: x):
             statuses[conf['emoji_dict'][str(key)]] = len(list(group))
-        stat_disp = ' '.join([f'{k}{v:,}' for k, v in statuses.items()])
+        stat_disp = '\n'.join([f'{k}{v:,}' for k, v in statuses.items()])
+        boost_bar = utils.data_vis.bar_make(
+            guild.premium_subscription_count, 30,
+            '<:nitrobar_filled:698019974832324608>', '<:nitrobar_empty:698019957983674459>', False, 5)
         embed.add_field(
-            name='**Members**',
-            value=stat_disp + f"""
-**Total** {len(guild.members):,}
-**Admins** {len(admins)}
-**Owner ** {guild.owner.name}
-**Boosts **{guild.premium_subscription_count}
-{utils.data_vis.bar_make(guild.premium_subscription_count, 30, '<:nitrobar_filled:698019974832324608>', '<:nitrobar_empty:698019957983674459>', False, 5)}
+            name=f'**Members ({len(guild.members):,})**',
+            value=f"""
+**Boosts **{guild.premium_subscription_count} {boost_bar} 
+{stat_disp}
             """,
             inline=True)
         await ctx.send(embed=embed)
