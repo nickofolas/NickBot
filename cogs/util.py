@@ -75,7 +75,7 @@ class Util(commands.Cog):
             diff = difflib.ndiff(f'{before.content}\n'.splitlines(keepends=True),
                                  f'{after.content}\n'.splitlines(keepends=True))
             entries.append('```diff\n' + ''.join(diff) + '```')
-        await ctx.quick_menu(entries, 1)
+        await ctx.quick_menu(entries, 1, delete_message_after=True)
         '''
         before, after, when = self.bot.snipes[target_channel.id]['edited'][-1]
         diff = difflib.ndiff(f'{before.content}\n'.splitlines(keepends=True),
