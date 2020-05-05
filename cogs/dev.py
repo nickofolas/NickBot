@@ -240,9 +240,8 @@ class Dev(commands.Cog):
         if is_multistatement or rows == 0:
             return await ctx.send(f'`{dt:.2f}ms: {results}`')
         headers = list(results[0].keys())
-        table = tabulate(list(list(r.values()) for r in results), headers=headers,
-                         tablefmt='pretty')
-        pages = commands.Paginator()
+        table = tabulate(list(list(r.values()) for r in results), headers=headers)
+        pages = commands.Paginator(max_size=1000)
         for line in table.splitlines():
             pages.add_line(line)
         await ctx.quick_menu(
