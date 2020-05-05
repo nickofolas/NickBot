@@ -69,7 +69,7 @@ class Util(commands.Cog):
         target_channel = self.bot.get_channel(target_channel) if \
             isinstance(target_channel, int) else target_channel or ctx.channel
         entries = []
-        for before, after, when in sorted(self.bot.snipes[target_channel.id]['edited'], reverse=True):
+        for before, after, when in reversed(self.bot.snipes[target_channel.id]['edited']):
             if not before.content or not after.content:
                 continue
             diff = difflib.ndiff(f'{before.content}\n'.splitlines(keepends=True),
