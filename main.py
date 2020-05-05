@@ -94,6 +94,7 @@ class NeoBot(commands.Bot):
     async def close(self):
         await self.session.close()
         await self.cleverbot.close()
+        await self.conn.close()
         await super().close()
 
 

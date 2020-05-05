@@ -148,6 +148,27 @@ class Data(commands.Cog):
         if conf:
             await self.bot.conn.execute('DELETE FROM highlights WHERE user_id=$1', ctx.author.id)
 
+    @highlight.group(name='dev')
+    @commands.is_owner()
+    async def hl_dev(self, ctx):
+        pass
+
+    @hl_dev.command(name='queue')
+    @commands.is_owner()
+    async def view_hl_queue(self, ctx):
+        await ctx.safe_send(self.bot.get_cog('Events').hl_queue)
+
+    @hl_dev.command(name='cache')
+    @commands.is_owner()
+    async def view_hl_cache(self, ctx):
+        await ctx.safe_send(self.bot.get_cog('Events').hl_cache)
+
+    @hl_dev.command(name='build')
+    @commands.is_owner()
+    async def hl_cache_build_cmd(self, ctx):
+        await self.bot.get_cog('Events').build_hl_cache()
+        await ctx.message.add_reaction(ctx.tick(True))
+
     # END HIGHLIGHTS GROUP ~
     # BEGIN TODOS GROUP ~
 
