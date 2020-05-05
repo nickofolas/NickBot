@@ -241,7 +241,7 @@ class Dev(commands.Cog):
             return await ctx.send(f'`{dt:.2f}ms: {results}`')
         headers = list(results[0].keys())
         table = tabulate(list(list(r.values()) for r in results), headers=headers)
-        paginator = commands.Paginator(suffix=f'```\nReturned {rows} {pluralize("row", rows)} in {dt:.2f}ms')
+        paginator = commands.Paginator(prefix='', suffix=f'\nReturned {rows} {pluralize("row", rows)} in {dt:.2f}ms')
         for line in table.splitlines():
             paginator.add_line(line)
         source = ShellMenu(paginator.pages, per_page=1985)
