@@ -1,3 +1,4 @@
+import difflib
 import time
 import re
 import pprint
@@ -62,6 +63,13 @@ class Util(commands.Cog):
         await ctx.safe_send(
             ('```\n' + pprint.pformat(send_dict).replace('```', '``')
              + '\n```'))
+
+    @snipe.command()
+    async def edits(self, ctx):
+        before, after, when = self.bot.edited[ctx.channel.id]
+        diff = difflib.unified_diff(before.splitlines(keepends=True),
+                                    after.splitlines(keepends=True))
+        await ctx.send('```diff\n' + ''.join(diff) + '```', end="")
 
     @commands.command()
     @commands.cooldown(1, 15, commands.BucketType.user)

@@ -106,6 +106,7 @@ class Events(commands.Cog):
     async def on_message_edit(self, before, after):
         if after.content != before.content:
             await self.bot.process_commands(after)
+        self.bot.edited[after.channel.id] = (before, after, datetime.utcnow())
 
     @commands.Cog.listener()
     async def on_message_delete(self, message):
