@@ -55,6 +55,7 @@ class Events(commands.Cog):
         await ctx.propagate_to_eh(self.bot, ctx, error)
 
     async def build_hl_cache(self):
+        await self.bot.wait_until_ready()
         self.hl_cache = []
         fetched = await self.bot.conn.fetch('SELECT user_id, kw, exclude_guild FROM highlights')
         for rec in fetched:
