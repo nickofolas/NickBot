@@ -211,11 +211,8 @@ class Info(commands.Cog):
     @userinfo.command(name='shared')
     async def shared_guilds(self, ctx, *, target: Union[discord.Member, discord.User, int] = None):
         target = (target.id if isinstance(target, (discord.Member, discord.User)) else target) or ctx.author.id
-        await ctx.send(
-            embed=discord.Embed(
-                title=f'Guilds {self.bot.get_user(target)} shares with bot',
-                description='\n'.join([*(g.name for g in self.bot.guilds if target in [m.id for m in g.members])]),
-                color=discord.Color.main))
+        template = discord.Embed(title=f'Guilds shared between {self.bot.get_user(target)} and {ctx.me}', color=discord.Color.main)
+        await ctx.quick_menu([*(g.name for g in self.bot.guilds if target in [m.id for m in g.members])], 10, template=template, delete_message_after=True)
 
     @commands.group(
         aliases=['guild', 'guildinfo', 'server'],
