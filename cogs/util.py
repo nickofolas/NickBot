@@ -35,17 +35,13 @@ class Util(commands.Cog):
             to retrieve the most recently deleted item from that channel"""
         target_channel = self.bot.get_channel(target_channel) if \
             isinstance(target_channel, int) else target_channel or ctx.channel
-        async with ctx.ExHandler(
-                exception_type=KeyError,
-                propagate=(self.bot, ctx),
-                message='This channel cannot be sniped'):
-            entries = []
-            for msg, when in reversed(self.bot.snipes[target_channel.id]['deleted']):
-                tup = (msg.content, msg, when)
-                entries.append(tup)
-            source = paginator.SnipeMenu(entries)
-            menu = paginator.CSMenu(source, delete_message_after=True)
-            await menu.start(ctx)
+        entries = []
+        for msg, when in reversed(self.bot.snipes[target_channel.id]['deleted']):
+            tup = (msg.content, msg, when)
+            entries.append(tup)
+        source = paginator.SnipeMenu(entries)
+        menu = paginator.CSMenu(source, delete_message_after=True)
+        await menu.start(ctx)
 
     @snipe.command(aliases=['dict'])
     @commands.is_owner()
