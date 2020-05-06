@@ -76,7 +76,8 @@ class Events(commands.Cog):
         await self.bot.wait_until_ready()
         if not hasattr(self, 'hl_cache'):
             return
-        for c in self.hl_cache:
+        set_cache = set(self.hl_cache)
+        for c in set_cache:
             if match := re.search(c[1], message.content):
                 if c[2]:
                     if str(message.guild.id) in c[2].split(','):
