@@ -122,8 +122,6 @@ class Info(commands.Cog):
                 is_nitro = True
         if target.is_avatar_animated():
             is_nitro = True
-        if is_nitro:
-            badge_list += ' <:nitro:707724974248427642>'
         embed = discord.Embed(
             title=tagline,
             colour=discord.Color.main)
