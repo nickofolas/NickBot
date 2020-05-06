@@ -9,6 +9,7 @@ from inspect import Parameter
 from typing import Union
 
 import discord
+import typing
 import unidecode as ud
 from discord.ext import commands
 
@@ -89,14 +90,16 @@ class Util(commands.Cog):
         await message.edit(embed=embed)
 
     @commands.command(aliases=['inv'])
-    async def invite(self, ctx, *, permissions=None):
+    async def invite(self, ctx, *, permissions: typing.Union[str, int] = None):
         """Gets an invite link for the bot
         When run with no arguments, an invite link with
         default permissions will be returned. However, this
         command also allows for granular permission setting:
             - To request an invite link with only read_messages
             permissions, one would run `invite read_messages`"""
-        if permissions:
+        if isinstance(permissions, int):
+            permissions = discord.Permissions(permissions)
+        elif permissions:
             permission_names = tuple(re.split(r'[ ,] ?', permissions))
             permissions = discord.Permissions()
             permissions.update(**dict.fromkeys(permission_names, True))
