@@ -109,7 +109,7 @@ class Events(commands.Cog):
             await self.bot.process_commands(after)
         if not self.bot.snipes.get(after.channel.id):
             self.bot.snipes[after.channel.id] = {'deleted': collections.deque(list(), 5), 'edited': collections.deque(list(), 5)}
-        if after.content and not after.bot:
+        if after.content and not after.author.bot:
             self.bot.snipes[after.channel.id]['edited'].append((before, after, datetime.utcnow()))
 
     @commands.Cog.listener()
