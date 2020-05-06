@@ -349,7 +349,7 @@ class SnipeMenu(menus.ListPageSource):
         if page[1].embeds:
             embed = copy.copy(page[1].embeds[0])
         embed.set_author(
-            name=f'{page[1].author.display_name} - {humanize.naturaltime(datetime.utcnow() - page[3])}',
+            name=f'{page[1].author.display_name} - {humanize.naturaltime(datetime.utcnow() - page[2])}',
             icon_url=page[1].author.avatar_url_as(static_format='png'))
         if isinstance(page, str):
             embed.description = ''.join(page[0])
