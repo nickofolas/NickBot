@@ -86,6 +86,7 @@ class Info(commands.Cog):
         target = (await self.bot.fetch_user(target)) if \
             isinstance(target, int) else target or ctx.author
         act, e, status_display, badge_list, join_pos = ([], [], None, [], None)
+        is_nitro = False
         if isinstance(target, discord.Member) and ctx.guild:
             status_display, acts, act, join_pos = \
                 await member_info(ctx, target, act, e)
@@ -118,6 +119,11 @@ class Info(commands.Cog):
                 tagline += '<:serverowner:706224911500181546> '
             if target.premium_since:
                 tagline += '<:booster:705917670691700776> '
+                is_nitro = True
+        if target.is_avatar_animated():
+            is_nitro = True
+        if is_nitro:
+            badge_list += ' <:nitro:707724974248427642>'
         embed = discord.Embed(
             title=tagline,
             colour=discord.Color.main)
