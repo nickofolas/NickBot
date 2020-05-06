@@ -259,6 +259,16 @@ class Dev(commands.Cog):
         menu = CSMenu(source, delete_message_after=True)
         await menu.start(ctx)
 
+    @dev_command_group.command(name='delete')
+    @commands.is_owner()
+    async def delete_bot_msg(self, ctx, *, message_id):
+        converter = commands.MessageConverter()
+        m = await converter.convert(ctx, message_id)
+        if not m.author.bot:
+            raise commands.CommandError('I can only delete my own messages')
+        await m.delete()
+        await ctx.message.add_reaction(ctx.tick(True))
+
     @commands.command(name='edit')
     @commands.is_owner()
     async def args_edit(self, ctx, *, args: str):
