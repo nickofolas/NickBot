@@ -15,6 +15,8 @@ import discord
 from discord.ext import commands
 import humanize
 
+from utils import paginator
+
 
 class Util(commands.Cog):
     """A variety of commands made with an emphasis
@@ -37,21 +39,13 @@ class Util(commands.Cog):
                 exception_type=KeyError,
                 propagate=(self.bot, ctx),
                 message='This channel cannot be sniped'):
-            msg = self.bot.snipes[target_channel.id]['deleted'][-1][0]
-            timestamp = self.bot.snipes[target_channel.id]['deleted'][-1][1]
-            embed = discord.Embed(
-                title='',
-                description=(msg.content if msg.content else ''),
-                color=discord.Color.main)
-            if msg.attachments:
-                embed.set_image(url=msg.attachments[0].proxy_url)
-            if msg.embeds:
-                embed = copy.copy(msg.embeds[0])
-            embed.set_author(
-                name=f'{msg.author.display_name} - {humanize.naturaltime(datetime.utcnow() - timestamp)}',
-                icon_url=msg.author.avatar_url_as(static_format='png'))
-            embed.set_footer(text=f'ID: {msg.id} | In: {target_channel}')
-            await ctx.send(embed=embed)
+            entries = []
+            for msg, when in reversed(self.bot.snipes[target_channel.id]['deleted']):
+                tup = (msg.content, msg, when)
+                entries.append(tup)
+            source = paginator.SnipeMenu(entries)
+            menu = paginator.CSMenu(source, delete_message_after=True)
+            await menu.start(ctx)
 
     @snipe.command(aliases=['dict'])
     @commands.is_owner()
@@ -74,19 +68,11 @@ class Util(commands.Cog):
                 continue
             diff = difflib.ndiff(f'{before.content}\n'.splitlines(keepends=True),
                                  f'{after.content}\n'.splitlines(keepends=True))
-            entries.append('```diff\n' + ''.join(diff) + '```')
-        await ctx.quick_menu(entries, 1, delete_message_after=True)
-        '''
-        before, after, when = self.bot.snipes[target_channel.id]['edited'][-1]
-        diff = difflib.ndiff(f'{before.content}\n'.splitlines(keepends=True),
-                             f'{after.content}\n'.splitlines(keepends=True))
-        embed = discord.Embed(description='```diff\n' + ''.join(diff) + '```', color=discord.Color.main)
-        embed.set_author(
-            name=f'{after.author.display_name} - {humanize.naturaltime(datetime.utcnow() - when)}',
-            icon_url=after.author.avatar_url_as(static_format='png'))
-        embed.set_footer(text=f'ID: {after.id} | In: {target_channel}')
-        await ctx.send(embed=embed)
-        '''
+            tup = ('```diff\n' + ''.join(diff) + '```', after, when)
+            entries.append(tup)
+        source = paginator.SnipeMenu(entries)
+        menu = paginator.CSMenu(source, delete_message_after=True)
+        await menu.start(ctx)
 
     @commands.command()
     @commands.cooldown(1, 15, commands.BucketType.user)

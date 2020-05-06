@@ -1,7 +1,9 @@
 import asyncio
 import copy
+from datetime import datetime
 
 import discord
+import humanize
 from discord.ext.commands import Paginator as CommandPaginator
 from discord.ext import menus
 
@@ -254,11 +256,12 @@ class CSMenu(menus.MenuPages):
         elif isinstance(value, str):
             return {'content': value, 'embed': None}
         elif isinstance(value, discord.Embed):
-            return {'embed': value.set_footer(text=f'Page {self.current_page+1}/{self._source.get_max_pages()}'), 'content': None}
+            return {'embed': value.set_footer(text=f'Page {self.current_page + 1}/{self._source.get_max_pages()}'),
+                    'content': None}
 
     @menus.button(
-            '<:track_backward:703845740702859345>\ufe0f',
-            position=menus.First(0), skip_if=_skip_double_triangle_buttons)
+        '<:track_backward:703845740702859345>\ufe0f',
+        position=menus.First(0), skip_if=_skip_double_triangle_buttons)
     async def go_to_first_page(self, payload):
         """go to the first page"""
         await self.show_page(0)
@@ -274,8 +277,8 @@ class CSMenu(menus.MenuPages):
         await self.show_checked_page(self.current_page + 1)
 
     @menus.button(
-            '<:track_forward:703845753696813076>\ufe0f',
-            position=menus.Last(1), skip_if=_skip_double_triangle_buttons)
+        '<:track_forward:703845753696813076>\ufe0f',
+        position=menus.Last(1), skip_if=_skip_double_triangle_buttons)
     async def go_to_last_page(self, payload):
         """go to the last page"""
         # The call here is safe because it's guarded by skip_if
@@ -333,3 +336,23 @@ class ShellMenu(menus.ListPageSource):
             return page
         else:
             return f'```{self.code_lang or ""}\n' + ''.join(page) + '```'
+
+
+class SnipeMenu(menus.ListPageSource):
+    def __init__(self, entries, per_page=1):
+        super().__init__(entries, per_page=per_page)
+
+    async def format_page(self, menu, page):
+        embed = discord.Embed(color=discord.Color.main)
+        if page[1].attachments:
+            embed.set_image(url=page[1].attachments[0].proxy_url)
+        if page[1].embeds:
+            embed = copy.copy(page[1].embeds[0])
+        embed.set_author(
+            name=f'{page[1].author.display_name} - {humanize.naturaltime(datetime.utcnow() - page[3])}',
+            icon_url=page[1].author.avatar_url_as(static_format='png'))
+        if isinstance(page, str):
+            embed.description = ''.join(page[0])
+        else:
+            embed.description = '\n'.join(page[0])
+        return embed
