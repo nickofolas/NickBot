@@ -131,7 +131,7 @@ class Info(commands.Cog):
         status_display = status_display or ''
         embed.description = f"""
 {status_display}
-{badge_list or ''}
+{badge_list or ''}{' <:nitro:707724974248427642>' if is_nitro else ''}
             """
         stats_disp = str()
         stats_disp += f'**Registered **{humanize.naturaltime(datetime.utcnow() - target.created_at)}'
