@@ -90,7 +90,7 @@ class Util(commands.Cog):
         await message.edit(embed=embed)
 
     @commands.command(aliases=['inv'])
-    async def invite(self, ctx, *, permissions = None):
+    async def invite(self, ctx, *, permissions=None):
         """Gets an invite link for the bot
         When run with no arguments, an invite link with
         default permissions will be returned. However, this

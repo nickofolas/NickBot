@@ -85,16 +85,6 @@ class Info(commands.Cog):
         """Get information about the targeted user"""
         target = (await self.bot.fetch_user(target)) if \
             isinstance(target, int) else target or ctx.author
-        if target != self.bot.user:
-            shared = len(
-                [g for g in self.bot.guilds
-                 if target in g.members]
-            )
-            shared_display = \
-                f'**Shared w/ Bot **{shared} {pluralize("guild", shared)}' \
-                    if shared else ''
-        else:
-            shared_display = ''
         act, e, status_display, badge_list, join_pos = ([], [], None, [], None)
         if isinstance(target, discord.Member) and ctx.guild:
             status_display, acts, act, join_pos = \
@@ -137,11 +127,9 @@ class Info(commands.Cog):
 {status_display}
 {badge_list or ''}
             """
-        # **Shared w/ Bot **{str(shared)} guilds
         stats_disp = str()
         stats_disp += f'**Registered **{humanize.naturaltime(datetime.utcnow() - target.created_at)}'
         stats_disp += f'\n{guild_level_stats}' if guild_level_stats else ''
-        stats_disp += f'\n{shared_display}' if shared_display else ''
         embed.add_field(
             name='Stats',
             value=stats_disp
@@ -219,6 +207,15 @@ class Info(commands.Cog):
                 return await ctx.send(embed=e)
         else:
             await ctx.send("A Spotify status couldn't be detected!")
+
+    @userinfo.command(name='shared')
+    async def shared_guilds(self, ctx, *, target: Union[discord.Member, discord.User, int] = None):
+        target = (target.id if isinstance(target, (discord.Member, discord.User)) else target) or ctx.me.id
+        await ctx.send(
+            embed=discord.Embed(
+                title=f'Guilds {self.bot.get_user(target)} shares with bot',
+                description='\n'.join([*(g.name for g in self.bot.guilds if target in [m.id for m in g.members])]),
+                color=discord.Color.main))
 
     @commands.group(
         aliases=['guild', 'guildinfo', 'server'],

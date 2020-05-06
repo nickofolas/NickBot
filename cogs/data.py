@@ -30,12 +30,12 @@ class Data(commands.Cog):
         """
         hl_list = []
         fetched = [rec['kw'] for rec in await self.bot.conn.fetch('SELECT kw FROM highlights WHERE user_id=$1', ctx.author.id)]
-        for i in range(10):
+        for i in range(5):
             to_append = f"`{(i + 1)}` {fetched[i]}" if i < len(fetched) else ''
             hl_list.append(to_append)
         await ctx.send(embed=discord.Embed(
             description='\n'.join(hl_list), color=discord.Color.main).set_footer(
-            text=f'{len(fetched)}/10 slots used'))
+            text=f'{len(fetched)}/5 slots used'))
 
     @highlight.command()
     async def add(self, ctx, *, highlight_words):
@@ -52,8 +52,8 @@ class Data(commands.Cog):
             if re.search(content_check, i):
                 raise commands.CommandError('This trigger is too general')
         active = await self.bot.conn.fetch('SELECT kw FROM highlights WHERE user_id=$1', ctx.author.id)
-        if len(active) >= 10:
-            raise commands.CommandError('You may only have 10 highlights at a time')
+        if len(active) >= 5:
+            raise commands.CommandError('You may only have 5 highlights at a time')
         if highlight_words in [rec['kw'] for rec in active]:
             raise commands.CommandError('You already have a highlight with this trigger')
         await self.bot.conn.execute(
