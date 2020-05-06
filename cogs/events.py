@@ -64,6 +64,7 @@ class Events(commands.Cog):
             i[1] = re.compile(i[1], re.I)
             i = tuple(i)
             self.hl_cache.append(i)
+        self.hl_cache = set(self.hl_cache)
 
     @commands.Cog.listener()
     async def on_command(self, ctx):
@@ -76,8 +77,7 @@ class Events(commands.Cog):
         await self.bot.wait_until_ready()
         if not hasattr(self, 'hl_cache'):
             return
-        set_cache = set(self.hl_cache)
-        for c in set_cache:
+        for c in self.hl_cache:
             if match := re.search(c[1], message.content):
                 if c[2]:
                     if str(message.guild.id) in c[2].split(','):
