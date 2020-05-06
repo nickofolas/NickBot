@@ -1,19 +1,16 @@
 import difflib
-import time
-import re
+import json
+import os
 import pprint
-from datetime import datetime
-from typing import Union
-import copy
+import re
+import time
 import unicodedata
 from inspect import Parameter
-import os
-import json
+from typing import Union
 
-import unidecode as ud
 import discord
+import unidecode as ud
 from discord.ext import commands
-import humanize
 
 from utils import paginator
 

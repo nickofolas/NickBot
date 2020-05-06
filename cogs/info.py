@@ -1,16 +1,14 @@
-import textwrap
-from datetime import datetime
 import io
-from typing import Union
 import itertools
+from datetime import datetime
+from typing import Union
 
 import discord
-from discord.ext import commands
 import humanize
-import aiosqlite as asq
+from discord.ext import commands
 
-from utils.config import conf
 import utils.data_vis
+from utils.config import conf
 from utils.flags import UserFlags
 from utils.helpers import pluralize
 
@@ -49,7 +47,8 @@ async def member_info(ctx, target, act, e):
             emoji = ''
             try:
                 if a.emoji:
-                    emoji = await commands.EmojiConverter().convert(ctx, a.emoji.id) if a.emoji.is_custom_emoji() else a.emoji
+                    emoji = await commands.EmojiConverter().convert(ctx,
+                                                                    a.emoji.id) if a.emoji.is_custom_emoji() else a.emoji
             except commands.errors.BadArgument:
                 emoji = ':question:'
             act.append(f'{emoji} {a.name or ""}')
@@ -82,18 +81,18 @@ class Info(commands.Cog):
 
     @commands.group(aliases=['ui'], invoke_without_command=True)
     async def userinfo(self, ctx, *, target: Union[
-            discord.Member, discord.User, int] = None):
+        discord.Member, discord.User, int] = None):
         """Get information about the targeted user"""
         target = (await self.bot.fetch_user(target)) if \
             isinstance(target, int) else target or ctx.author
         if target != self.bot.user:
             shared = len(
                 [g for g in self.bot.guilds
-                    if target in g.members]
-                )
+                 if target in g.members]
+            )
             shared_display = \
                 f'**Shared w/ Bot **{shared} {pluralize("guild", shared)}' \
-                if shared else ''
+                    if shared else ''
         else:
             shared_display = ''
         act, e, status_display, badge_list, join_pos = ([], [], None, [], None)
@@ -101,7 +100,7 @@ class Info(commands.Cog):
             status_display, acts, act, join_pos = \
                 await member_info(ctx, target, act, e)
         try:
-            bio = (await self.bot.conn.fetch('SELECT user_bio FROM user_data WHERE user_id=$1', target.id))[0]\
+            bio = (await self.bot.conn.fetch('SELECT user_bio FROM user_data WHERE user_id=$1', target.id))[0] \
                 ['user_bio']
         except IndexError:
             bio = None
@@ -112,14 +111,15 @@ class Info(commands.Cog):
                 badge_list.append(badges[i])
         badge_list = ' '.join(badge_list)
         guild_level_stats = f"**Joined Guild **" \
-            f"{humanize.naturaltime(datetime.utcnow() - target.joined_at)}"\
-            f"\n**Join Position **{join_pos}" \
+                            f"{humanize.naturaltime(datetime.utcnow() - target.joined_at)}" \
+                            f"\n**Join Position **{join_pos}" \
             if isinstance(target, discord.Member) and ctx.guild else ''
         bot_tag = ''
         tagline = f'{target} '
         if target.bot:
             bot_tag = '<:verified1:704885163003478069><:verified2:704885180162244749> ' if 'verified_bot' in \
-                [*flag_vals] else '<:bot:699991045886312488> '
+                                                                                           [
+                                                                                               *flag_vals] else '<:bot:699991045886312488> '
         tagline += f'{bot_tag} '
         if 'system' in [*flag_vals]:
             tagline += f'<:system1:706565390712701019><:system2:706565410463678485> '
@@ -145,7 +145,7 @@ class Info(commands.Cog):
         embed.add_field(
             name='Stats',
             value=stats_disp
-            )
+        )
         if act:
             embed.add_field(
                 name='Activities',
@@ -174,7 +174,8 @@ class Info(commands.Cog):
         for key, group in itertools.groupby(ls, lambda x: x[1]):
             joined = '\n'.join(
                 [f'{ctx.tick(g[1])} {discord.utils.escape_markdown(g[0])}'
-                 for g in group if g[0] in [a[0] for a in filter(lambda p: p[1] is True, discord.Permissions(2080898303))]])
+                 for g in group if
+                 g[0] in [a[0] for a in filter(lambda p: p[1] is True, discord.Permissions(2080898303))]])
             embed.add_field(name='_ _', value=joined or '_ _')
         embed.set_field_at(0, name=ctx.channel.permissions_for(ctx.author).value, value=embed.fields[0].value)
         embed.set_author(
@@ -196,7 +197,7 @@ class Info(commands.Cog):
                 e.set_author(
                     name=target.display_name,
                     icon_url='https://apkwind.com/wp-content/uploads'
-                    '/2019/10/spotify-1320568267425052388.png')
+                             '/2019/10/spotify-1320568267425052388.png')
                 e.set_thumbnail(url=ac.album_cover_url)
                 e.add_field(
                     name='**Song Title**',
@@ -206,14 +207,15 @@ class Info(commands.Cog):
                     value=', '.join(ac.artists))
                 e.add_field(name='**Album Name**', value=discord.utils.escape_markdown(ac.album))
                 bar = utils.data_vis.bar_make(
-                    val.seconds, g.seconds, '◉', '─', True, 5) if ctx.author.is_on_mobile() else utils.data_vis.bar_make(
-                        val.seconds, g.seconds, '◉', '─', True, 25)
+                    val.seconds, g.seconds, '◉', '─', True,
+                    5) if ctx.author.is_on_mobile() else utils.data_vis.bar_make(
+                    val.seconds, g.seconds, '◉', '─', True, 25)
                 e.add_field(
                     name='**Song Progress**',
-                    value=f'`{(val.seconds//60)%60:>02}:{val.seconds%60:>02}` '
-                    + bar
-                    + f' `{(g.seconds // 60) % 60:>02}:'
-                    f'{g.seconds % 60:>02}`', inline=False)
+                    value=f'`{(val.seconds // 60) % 60:>02}:{val.seconds % 60:>02}` '
+                          + bar
+                          + f' `{(g.seconds // 60) % 60:>02}:'
+                            f'{g.seconds % 60:>02}`', inline=False)
                 return await ctx.send(embed=e)
         else:
             await ctx.send("A Spotify status couldn't be detected!")
@@ -227,9 +229,11 @@ class Info(commands.Cog):
         guild = self.bot.get_guild(guild) or ctx.guild
         embed = discord.Embed(
             color=discord.Color.main).set_footer(
-                text=f'Created '
-                f'{humanize.naturaltime(datetime.utcnow() - guild.created_at)} | Owner: {guild.owner}')
-        embed.set_author(name=f'{guild.name} | {guild.id}', icon_url=guild.icon_url_as(static_format='png'))
+            text=f'Created '
+                 f'{humanize.naturaltime(datetime.utcnow() - guild.created_at)} | Owner: {guild.owner}')
+        embed.set_author(
+            name=f'{guild.name} | {guild.id}',
+            icon_url=guild.icon_url_as(static_format='png'), url=guild.icon_url_as(static_format='png'))
         embed.add_field(
             name='**General**',
             value=f"""
@@ -279,16 +283,16 @@ class Info(commands.Cog):
                 f'<:expanded:702065051036680232> {cat.name}',
                 [ctx.tab(5) + (
                     ('<:text_channel:687064764421373954> ' + chan.name if not
-                        chan.overwrites_for(guild.default_role).read_messages
-                        is False else '<:text_locked:697526634848452639> '
-                        + chan.name) if isinstance(chan, discord.TextChannel)
+                    chan.overwrites_for(guild.default_role).read_messages
+                    is False else '<:text_locked:697526634848452639> '
+                                  + chan.name) if isinstance(chan, discord.TextChannel)
                     else (
                         '<:voice_channel:687064782167212165> '
                         + chan.name if not
                         chan.overwrites_for(guild.default_role)
-                        .read_messages is False else
+                            .read_messages is False else
                         '<:voice_locked:697526650333691986> ' + chan.name))
-                    for chan in chanlist])
+                 for chan in chanlist])
             if to_append[1]:
                 final.append(to_append)
         embed = discord.Embed(color=discord.Color.main)
