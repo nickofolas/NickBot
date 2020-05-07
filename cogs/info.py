@@ -60,12 +60,7 @@ async def member_info(ctx, target, act, e):
         elif isinstance(a, discord.activity.Activity):
             act.append(f'{activity_type_mapping.get(a.type)} **{a.name}**')
     acts = '\n'.join(sorted(act))
-    for m in ctx.guild.members:
-        e.append(m)
-    e.sort(key=lambda r: r.joined_at)
-    for count, val in enumerate(e, 1):
-        if val == target:
-            join_pos = f'{count:,}'
+    join_pos = f'{sorted(ctx.guild.members, key=lambda m: m.joined_at).index(target) + 1:,}'
     status_display = f"{status_icon} " \
                      f"{str(target.status).title().replace('Dnd', 'DND')}" \
                      f" {('(' + ', '.join(multi_status) + ')' if multi_status else '')}"
