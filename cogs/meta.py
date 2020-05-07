@@ -171,6 +171,7 @@ class PaginatedHelpCommand(commands.HelpCommand):
             pages.embed.set_footer(text=f'Checks: {c}')
         await pages.paginate()
 
+
 class EmbeddedMinimalHelpCommand(commands.MinimalHelpCommand):
     def get_command_signature(self, command):
         parent = command.full_parent_name
@@ -182,14 +183,15 @@ class EmbeddedMinimalHelpCommand(commands.MinimalHelpCommand):
             alias = fmt
         else:
             alias = command.name if not parent else f'{parent} {command.name}'
-        return f'{alias} {command.signature}'
+        return f'{self.clean_prefix}{alias} {command.signature}'
 
     async def send_bot_help(self, mapping):
         def key(c):
             return c.cog_name or '\u200bUncategorized'
-        embed = discord.Embed(color=discord.Color.main)
-        description = str()
         bot = self.context.bot
+        embed = discord.Embed(color=discord.Color.main).set_author(
+            name=f'{bot.name} Help', icon_url=bot.avatar_url_as(static_format='png'))
+        description = f'Use {self.clean_prefix}help <command/category> for more help\n\n'
         entries = await self.filter_commands(bot.commands, sort=True, key=key)
         for cog, commands in itertools.groupby(entries, key=key):
             commands = sorted(commands, key=lambda c: c.name)
