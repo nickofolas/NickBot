@@ -17,6 +17,32 @@ from utils.config import conf
 from cogs.dev import cleanup_code
 from utils.paginator import BareBonesMenu, CSMenu
 
+CODE = {'A': '.-', 'B': '-...', 'C': '-.-.',
+        'D': '-..', 'E': '.', 'F': '..-.',
+        'G': '--.', 'H': '....', 'I': '..',
+        'J': '.---', 'K': '-.-', 'L': '.-..',
+        'M': '--', 'N': '-.', 'O': '---',
+        'P': '.--.', 'Q': '--.-', 'R': '.-.',
+        'S': '...', 'T': '-', 'U': '..-',
+        'V': '...-', 'W': '.--', 'X': '-..-',
+        'Y': '-.--', 'Z': '--..',
+
+        '0': '-----', '1': '.----', '2': '..---',
+        '3': '...--', '4': '....-', '5': '.....',
+        '6': '-....', '7': '--...', '8': '---..',
+        '9': '----.'
+        }
+
+CODE_REVERSED = {value: key for key, value in CODE.items()}
+
+
+def to_morse(s):
+    return ' '.join(CODE.get(i.upper(), i) for i in s)
+
+
+def from_morse(s):
+    return ''.join(CODE_REVERSED.get(i, i) for i in s.split())
+
 
 def upscale(inp):
     img = Image.open(io.BytesIO(inp))
@@ -51,6 +77,14 @@ class Fun(commands.Cog):
                 + n.to_bytes((n.bit_length() + 7) // 8, 'big').decode())
         except Exception:
             await ctx.safe_send(str(bin(int.from_bytes(input.encode(), 'big'))))
+
+    @commands.command()
+    async def morse(self, ctx, *, message):
+        await ctx.send(to_morse(message))
+
+    @commands.command()
+    async def demorse(self, ctx, *, morse):
+        await ctx.send(from_morse(morse))
 
     @commands.group(invoke_without_command=True)
     async def say(self, ctx, *, message):
