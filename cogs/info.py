@@ -86,8 +86,7 @@ class Info(commands.Cog):
             status_display, acts, act, join_pos = \
                 await member_info(ctx, target, act, e)
         try:
-            bio = (await self.bot.conn.fetch('SELECT user_bio FROM user_data WHERE user_id=$1', target.id))[0] \
-                ['user_bio']
+            bio = (await self.bot.conn.fetch('SELECT user_bio FROM user_data WHERE user_id=$1', target.id))[0]['user_bio']
         except IndexError:
             bio = None
         flag_vals = UserFlags(
@@ -210,8 +209,10 @@ class Info(commands.Cog):
     @userinfo.command(name='shared')
     async def shared_guilds(self, ctx, *, target: Union[discord.Member, discord.User, int] = None):
         target = (target.id if isinstance(target, (discord.Member, discord.User)) else target) or ctx.author.id
-        template = discord.Embed(title=f'Guilds shared between {self.bot.get_user(target)} and {ctx.me}', color=discord.Color.main)
-        await ctx.quick_menu([*(g.name for g in self.bot.guilds if target in [m.id for m in g.members])], 10, template=template, delete_message_after=True)
+        template = discord.Embed(title=f'Guilds shared between {self.bot.get_user(target)} and {ctx.me}',
+                                 color=discord.Color.main)
+        await ctx.quick_menu([*(g.name for g in self.bot.guilds if target in [m.id for m in g.members])], 10,
+                             template=template, delete_message_after=True)
 
     @commands.group(
         aliases=['guild', 'guildinfo', 'server'],
