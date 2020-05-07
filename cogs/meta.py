@@ -34,7 +34,7 @@ def retrieve_checks(command):
 class EmbeddedMinimalHelpCommand(commands.MinimalHelpCommand):
     def __init__(self):
         super().__init__(command_attrs={
-            'help': 'Shows help.',
+            'help': 'Shows help for the bot, a category, or a command.',
             'cooldown': commands.Cooldown(1, 2.5, commands.BucketType.user)
         })
 

@@ -135,21 +135,6 @@ class Fun(commands.Cog):
         await vote.add_reaction('<:upvote:655880245047459853>')
         await vote.add_reaction('<:downvote:655880259358687252>')
 
-    @commands.command(aliases=['md'])
-    async def markdown(self, ctx, message_id: str = None):
-        """Decode the markdown of a message"""
-        if message_id is None:
-            async for m in ctx.channel.history(limit=2):
-                if m.id == ctx.message.id:
-                    continue
-                else:
-                    await ctx.safe_send(discord.utils.escape_markdown(m.content))
-        else:
-            # await ctx.message.add_reaction('<a:loading:681628799376293912>')
-            converter = commands.MessageConverter()
-            m = await converter.convert(ctx, message_id)
-            await ctx.safe_send(discord.utils.escape_markdown(m.content))
-
     @commands.command()
     async def quiz(self, ctx, difficulty=None):
         """Start a quick trivia"""

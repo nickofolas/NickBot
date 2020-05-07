@@ -76,20 +76,6 @@ class Dev(commands.Cog):
         self.bot = bot
         self._last_result = None
 
-    # Credit to Blank-Cheque for the basis for this
-    @commands.command()
-    @commands.is_owner()
-    async def newcmd(self, ctx, *, code):
-        """Create new commands using discord code blocks"""
-        code = cleanup_code(self, code)
-        exec(code)
-        func = [
-            v for k, v in locals().items() if k not in {'self', 'ctx', 'code'}
-        ][0]  # Get the executed function from locals
-        self.bot.add_command(func)
-        func.cog = self
-        await ctx.send(f'Successfully added new command {func.name}')
-
     @commands.command(aliases=['sh'])
     @commands.is_owner()
     async def shell(self, ctx, *, args):

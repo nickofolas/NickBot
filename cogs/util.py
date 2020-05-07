@@ -194,6 +194,21 @@ class Util(commands.Cog):
                                            data=json.dumps({'destination': link}))
         await ctx.send(f'Shortened URL: <https://{(await resp.json())["shortUrl"]}>')
 
+    @commands.command()
+    async def raw(self, ctx, message_id: str = None):
+        """Decode the markdown of a message"""
+        if message_id is None:
+            async for m in ctx.channel.history(limit=2):
+                if m.id == ctx.message.id:
+                    continue
+                else:
+                    await ctx.safe_send(discord.utils.escape_markdown(m.content))
+        else:
+            # await ctx.message.add_reaction('<a:loading:681628799376293912>')
+            converter = commands.MessageConverter()
+            m = await converter.convert(ctx, message_id)
+            await ctx.safe_send(discord.utils.escape_markdown(m.content))
+
 
 def setup(bot):
     bot.add_cog(Util(bot))
