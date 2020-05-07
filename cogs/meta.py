@@ -161,7 +161,7 @@ class Meta(commands.Cog):
         async with self.bot.session.get(f'{url}/master', headers=headers) as resp1:
             self.last_commit_cache = await resp1.json()
 
-    @commands.group(invoke_without_command=True, aliases=['ab', 'info'])
+    @commands.command(aliases=['ab', 'info'])
     async def about(self, ctx):
         """Displays info about the bot"""
         appinfo = await self.bot.application_info()

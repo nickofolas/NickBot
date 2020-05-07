@@ -104,7 +104,7 @@ class Api(commands.Cog):
         post, embed = await get_sub(self, ctx, sort, subreddit, False)
         await ctx.send(embed=embed)
 
-    @commands.group(invoke_without_command=True, aliases=['sub'])
+    @commands.command(aliases=['sub'])
     async def subreddit(self, ctx, *, subreddit):
         async with self.bot.session.get(f'https://reddit.com/r/{subreddit}/about/.json') as resp:
             if resp.status == 404:
