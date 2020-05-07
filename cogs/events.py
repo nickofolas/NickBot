@@ -63,7 +63,7 @@ class Events(commands.Cog):
             i = list(tuple(rec))
             i[1] = re.compile(i[1], re.I)
             i = tuple(i)
-            self.hl_cache.append(i)
+            list(self.hl_cache).append(i)
         self.hl_cache = set(self.hl_cache)
 
     @commands.Cog.listener()
