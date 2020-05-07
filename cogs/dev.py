@@ -261,7 +261,7 @@ class Dev(commands.Cog):
 
     @dev_command_group.command(name='delete', aliases=['del'])
     @commands.is_owner()
-    async def delete_bot_msg(self, ctx, *, message_ids: commands.Greedy[int]):
+    async def delete_bot_msg(self, ctx, message_ids: commands.Greedy[int]):
         for m_id in message_ids:
             converter = commands.MessageConverter()
             m = await converter.convert(ctx, m_id)
