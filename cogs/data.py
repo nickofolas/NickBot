@@ -45,8 +45,8 @@ class Data(commands.Cog):
         supported.
         NOTE: It may take up to a minute for a new highlight to take effect
         """
-        if len(highlight_words) < 3 or len(highlight_words) > 60:
-            raise commands.CommandError('Highlights must be more than 2 characters long and at most 60 characters long')
+        if len(highlight_words) < 3 or len(highlight_words) > 100:
+            raise commands.CommandError('Highlights must be more than 2 characters long and at most 100 characters long')
         content_check = re.compile(fr'{highlight_words}', re.I)
         for i in ('afssafasfa', '12421', '\n', ' ', string.ascii_letters, string.digits):
             if re.search(content_check, i):
