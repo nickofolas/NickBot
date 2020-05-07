@@ -14,7 +14,7 @@ from discord.ext import commands
 
 import utils
 from utils.config import conf
-from utils.paginator import ShellMenu, Pages, CSMenu
+from utils.paginator import ShellMenu, CSMenu
 
 
 checked_perms = ['is_owner', 'guild_only', 'dm_only', 'is_nsfw']
