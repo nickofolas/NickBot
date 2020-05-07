@@ -59,7 +59,7 @@ class EmbeddedHelpCommand(commands.HelpCommand):
         entries = await self.filter_commands(bot.commands, sort=True, key=key)
         for cog, cmds in itertools.groupby(entries, key=key):
             cmds = sorted(cmds, key=lambda c: c.name)
-            description += f'**➤ {cog}**\n{" ⏣ ".join([c.name for c in cmds])}\n'
+            description += f'**➤ {cog}**\n{" • ".join([c.name for c in cmds])}\n'
         embed.description = description
         await self.context.send(embed=embed)
 
@@ -68,7 +68,7 @@ class EmbeddedHelpCommand(commands.HelpCommand):
             .set_footer(text='⇶ indicates subcommands')
         description = f'{cog.description or ""}\n\n'
         entries = await self.filter_commands(cog.get_commands(), sort=True)
-        description += "\n".join([f'{"⇶" if isinstance(c, commands.Group) else "⇾"} {c.name} -'
+        description += "\n".join([f'{"⇶" if isinstance(c, commands.Group) else "⇾"} **{c.name}** -'
                                   f' {c.short_doc or "No description"}' for c in entries])
         embed.description = description
         await self.context.send(embed=embed)
@@ -85,7 +85,7 @@ class EmbeddedHelpCommand(commands.HelpCommand):
         embed = discord.Embed(title=self.get_command_signature(group), color=discord.Color.main)
         description = f'{group.help or "No description provided"}\n\n'
         entries = await self.filter_commands(group.commands, sort=True)
-        description += "\n".join([f'{"⇶" if isinstance(c, commands.Group) else "⇾"} {c.name} -'
+        description += "\n".join([f'{"⇶" if isinstance(c, commands.Group) else "⇾"} **{c.name}** -'
                                   f' {c.short_doc or "No description"}' for c in entries])
         embed.description = description
         footer_text = '⇶ indicates subcommands'
