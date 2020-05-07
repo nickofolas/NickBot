@@ -190,7 +190,7 @@ class EmbeddedMinimalHelpCommand(commands.MinimalHelpCommand):
             return c.cog_name or '\u200bUncategorized'
         bot = self.context.bot
         embed = discord.Embed(color=discord.Color.main).set_author(
-            name=f'{bot.name} Help', icon_url=bot.avatar_url_as(static_format='png'))
+            name=f'{self.context.me.name} Help', icon_url=self.context.me.avatar_url_as(static_format='png'))
         description = f'Use {self.clean_prefix}help <command/category> for more help\n\n'
         entries = await self.filter_commands(bot.commands, sort=True, key=key)
         for cog, commands in itertools.groupby(entries, key=key):
