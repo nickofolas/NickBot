@@ -198,10 +198,10 @@ class EmbeddedMinimalHelpCommand(commands.MinimalHelpCommand):
         await self.context.send(embed=embed)
 
     async def send_cog_help(self, cog):
-        embed = discord.Embed(title=f'{cog.name} Category', color=discord.Color.main)
+        embed = discord.Embed(title=f'{cog.qualified_name} Category', color=discord.Color.main)
         description = f'{cog.description or ""}\n\n'
         entries = await self.filter_commands(cog.get_commands(), sort=True)
-        description += " • ".join([c.name for c in entries])
+        description += "\n".join([f'⇾ {c.name} - {c.brief}' for c in entries])
         embed.description = description
         await self.context.send(embed=embed)
 
@@ -217,7 +217,7 @@ class EmbeddedMinimalHelpCommand(commands.MinimalHelpCommand):
         embed = discord.Embed(title=self.get_command_signature(group), color=discord.Color.main)
         description = f'{group.help or ""}\n\n'
         entries = await self.filter_commands(group.commands, sort=True)
-        description += " • ".join([c.name for c in entries])
+        description += "\n".join([f'⇾ {c.name} - {c.brief}' for c in entries])
         embed.description = description
         if c := retrieve_checks(group):
             embed.set_footer(text=f'Checks: {c}')
