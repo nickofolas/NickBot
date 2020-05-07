@@ -88,8 +88,10 @@ class EmbeddedHelpCommand(commands.HelpCommand):
         description += "\n".join([f'{"⇶" if isinstance(c, commands.Group) else "⇾"} {c.name} -'
                                   f' {c.short_doc or "No description"}' for c in entries])
         embed.description = description
+        footer_text = '⇶ indicates subcommands'
         if c := retrieve_checks(group):
-            embed.set_footer(text=f'⇶ indicates subcommands | Checks: {c}')
+            footer_text += f' | Checks: {c}'
+        embed.set_footer(text=footer_text)
         await self.context.send(embed=embed)
 
 
