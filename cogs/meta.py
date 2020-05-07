@@ -65,11 +65,11 @@ class EmbeddedHelpCommand(commands.HelpCommand):
 
     async def send_cog_help(self, cog):
         embed = discord.Embed(title=f'{cog.qualified_name} Category', color=discord.Color.main)\
-            .set_footer(text='[+] indicates subcommands')
+            .set_footer(text='⇶ indicates subcommands')
         description = f'{cog.description or ""}\n\n'
         entries = await self.filter_commands(cog.get_commands(), sort=True)
-        description += "\n".join([f'⇾ {c.name} - {c.short_doc or "No description"}'
-                                  f'{" `[+]`" if isinstance(c, commands.Group) else ""}' for c in entries])
+        description += "\n".join([f'{"⇶" if isinstance(c, commands.Group) else "⇾"} {c.name} -'
+                                  f' {c.short_doc or "No description"}' for c in entries])
         embed.description = description
         await self.context.send(embed=embed)
 
@@ -85,11 +85,11 @@ class EmbeddedHelpCommand(commands.HelpCommand):
         embed = discord.Embed(title=self.get_command_signature(group), color=discord.Color.main)
         description = f'{group.help or "No description provided"}\n\n'
         entries = await self.filter_commands(group.commands, sort=True)
-        description += "\n".join([f'⇾ {c.name} - {c.short_doc or "No description"}'
-                                  f'{" `[+]`" if isinstance(c, commands.Group) else ""}' for c in entries])
+        description += "\n".join([f'{"⇶" if isinstance(c, commands.Group) else "⇾"} {c.name} -'
+                                  f' {c.short_doc or "No description"}' for c in entries])
         embed.description = description
         if c := retrieve_checks(group):
-            embed.set_footer(text=f'[+] indicates subcommands | Checks: {c}')
+            embed.set_footer(text=f'⇶ indicates subcommands | Checks: {c}')
         await self.context.send(embed=embed)
 
 
