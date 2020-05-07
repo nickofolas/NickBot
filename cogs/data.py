@@ -175,7 +175,7 @@ class Data(commands.Cog):
     @commands.group(name='todo', invoke_without_command=True)
     async def todo_rw(self, ctx):
         """
-        Base todo command, run with now arguments to see a list of all your active todos
+        Base todo command, run with no arguments to see a list of all your active todos
         """
         todo_list = []
         fetched = [rec['content'] for rec in

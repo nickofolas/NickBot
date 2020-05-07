@@ -173,6 +173,12 @@ class PaginatedHelpCommand(commands.HelpCommand):
 
 
 class EmbeddedMinimalHelpCommand(commands.MinimalHelpCommand):
+    def __init__(self):
+        super().__init__(command_attrs={
+            'help': 'Shows help.',
+            'cooldown': commands.Cooldown(1, 2.5, commands.BucketType.user)
+        })
+
     def get_command_signature(self, command):
         parent = command.full_parent_name
         if len(command.aliases) > 0:
@@ -191,11 +197,11 @@ class EmbeddedMinimalHelpCommand(commands.MinimalHelpCommand):
         bot = self.context.bot
         embed = discord.Embed(color=discord.Color.main).set_author(
             name=f'{self.context.me.name} Help', icon_url=self.context.me.avatar_url_as(static_format='png'))
-        description = f'Use {self.clean_prefix}help <command/category> for more help\n\n'
+        description = f'Use `{self.clean_prefix}help <command/category>` for more help\n\n'
         entries = await self.filter_commands(bot.commands, sort=True, key=key)
-        for cog, commands in itertools.groupby(entries, key=key):
-            commands = sorted(commands, key=lambda c: c.name)
-            description += f'**__{cog}__**\n{" • ".join([c.name for c in commands])}\n'
+        for cog, cmds in itertools.groupby(entries, key=key):
+            cmds = sorted(cmds, key=lambda c: c.name)
+            description += f'**__{cog}__**\n{" • ".join([c.name for c in cmds])}\n'
         embed.description = description
         await self.context.send(embed=embed)
 
@@ -209,7 +215,7 @@ class EmbeddedMinimalHelpCommand(commands.MinimalHelpCommand):
 
     async def send_command_help(self, command):
         embed = discord.Embed(title=self.get_command_signature(command), color=discord.Color.main)
-        description = f'{command.help or ""}\n\n'
+        description = f'{command.help or "No description provided"}\n\n'
         embed.description = description
         if c := retrieve_checks(command):
             embed.set_footer(text=f'Checks: {c}')
@@ -217,7 +223,7 @@ class EmbeddedMinimalHelpCommand(commands.MinimalHelpCommand):
 
     async def send_group_help(self, group):
         embed = discord.Embed(title=self.get_command_signature(group), color=discord.Color.main)
-        description = f'{group.help or ""}\n\n'
+        description = f'{group.help or "No description provided"}\n\n'
         entries = await self.filter_commands(group.commands, sort=True)
         description += "\n".join([f'⇾ {c.name} - {c.short_doc or "No description"}' for c in entries])
         embed.description = description
