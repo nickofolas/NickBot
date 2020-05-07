@@ -171,6 +171,58 @@ class PaginatedHelpCommand(commands.HelpCommand):
             pages.embed.set_footer(text=f'Checks: {c}')
         await pages.paginate()
 
+class EmbeddedMinimalHelpCommand(commands.MinimalHelpCommand):
+    def get_command_signature(self, command):
+        parent = command.full_parent_name
+        if len(command.aliases) > 0:
+            aliases = '|'.join(command.aliases)
+            fmt = f'{command.name}|{aliases}'
+            if parent:
+                fmt = f'{parent} {fmt}'
+            alias = fmt
+        else:
+            alias = command.name if not parent else f'{parent} {command.name}'
+        return f'{alias} {command.signature}'
+
+    async def send_bot_help(self, mapping):
+        def key(c):
+            return c.cog_name or '\u200bUncategorized'
+        embed = discord.Embed(color=discord.Color.main)
+        description = str()
+        bot = self.context.bot
+        entries = await self.filter_commands(bot.commands, sort=True, key=key)
+        for cog, commands in itertools.groupby(entries, key=key):
+            commands = sorted(commands, key=lambda c: c.name)
+            description += f'**__{cog}__**\n{" • ".join([c.name for c in commands])}\n'
+        embed.description = description
+        await self.context.send(embed=embed)
+
+    async def send_cog_help(self, cog):
+        embed = discord.Embed(title=f'{cog.name} Category', color=discord.Color.main)
+        description = f'{cog.description or ""}\n\n'
+        entries = await self.filter_commands(cog.get_commands(), sort=True)
+        description += " • ".join([c.name for c in entries])
+        embed.description = description
+        await self.context.send(embed=embed)
+
+    async def send_command_help(self, command):
+        embed = discord.Embed(title=self.get_command_signature(command), color=discord.Color.main)
+        description = f'{command.help or ""}\n\n'
+        embed.description = description
+        if c := retrieve_checks(command):
+            embed.set_footer(text=f'Checks: {c}')
+        await self.context.send(embed=embed)
+
+    async def send_group_help(self, group):
+        embed = discord.Embed(title=self.get_command_signature(group), color=discord.Color.main)
+        description = f'{group.help or ""}\n\n'
+        entries = await self.filter_commands(group.commands, sort=True)
+        description += " • ".join([c.name for c in entries])
+        embed.description = description
+        if c := retrieve_checks(group):
+            embed.set_footer(text=f'Checks: {c}')
+        await self.context.send(embed=embed)
+
 
 class Meta(commands.Cog):
     """Commands relating to the bot itself"""
@@ -178,7 +230,7 @@ class Meta(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.old_help = self.bot.help_command
-        self.bot.help_command = PaginatedHelpCommand()
+        self.bot.help_command = EmbeddedMinimalHelpCommand()
         self.bot.help_command.cog = self
         self.bot.loop.create_task(self.fetch_latest_commit())
 
