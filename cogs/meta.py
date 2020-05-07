@@ -59,7 +59,7 @@ class EmbeddedHelpCommand(commands.HelpCommand):
         entries = await self.filter_commands(bot.commands, sort=True, key=key)
         for cog, cmds in itertools.groupby(entries, key=key):
             cmds = sorted(cmds, key=lambda c: c.name)
-            description += f'**__{cog}__**\n{" • ".join([c.name for c in cmds])}\n'
+            description += f'**➤ {cog}**\n{" ⏣ ".join([c.name for c in cmds])}\n'
         embed.description = description
         await self.context.send(embed=embed)
 
