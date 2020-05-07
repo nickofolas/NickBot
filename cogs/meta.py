@@ -31,7 +31,7 @@ def retrieve_checks(command):
     return ', '.join(req)
 
 
-class EmbeddedMinimalHelpCommand(commands.MinimalHelpCommand):
+class EmbeddedHelpCommand(commands.HelpCommand):
     def __init__(self):
         super().__init__(command_attrs={
             'help': 'Shows help for the bot, a category, or a command.',
@@ -97,7 +97,7 @@ class Meta(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.old_help = self.bot.help_command
-        self.bot.help_command = EmbeddedMinimalHelpCommand()
+        self.bot.help_command = EmbeddedHelpCommand()
         self.bot.help_command.cog = self
         self.bot.loop.create_task(self.fetch_latest_commit())
 
