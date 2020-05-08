@@ -59,7 +59,7 @@ async def fetch_one(self, ctx, thing: str):
     converter = commands.EmojiConverter()
     # TODO: Cache this
     indexed_guilds = [self.bot.get_guild(rec['guild_id'])
-                      for rec in await self.conn.fetch('SELECT guild_id FROM guild_prefs WHERE index_emojis=TRUE')]
+                      for rec in await self.bot.conn.fetch('SELECT guild_id FROM guild_prefs WHERE index_emojis=TRUE')]
     available_emojis = list()
     for guild in indexed_guilds:
         available_emojis.extend(guild.emojis)
