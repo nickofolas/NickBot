@@ -206,12 +206,11 @@ class Guild(commands.Cog):
         readable_settings = list()
         for k, v in current_settings.items():
             if isinstance(v, bool):
-                readable_settings.append(f'**{k}** {ctx.tick(v)}')
+                readable_settings.append(f'**{discord.utils.escape_markdown(k)}** {ctx.tick(v)}')
             else:
-                readable_settings.append(f'**{k}** `{v}`')
+                readable_settings.append(f'**{discord.utils.escape_markdown(k)}** `{v}`')
         await ctx.send(embed=discord.Embed(
-            title='Current Guild Settings', description=discord.utils.escape_markdown('\n'.join(
-                readable_settings[1:]), as_needed=True), color=discord.Color.main))
+            title='Current Guild Settings', description='\n'.join(readable_settings[1:]), color=discord.Color.main))
 
     @guild_config.command()
     @is_owner_or_administrator()
