@@ -85,10 +85,12 @@ class Docs(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self._rtfm_cache = dict()
-        self.bot.loop.create_task(self.rtfm_lookup_table_append(
-                'dpy', 'https://discordpy.readthedocs.io/en/latest'))
-        self.bot.loop.create_task(self.rtfm_lookup_table_append(
-            'python', 'https://docs.python.org/3'))
+        self.bot.loop.create_task(self.ainit())
+
+    async def ainit(self):
+        ret = await self.bot.conn.fetch('SELECT * FROM rtfm')
+        for name, url in ret:
+            await self.rtfm_lookup_table_append(name, url)
 
     def parse_object_inv(self, stream, url):
         # key: URL
