@@ -205,16 +205,6 @@ class Docs(commands.Cog):
         """
         await self.do_rtfm(ctx, doc_name, obj)
 
-    @rtfm.command(name='python', aliases=['py'], hidden=True)
-    async def rtfm_python(self, ctx, *, obj=None):
-        """Gives you a documentation link for a Python entity."""
-        await self.do_rtfm(ctx, 'python', obj)
-
-    @rtfm.command(name='dpy', aliases=['discord.py', 'discord'])
-    async def rtfm_dpy(self, ctx, *, obj=None):
-        """Gives you a documentation link for a discord.py entity"""
-        await self.do_rtfm(ctx, 'dpy', obj)
-
     @rtfm.command(name='dump')
     @commands.is_owner()
     async def rtfm_drop_cache(self, ctx):
@@ -225,11 +215,19 @@ class Docs(commands.Cog):
         if y_n is True:
             self._rtfm_cache.clear()
 
+    @rtfm.command(name='add')
+    @commands.is_owner()
+    async def add_new_docsource(self, ctx, doc_name, *, doc_url):
+        await self.bot.conn.execute('INSERT INTO rtfm VALUES ($1, $2)', doc_name, doc_url)
+        async with ctx.typing():
+            await self.ainit()
+        await ctx.send(f'Successfully added {doc_name} to the available documentations')
+
     @rtfm.command(name='cache')
     @commands.is_owner()
     async def view_rtfm_cache(self, ctx):
         """View all currently cached documentations for rtfm"""
-        cached_docs = '\n'.join([k for k in self._rtfm_cache.keys()]) \
+        cached_docs = '\n'.join([f'[`{k}`]({v})' for k, v in self._rtfm_cache.items()]) \
             or 'No cached docs'
         await ctx.safe_send(
             embed=discord.Embed(
