@@ -190,12 +190,10 @@ class Meta(commands.Cog):
             value='\n'.join(['\n'.join(textwrap.wrap(line, 25, break_long_words=False, replace_whitespace=False))
                              for line in com_msg.splitlines() if line.strip() != ''])
         )
+        links_val = f'[Invite URL]({invite_url}'
         if ctx.author not in self.bot.get_guild(696739356815392779).members:
-            embed.add_field(
-                name='**Support**',
-                value=f'Join the [support server](https://discord.gg/tjq68yq)',
-                inline=False)
-        embed.add_field(name='**Invite Link**', value=invite_url, inline=(False if len(embed.fields) == 2 else True))
+            links_val += f'\nJoin the [support server](https://discord.gg/tjq68yq)'
+        embed.add_field(name='**Links**', value=links_val, inline=False)
         await ctx.send(embed=embed)
 
 
