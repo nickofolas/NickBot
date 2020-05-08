@@ -199,15 +199,17 @@ class Mods(commands.Cog):
     @commands.group(name='config', aliases=['settings'], invoke_with_command=True)
     @is_owner_or_administrator()
     async def guild_config(self, ctx):
-        current_settings = dict(await self.bot.conn.fetch('SELECT * FROM guild_prefs WHERE guild_id=$1', ctx.guild.id))
+        if ctx.invoked_subcommand is not None:
+            return
+        current_settings = dict((await self.bot.conn.fetch('SELECT * FROM guild_prefs WHERE guild_id=$1', ctx.guild.id))[0])
         readable_settings = list()
-        for k, v in current_settings:
+        for k, v in current_settings.items():
             if isinstance(v, bool):
                 readable_settings.append(f'{k}: {ctx.tick(v)}')
             else:
                 readable_settings.append(f'{k}: {v}')
         await ctx.send(embed=discord.Embed(
-            title='Current Guild Settings', description='\n'.join(readable_settings), color=discord.Color.main))
+            title='Current Guild Settings', description=discord.utils.escape_markdown('\n'.join(readable_settings), as_needed=True), color=discord.Color.main))
 
     @guild_config.command()
     @is_owner_or_administrator()
@@ -232,6 +234,7 @@ class Mods(commands.Cog):
             await self.bot.conn.execute('UPDATE guild_prefs SET index_emojis=TRUE WHERE guild_id=$1', ctx.guild.id)
         else:
             await self.bot.conn.execute('UPDATE guild_prefs SET index_emojis=FALSE WHERE guild_id=$1', ctx.guild.id)
+        await ctx.message.add_reaction(ctx.tick(True))
 
 
 def setup(bot):
