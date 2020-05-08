@@ -57,7 +57,13 @@ def upscale(inp):
 
 async def fetch_one(self, ctx, thing: str):
     converter = commands.EmojiConverter()
-    choice = process.extractOne(thing, [e.name for e in self.bot.emojis])[0]
+    # TODO: Cache this
+    indexed_guilds = [self.bot.get_guild(rec['guild_id'])
+                      for rec in await self.conn.fetch('SELECT guild_id FROM guild_prefs WHERE index_emojis=TRUE')]
+    available_emojis = list()
+    for guild in indexed_guilds:
+        available_emojis.extend(guild.emojis)
+    choice = process.extractOne(thing, [e.name for e in available_emojis])[0]
     return await converter.convert(ctx, choice)
 
 
