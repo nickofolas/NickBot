@@ -153,7 +153,7 @@ class Docs(commands.Cog):
                 raise RuntimeError('Cannot build rtfm lookup table, try again later.')
 
             stream = SphinxObjectFileReader(await resp.read())
-            self._rtfm_cache[key] = self.parse_object_inv(stream, page)
+            self._rtfm_cache[key] = (self.parse_object_inv(stream, page), page + '/objects.inv')
 
     async def do_rtfm(self, ctx, key, obj):
 
@@ -165,7 +165,7 @@ class Docs(commands.Cog):
         try:
             cache = list(self._rtfm_cache[key].items())
             if obj is None:
-                return await ctx.send(self._rtfm_cache[key])
+                return await ctx.send(self._rtfm_cache[key][1])
         except KeyError:
             raise commands.CommandError('This documentation is not available right now')
 
@@ -227,7 +227,7 @@ class Docs(commands.Cog):
     @commands.is_owner()
     async def view_rtfm_cache(self, ctx):
         """View all currently cached documentations for rtfm"""
-        cached_docs = '\n'.join([f'[`{k}`]({v})' for k, v in self._rtfm_cache.items()]) \
+        cached_docs = '\n'.join([f'[`{k}`]({v[1]})' for k, v in self._rtfm_cache.items()]) \
             or 'No cached docs'
         await ctx.safe_send(
             embed=discord.Embed(
