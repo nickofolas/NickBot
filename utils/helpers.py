@@ -1,3 +1,5 @@
+from discord.ext import commands
+
 LANGUAGES = sorted([
     'as',
     '1c',
@@ -330,3 +332,18 @@ def pluralize(inp, value):
     if isinstance(value, int):
         inp = inp + 's' if value != 1 else inp
     return inp
+
+
+class BoolConverter(commands.Converter):
+    async def convert(self, ctx, argument):
+        try:
+            true_values = ['on', 'yes', 'true', 'y']
+            false_values = ['off', 'no', 'false', 'n']
+            if argument.lower() in true_values:
+                return True
+            elif argument.lower() in false_values:
+                return False
+            else:
+                raise commands.BadArgument()
+        except Exception as e:
+            raise commands.BadArgument()

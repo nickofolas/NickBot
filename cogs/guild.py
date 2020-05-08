@@ -7,6 +7,7 @@ from discord.ext import commands
 from discord.ext.commands import has_permissions
 
 from utils.checks import is_owner_or_administrator
+from utils.helpers import BoolConverter
 
 
 class Arguments(argparse.ArgumentParser):
@@ -196,7 +197,7 @@ class Mods(commands.Cog):
         await ctx.send(f'{member} was kicked - **{reason}**')
         await ctx.message.delete()
 
-    @commands.group(name='config', aliases=['settings'], invoke_with_command=True)
+    @commands.group(name='config', aliases=['settings', 'cfg'], invoke_with_command=True)
     @is_owner_or_administrator()
     async def guild_config(self, ctx):
         if ctx.invoked_subcommand is not None:
@@ -229,11 +230,8 @@ class Mods(commands.Cog):
 
     @guild_config.command(name='index')
     @is_owner_or_administrator()
-    async def _index_emojis_toggle(self, ctx, on_off):
-        if on_off == 'on':
-            await self.bot.conn.execute('UPDATE guild_prefs SET index_emojis=TRUE WHERE guild_id=$1', ctx.guild.id)
-        else:
-            await self.bot.conn.execute('UPDATE guild_prefs SET index_emojis=FALSE WHERE guild_id=$1', ctx.guild.id)
+    async def _index_emojis_toggle(self, ctx, on_off: BoolConverter):
+        await self.bot.conn.execute('UPDATE guild_prefs SET index_emojis=$1 WHERE guild_id=$2', on_off, ctx.guild.id)
         await ctx.message.add_reaction(ctx.tick(True))
 
 
