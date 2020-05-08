@@ -194,22 +194,6 @@ class Dev(commands.Cog):
                 await m.delete()
 
     @commands.command()
-    @is_owner_or_administrator()
-    async def prefix(self, ctx, new_prefix=None):
-        """Change the prefix for the current server"""
-        if new_prefix is None:
-            return await ctx.send(embed=discord.Embed(
-                title='Prefixes for this guild',
-                description='\n'.join(
-                    sorted(set([p.replace('@!', '@') for p in await self.bot.get_prefix(ctx.message)]),
-                           key=lambda p: len(p))),
-                color=discord.Color.main))
-        await self.bot.conn.execute(
-            'INSERT INTO guild_prefs (guild_id, prefix) VALUES ($1, $2) ON CONFLICT (guild_id) DO UPDATE SET prefix=$2',
-            ctx.guild.id, new_prefix)
-        await ctx.send(f'Prefix successfully changed to `{new_prefix}`')
-
-    @commands.command()
     @commands.is_owner()
     async def sql(self, ctx, *, query: str):
         """Run SQL statements"""

@@ -6,6 +6,8 @@ import discord
 from discord.ext import commands
 from discord.ext.commands import has_permissions
 
+from utils.checks import is_owner_or_administrator
+
 
 class Arguments(argparse.ArgumentParser):
     def error(self, message):
@@ -17,6 +19,27 @@ ereg = re.compile(
 )
 
 units = {"s": 1, "m": 60, "h": 3600, "d": 86400, "w": 604800}
+
+
+async def do_removal(ctx,
+                     limit,
+                     predicate,
+                     *,
+                     before=None,
+                     after=None):
+    if limit > 2000:
+        return await ctx.send(
+            f'Too many messages to search given ({limit}/2000)')
+
+    if before is None:
+        before = ctx.message
+    else:
+        before = discord.Object(id=before)
+
+    if after is not None:
+        after = discord.Object(id=after)
+    await ctx.channel.purge(
+        limit=limit, before=before, after=after, check=predicate)
 
 
 class Mods(commands.Cog):
@@ -39,84 +62,6 @@ class Mods(commands.Cog):
         if ctx.invoked_subcommand is None:
             await ctx.message.delete()
             await ctx.channel.purge(limit=amount)
-
-    @clear.command(aliases=['emj'])
-    @has_permissions(manage_messages=True)
-    async def emoji(self, ctx, amount: int):
-        """Clear messages with emoji from the channel"""
-        custom_emoji = re.compile(
-            r'(<a?:\w*:\d*>)|([\U00002600-\U000027BF])|([\U0001f300-\U0001f64F])|([\U0001f680-\U0001f6FF])'
-        )
-        await ctx.message.delete()
-        await ctx.channel.purge(
-            limit=amount, check=lambda m: custom_emoji.search(m.content))
-
-    @clear.command(aliases=['fi', 'file'])
-    @has_permissions(manage_messages=True)
-    async def files(self, ctx, amount: int):
-        """Clears the specified number of files from the channel"""
-        await ctx.message.delete()
-        await ctx.channel.purge(limit=amount, check=lambda m: m.attachments)
-
-    @clear.command()
-    @has_permissions(manage_messages=True)
-    async def bot(self, ctx, amount: int):
-        """Clears a given amount of messages from bots"""
-        await ctx.message.delete()
-        await ctx.channel.purge(limit=amount, check=lambda m: m.author.bot)
-
-    @clear.command()
-    @has_permissions(manage_messages=True)
-    async def user(self, ctx, amount: int, *, user: discord.Member):
-        """Clear messages from a given user"""
-        await ctx.message.delete()
-        await ctx.channel.purge(limit=amount, check=lambda m: m.author == user)
-
-    @clear.command(aliases=['keyword', 'k'])
-    @has_permissions(manage_messages=True)
-    async def kw(self, ctx, amount: int, *, keyword: str):
-        """Clear only messages with specified keyword(s)"""
-        await ctx.message.delete()
-        await ctx.channel.purge(
-            limit=amount, check=lambda m: keyword in m.content)
-
-    @clear.command()
-    @has_permissions(manage_messages=True)
-    async def code(self, ctx, amount: int):
-        """Clear messages with codeblocks"""
-        await ctx.message.delete()
-        await ctx.channel.purge(
-            limit=amount, check=lambda m: '```' in m.content)
-
-    @clear.command()
-    @has_permissions(manage_messages=True)
-    async def regex(self, ctx, amount: int, *, regex):
-        """Clear messages based off an inputted regex"""
-        custom_regex = re.compile(regex)
-        await ctx.message.delete()
-        await ctx.channel.purge(
-            limit=amount, check=lambda m: custom_regex.search(m.content))
-
-    async def do_removal(self,
-                         ctx,
-                         limit,
-                         predicate,
-                         *,
-                         before=None,
-                         after=None):
-        if limit > 2000:
-            return await ctx.send(
-                f'Too many messages to search given ({limit}/2000)')
-
-        if before is None:
-            before = ctx.message
-        else:
-            before = discord.Object(id=before)
-
-        if after is not None:
-            after = discord.Object(id=after)
-        await ctx.channel.purge(
-            limit=limit, before=before, after=after, check=predicate)
 
     @clear.command(aliases=['-c', 'cu', 'adv'])
     @has_permissions(manage_messages=True)
@@ -223,17 +168,8 @@ class Mods(commands.Cog):
         args.search = max(0, min(2000, args.search))  # clamp from 0-2000
         if not args.nohide:
             await ctx.message.delete()
-        await self.do_removal(
+        await do_removal(
             ctx, args.search, predicate, before=args.before, after=args.after)
-
-    @clear.command(
-        aliases=['reactionclear', 'rc', 'reactions', 'r'], )
-    @has_permissions(manage_messages=True)
-    async def rclear(self, ctx, amount: int):
-        """Clears all reactions from the specified number of messages"""
-        await ctx.message.delete()
-        async for message in ctx.channel.history(limit=amount):
-            await message.clear_reactions()
 
     @commands.command()
     @has_permissions(ban_members=True)
@@ -259,6 +195,43 @@ class Mods(commands.Cog):
         await member.kick(reason=reason)
         await ctx.send(f'{member} was kicked - **{reason}**')
         await ctx.message.delete()
+
+    @commands.group(name='config', aliases=['settings'], invoke_with_command=True)
+    @is_owner_or_administrator()
+    async def guild_config(self, ctx):
+        current_settings = dict(await self.bot.conn.fetch('SELECT * FROM guild_prefs WHERE guild_id=$1', ctx.guild.id))
+        readable_settings = list()
+        for k, v in current_settings:
+            if isinstance(v, bool):
+                readable_settings.append(f'{k}: {ctx.tick(v)}')
+            else:
+                readable_settings.append(f'{k}: {v}')
+        await ctx.send(embed=discord.Embed(
+            title='Current Guild Settings', description='\n'.join(readable_settings), color=discord.Color.main))
+
+    @guild_config.command()
+    @is_owner_or_administrator()
+    async def prefix(self, ctx, new_prefix=None):
+        """Change the prefix for the current server"""
+        if new_prefix is None:
+            return await ctx.send(embed=discord.Embed(
+                title='Prefixes for this guild',
+                description='\n'.join(
+                    sorted(set([p.replace('@!', '@') for p in await self.bot.get_prefix(ctx.message)]),
+                           key=lambda p: len(p))),
+                color=discord.Color.main))
+        await self.bot.conn.execute(
+            'INSERT INTO guild_prefs (guild_id, prefix) VALUES ($1, $2) ON CONFLICT (guild_id) DO UPDATE SET prefix=$2',
+            ctx.guild.id, new_prefix)
+        await ctx.send(f'Prefix successfully changed to `{new_prefix}`')
+
+    @guild_config.command(name='index')
+    @is_owner_or_administrator()
+    async def _index_emojis_toggle(self, ctx, on_off):
+        if on_off == 'on':
+            await self.bot.conn.execute('UPDATE guild_prefs SET index_emojis=TRUE WHERE guild_id=$1', ctx.guild.id)
+        else:
+            await self.bot.conn.execute('UPDATE guild_prefs SET index_emojis=FALSE WHERE guild_id=$1', ctx.guild.id)
 
 
 def setup(bot):
