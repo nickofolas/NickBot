@@ -163,7 +163,7 @@ class Docs(commands.Cog):
             await self.ainit()
 
         try:
-            cache = list(self._rtfm_cache[key].items())
+            cache = list(self._rtfm_cache[key][0].items())
             if obj is None:
                 return await ctx.send(self._rtfm_cache[key][1])
         except KeyError:
