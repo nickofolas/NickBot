@@ -156,30 +156,18 @@ class Docs(commands.Cog):
             self._rtfm_cache[key] = self.parse_object_inv(stream, page)
 
     async def do_rtfm(self, ctx, key, obj):
-        page_types = {
-            'dpy': 'https://discordpy.readthedocs.io/en/latest',
-            'python': 'https://docs.python.org/3',
-        }
-
-        if key not in page_types.keys():
-            page_types[key] = f'https://{key}.readthedocs.io/en/latest'
 
         if not hasattr(self, '_rtfm_cache'):
             await ctx.trigger_typing()
             self._rtfm_cache = dict()
-            await self.rtfm_lookup_table_append('dpy', 'https://discordpy.readthedocs.io/en/latest')
-            await self.rtfm_lookup_table_append('python', 'https://docs.python.org/3')
+            await self.ainit()
 
         try:
             cache = list(self._rtfm_cache[key].items())
             if obj is None:
-                return await ctx.safe_send(page_types[key])
+                return await ctx.send(self._rtfm_cache[key])
         except KeyError:
-            await ctx.trigger_typing()
-            await self.rtfm_lookup_table_append(key, f'https://{key}.readthedocs.io/en/latest')
-            cache = list(self._rtfm_cache[key].items())
-            if obj is None:
-                return await ctx.safe_send(page_types[key])
+            raise commands.CommandError('This documentation is not available right now')
 
         obj = re.sub(r'^(?:discord\.(?:ext\.)?)?(?:commands\.)?(.+)', r'\1', obj)
 
