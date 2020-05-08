@@ -153,7 +153,7 @@ class Docs(commands.Cog):
                 raise RuntimeError('Cannot build rtfm lookup table, try again later.')
 
             stream = SphinxObjectFileReader(await resp.read())
-            self._rtfm_cache[key] = (self.parse_object_inv(stream, page), page + '/objects.inv')
+            self._rtfm_cache[key] = (self.parse_object_inv(stream, page), page)
 
     async def do_rtfm(self, ctx, key, obj):
 
