@@ -85,12 +85,10 @@ class Docs(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self._rtfm_cache = dict()
-        self.bot.loop.create_task(self.ainit())
-
-    async def ainit(self):
-        ret = await self.bot.conn.fetch('SELECT * FROM rtfm')
-        for name, url in ret:
-            await self.rtfm_lookup_table_append(name, url)
+        self.bot.loop.create_task(self.rtfm_lookup_table_append(
+                'dpy', 'https://discordpy.readthedocs.io/en/latest'))
+        self.bot.loop.create_task(self.rtfm_lookup_table_append(
+            'python', 'https://docs.python.org/3'))
 
     def parse_object_inv(self, stream, url):
         # key: URL
@@ -156,16 +154,30 @@ class Docs(commands.Cog):
             self._rtfm_cache[key] = self.parse_object_inv(stream, page)
 
     async def do_rtfm(self, ctx, key, obj):
+        page_types = {
+            'dpy': 'https://discordpy.readthedocs.io/en/latest',
+            'python': 'https://docs.python.org/3',
+        }
+
+        if key not in page_types.keys():
+            page_types[key] = f'https://{key}.readthedocs.io/en/latest'
 
         if not hasattr(self, '_rtfm_cache'):
             await ctx.trigger_typing()
             self._rtfm_cache = dict()
-            await self.ainit()
+            await self.rtfm_lookup_table_append('dpy', 'https://discordpy.readthedocs.io/en/latest')
+            await self.rtfm_lookup_table_append('python', 'https://docs.python.org/3')
 
         try:
             cache = list(self._rtfm_cache[key].items())
+            if obj is None:
+                return await ctx.safe_send(page_types[key])
         except KeyError:
-            raise commands.CommandError('This documentation is not available right now')
+            await ctx.trigger_typing()
+            await self.rtfm_lookup_table_append(key, f'https://{key}.readthedocs.io/en/latest')
+            cache = list(self._rtfm_cache[key].items())
+            if obj is None:
+                return await ctx.safe_send(page_types[key])
 
         obj = re.sub(r'^(?:discord\.(?:ext\.)?)?(?:commands\.)?(.+)', r'\1', obj)
 
@@ -203,6 +215,16 @@ class Docs(commands.Cog):
         """
         await self.do_rtfm(ctx, doc_name, obj)
 
+    @rtfm.command(name='python', aliases=['py'], hidden=True)
+    async def rtfm_python(self, ctx, *, obj=None):
+        """Gives you a documentation link for a Python entity."""
+        await self.do_rtfm(ctx, 'python', obj)
+
+    @rtfm.command(name='dpy', aliases=['discord.py', 'discord'])
+    async def rtfm_dpy(self, ctx, *, obj=None):
+        """Gives you a documentation link for a discord.py entity"""
+        await self.do_rtfm(ctx, 'dpy', obj)
+
     @rtfm.command(name='dump')
     @commands.is_owner()
     async def rtfm_drop_cache(self, ctx):
@@ -213,20 +235,11 @@ class Docs(commands.Cog):
         if y_n is True:
             self._rtfm_cache.clear()
 
-    @rtfm.command(name='add')
-    @commands.is_owner()
-    async def add_new_docsource(self, ctx, doc_name, *, doc_url):
-        await self.bot.conn.execute('INSERT INTO rtfm VALUES ($1, $2)', doc_name, doc_url)
-        async with ctx.typing():
-            await self.ainit()
-        await ctx.send(f'Successfully added {doc_name} to the available documentations')
-
     @rtfm.command(name='cache')
     @commands.is_owner()
     async def view_rtfm_cache(self, ctx):
         """View all currently cached documentations for rtfm"""
-        _cached = {name: url for name, url in await self.bot.conn.fetch('SELECT * FROM rtfm')}
-        cached_docs = '\n'.join([f'[`{k}`]({v})' for k, v in _cached.items()]) \
+        cached_docs = '\n'.join([k for k in self._rtfm_cache.keys()]) \
             or 'No cached docs'
         await ctx.safe_send(
             embed=discord.Embed(
