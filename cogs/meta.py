@@ -165,6 +165,8 @@ class Meta(commands.Cog):
     async def about(self, ctx):
         """Displays info about the bot"""
         appinfo = await self.bot.application_info()
+        permissions = discord.Permissions(1878523719)
+        invite_url = discord.utils.oauth_url(self.bot.user.id, permissions)
         mem = psutil.virtual_memory()[2]
         vi = sys.version_info
         ascii_bar = utils.data_vis.bar_make(round(mem / 10), 10, '▰', '▱')
@@ -193,6 +195,7 @@ class Meta(commands.Cog):
                 name='**Support**',
                 value=f'Join the [support server](https://discord.gg/tjq68yq)',
                 inline=False)
+        embed.add_field(name='**Invite Link**', value=invite_url, inline=(False if len(embed.fields) == 2 else True))
         await ctx.send(embed=embed)
 
 
