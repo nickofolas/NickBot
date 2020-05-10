@@ -1,5 +1,6 @@
 import io
 import itertools
+import re
 from datetime import datetime
 from typing import Union
 
@@ -86,7 +87,8 @@ class Info(commands.Cog):
             status_display, acts, act, join_pos = \
                 await member_info(ctx, target, act, e)
         try:
-            bio = (await self.bot.conn.fetch('SELECT user_bio FROM user_data WHERE user_id=$1', target.id))[0]['user_bio']
+            bio = (await self.bot.conn.fetch('SELECT user_bio FROM user_data WHERE user_id=$1', target.id))[0][
+                'user_bio']
         except IndexError:
             bio = None
         flag_vals = UserFlags(
@@ -144,6 +146,10 @@ class Info(commands.Cog):
 
     @userinfo.command()
     async def bio(self, ctx, *, message=None):
+        """Set or remove your user bio (appears in userinfo card)
+        Pass no arguments to remove your current user bio"""
+        message = re.sub(re.compile(r'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*(),]|(?:%['
+                                    r'0-9a-fA-F][0-9a-fA-F]))+'), 'omitted', message)
         await self.bot.conn.execute('UPDATE user_data SET user_bio=$1 WHERE user_id=$2', message, ctx.author.id)
         await ctx.message.add_reaction(ctx.tick(True))
 

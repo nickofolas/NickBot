@@ -9,8 +9,7 @@ import aiohttp
 import async_cse as cse
 import discord
 import humanize
-from aiogoogletrans import LANGUAGES as langs
-from aiogoogletrans import Translator
+import aiogoogletrans
 from discord.ext import commands
 
 import utils.errors as errors
@@ -27,13 +26,14 @@ def filter_posts(obj):
     return all(checks)
 
 
-async def do_translation(self, ctx, input, dest='en'):
-    tr = Translator()
-    translated = await tr.translate(input, dest=dest)
+async def do_translation(ctx, content, dest='en'):
+    tr = aiogoogletrans.Translator()
+    langs = aiogoogletrans.LANGUAGES
+    translated = await tr.translate(content, dest=dest)
     embed = discord.Embed(color=discord.Color.main)
     embed.add_field(
         name=f'Input: {langs.get(translated.src, "Auto-Detected").title()}',
-        value=input
+        value=content
     )
     embed.add_field(
         name=f'Output: {langs.get(translated.dest, "Unknown").title()}',
@@ -71,11 +71,11 @@ async def get_sub(self, ctx, sort, subreddit, safe):
             text = textwrap.shorten(post['selftext'], width=1500)
         else:
             text = ''
-        post_delta = time.time()-post['created_utc']
+        post_delta = time.time() - post['created_utc']
         embed = discord.Embed(
             title=textwrap.shorten(post['title'], width=252),
-            description=
-            (f"**<:upvote:698744205710852167> {post['ups']} | {post['num_comments']} :speech_balloon:**\n {text}"),
+            description=f"**<:upvote:698744205710852167> {post['ups']} | {post['num_comments']} "
+                        f":speech_balloon:**\n {text}",
             url="https://www.reddit.com" + post['permalink'],
             color=discord.Color.main)
         embed.set_image(
@@ -84,12 +84,13 @@ async def get_sub(self, ctx, sort, subreddit, safe):
         embed.set_author(
             name=post['author'],
             url=f"https://www.reddit.com/user/{post['author']}"
-            )
+        )
     return post, embed
 
 
 class Api(commands.Cog):
     """Interact with various APIs"""
+
     def __init__(self, bot):
         self.bot = bot
 
@@ -116,7 +117,7 @@ class Api(commands.Cog):
             title=js['display_name_prefixed'],
             url=f"https://reddit.com{js['url']}",
             color=discord.Color.main).set_thumbnail(
-                url=js['icon_img'])
+            url=js['icon_img'])
         embed.description = f"""
 **Title** {js['title']}
 **Created** {humanize.naturaltime(time.time() - js['created_utc'])}
@@ -128,11 +129,14 @@ class Api(commands.Cog):
         await ctx.send(embed=embed)
 
     @commands.group(invoke_without_command=True, aliases=['r'])
-    async def redditor(self, ctx, *, user = None):
+    async def redditor(self, ctx, *, user=None):
         """Overview of a reddit user"""
         if user is None:
             try:
-                user = (await self.bot.conn.fetch('SELECT default_reddit FROM user_data WHERE user_id=$1', ctx.author.id))[0]['default_reddit']
+                user = \
+                    (await self.bot.conn.fetch('SELECT default_reddit FROM user_data WHERE user_id=$1', ctx.author.id))[
+                        0][
+                        'default_reddit']
                 if user is None:
                     raise IndexError
             except IndexError:
@@ -155,10 +159,10 @@ class Api(commands.Cog):
             title=alt_disp_name,
             description=textwrap.fill(' '.join(set(trophy_list)), 225),
             color=discord.Color.main).set_author(
-                name=usr['subreddit']['display_name_prefixed'],
-                url=f'https://www.reddit.com/user/{user}',
-                icon_url='https://i.imgur.com/mlZRTzi.png' if usr['is_gold'] is True else ''
-            ).set_thumbnail(url=usr['icon_img'].split('?', 1)[0])
+            name=usr['subreddit']['display_name_prefixed'],
+            url=f'https://www.reddit.com/user/{user}',
+            icon_url='https://i.imgur.com/mlZRTzi.png' if usr['is_gold'] is True else ''
+        ).set_thumbnail(url=usr['icon_img'].split('?', 1)[0])
         embed.add_field(
             name='<:karma:701164781238878270> Karma',
             value=f"""
@@ -172,15 +176,17 @@ class Api(commands.Cog):
         await ctx.send(embed=embed)
 
     @redditor.command(aliases=['mod'])
-    async def modstats(self, ctx, user = None):
+    async def modstats(self, ctx, user=None):
         """View moderator stats for a redditor"""
         if user is None:
             try:
-                user = (await self.bot.conn.fetch('SELECT default_reddit FROM user_data WHERE user_id=$1', ctx.author.id))[0]['default_reddit']
+                user = (await self.bot.conn.fetch('SELECT default_reddit FROM user_data WHERE user_id=$1',
+                                                  ctx.author.id))[0]['default_reddit']
                 if user is None:
                     raise IndexError
             except IndexError:
-                raise commands.CommandError("You do not appear to have set a default reddit account yet, please do so before calling this command with no arguments")
+                raise commands.CommandError("You do not appear to have set a default reddit account yet, please do so "
+                                            "before calling this command with no arguments")
         else:
             user = user.replace('u/', '')
         async with self.bot.session.get(f'https://www.reddit.com/user/{user}/moderated_subreddits/.json') as r:
@@ -195,12 +201,13 @@ class Api(commands.Cog):
             top_20.append(f'[{sub["sr_display_name_prefixed"]}](https://www.reddit.com{sub["url"]})')
         embed = discord.Embed(
             title='',
-            description=f'**Mod Stats for [{profile_js["data"]["subreddit"]["display_name_prefixed"]}](https://www.reddit.com/user/{user})**',
+            description=f'**Mod Stats for [{profile_js["data"]["subreddit"]["display_name_prefixed"]}](https://www'
+                        f'.reddit.com/user/{user})**',
             color=discord.Color.main)
         embed.set_thumbnail(url=profile_js['data']['icon_img'])
         if data := js.get('data'):
             embed.add_field(name='Total Subscribers', value=total_modded)
-            embed.add_field(name='No. Subs Modded', value=len(data))
+            embed.add_field(name='No. Subs Modded', value=str(len(data)))
             embed.add_field(name=f'Top {len(top_20)} Subreddits', value='\n'.join(top_20), inline=False)
         else:
             embed.add_field(name='_ _', value='This user does not mod any subs')
@@ -210,7 +217,8 @@ class Api(commands.Cog):
     async def default(self, ctx, *, reddit_user):
         """Set a shortcut to your reddit user for reddit commands
         This will allow you to access your reddit acc info without passing an argument"""
-        await self.bot.conn.execute("UPDATE user_data SET default_reddit=$1 WHERE user_id=$2", reddit_user, ctx.author.id)
+        await self.bot.conn.execute("UPDATE user_data SET default_reddit=$1 WHERE user_id=$2",
+                                    reddit_user, ctx.author.id)
         await ctx.message.add_reaction(ctx.tick(True))
 
     @commands.command()
@@ -236,7 +244,7 @@ class Api(commands.Cog):
 **Total deaths: **{js['deaths']:,}
 **Recovered Cases: **{js['recovered']:,}
                 """
-                )
+        )
         if country != 'global':
             embed.add_field(
                 name='More Stats',
@@ -275,23 +283,23 @@ class Api(commands.Cog):
         embed.add_field(
             name='Links',
             value='\n'.join([f'[{k}]({v})' for k, v in found.items() if v is not None]),
-            )
+        )
         embed.set_footer(text=f"Version: {info['version']}")
         await ctx.send(embed=embed)
 
     @commands.group(aliases=['tr'], invoke_without_command=True)
-    async def translate(self, ctx, *, input):
+    async def translate(self, ctx, *, content):
         """
         Basic translation - tries to auto-detect and translate to English
         """
-        await do_translation(self, ctx, input)
+        await do_translation(ctx, content)
 
     @translate.command(name='to')
-    async def translate_to(self, ctx, destination_language: str, *, input):
+    async def translate_to(self, ctx, destination_language: str, *, content):
         """
         Translate from one language to another
         """
-        await do_translation(self, ctx, input, destination_language)
+        await do_translation(ctx, content, destination_language)
 
     @commands.group(invoke_without_command=True, aliases=['g'])
     async def google(self, ctx, *, query: str):
@@ -306,7 +314,7 @@ class Api(commands.Cog):
         for result in res:
             res_tup = (result.title, result.description, result.url, result.image_url)
             page_entries.append(res_tup)
-        source = GoogleMenu(page_entries, per_page=1)
+        source = GoogleMenu(page_entries)
         menu = CSMenu(source, delete_message_after=True)
         await menu.start(ctx)
 
@@ -323,7 +331,7 @@ class Api(commands.Cog):
         for result in res:
             res_tup = (result.title, result.description, result.url, result.image_url)
             page_entries.append(res_tup)
-        source = GoogleMenu(page_entries, per_page=1, image=True)
+        source = GoogleMenu(page_entries, image=True)
         menu = CSMenu(source, delete_message_after=True)
         await menu.start(ctx)
 
@@ -345,6 +353,7 @@ class Api(commands.Cog):
                     sorted(
                         [f"`{g.get('vBucks'):<4}` [`{g.get('name')}`]({g.get('imageUrl')})"
                          for g in [*grp]]))
+
         await ctx.quick_menu(
             [*_gather()],
             1,
@@ -362,7 +371,7 @@ class Api(commands.Cog):
                 headers={'TRN-Api-Key': os.getenv('FORTNITE_KEY')}) as resp:
             js = await resp.json()
         embed = discord.Embed(color=discord.Color.main).set_author(
-                name=js.get('epicUserHandle'), icon_url='https://i.imgur.com/XMTZAQT.jpg')
+            name=js.get('epicUserHandle'), icon_url='https://i.imgur.com/XMTZAQT.jpg')
         stats = str()
         recents = str()
         checked_status = ['Wins', 'K/d', 'Matches Played', 'Kills', 'Top 5s', 'Win%']

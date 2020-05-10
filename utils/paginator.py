@@ -64,7 +64,7 @@ class CSMenu(menus.MenuPages):
 
 
 class GoogleMenu(menus.ListPageSource):
-    def __init__(self, entr, per_page=1, image: bool = False):
+    def __init__(self, entr, *, per_page=1, image: bool = False):
         super().__init__(entr, per_page=per_page)
         self.image = image
 

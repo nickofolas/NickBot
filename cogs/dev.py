@@ -1,27 +1,25 @@
-import time
-import io
-from contextlib import redirect_stdout
-import traceback
-import textwrap
-import asyncio
-import os
-import copy
-from typing import Union
-import re
 import argparse
+import asyncio
+import copy
+import io
+import os
+import re
 import shlex
+import textwrap
+import time
+import traceback
+from contextlib import redirect_stdout
+from typing import Union
 
 import discord
-from discord.ext import commands
-import aiosqlite as asq
-from tabulate import tabulate
 import import_expression
+from discord.ext import commands
+from tabulate import tabulate
 
-from utils.checks import is_owner_or_administrator
-from utils.paginator import ShellMenu, CSMenu
-from utils.helpers import return_lang_hl, pluralize
 import utils
 from utils.config import conf
+from utils.helpers import return_lang_hl, pluralize
+from utils.paginator import ShellMenu, CSMenu
 
 
 class Arguments(argparse.ArgumentParser):
@@ -59,7 +57,7 @@ def clean_bytes(line):
     return re.sub(r'\x1b[^m]*m', '', text).replace("``", "`\u200b`").strip('\n')
 
 
-def cleanup_code(self, content):
+def cleanup_code(content):
     """Automatically removes code blocks from the code."""
     # remove ```py\n```
     if content.startswith('```') and content.endswith('```'):
@@ -69,6 +67,7 @@ def cleanup_code(self, content):
     return content.strip('` \n')
 
 
+# noinspection PyBroadException
 class Dev(commands.Cog):
     """Commands made to assist with bot development"""
 
@@ -111,7 +110,7 @@ class Dev(commands.Cog):
 
         env.update(globals())
 
-        body = cleanup_code(self, body)
+        body = cleanup_code(body)
         stdout = io.StringIO()
         sent = None
 
