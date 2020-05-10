@@ -297,8 +297,12 @@ class Dev(commands.Cog):
 
     @commands.group(invoke_without_command=True)
     @commands.is_owner()
-    async def sudo(self, ctx, target: Union[discord.Member, discord.User], *, command):
+    async def sudo(self, ctx, target: Union[discord.Member, discord.User, None], *, command):
         """Run command as another user"""
+        if isinstance(target, None):
+            new_ctx = await copy_ctx(self, ctx, command, author=ctx.author)
+            await new_ctx.reinvoke()
+            return
         new_ctx = await copy_ctx(self, ctx, command, author=target)
         await self.bot.invoke(new_ctx)
 

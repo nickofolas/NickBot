@@ -336,14 +336,11 @@ def pluralize(inp, value):
 
 class BoolConverter(commands.Converter):
     async def convert(self, ctx, argument):
-        try:
-            true_values = ['on', 'yes', 'true', 'y']
-            false_values = ['off', 'no', 'false', 'n']
-            if argument.lower() in true_values:
-                return True
-            elif argument.lower() in false_values:
-                return False
-            else:
-                raise commands.BadArgument()
-        except Exception as e:
-            raise commands.BadArgument()
+        true_values = ['on', 'yes', 'true', 'y']
+        false_values = ['off', 'no', 'false', 'n']
+        if argument.lower() in true_values:
+            return True
+        elif argument.lower() in false_values:
+            return False
+        else:
+            raise commands.BadArgument('Input could not be converted into a true or false result')
