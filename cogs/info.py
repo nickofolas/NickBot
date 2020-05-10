@@ -148,8 +148,9 @@ class Info(commands.Cog):
     async def bio(self, ctx, *, message=None):
         """Set or remove your user bio (appears in userinfo card)
         Pass no arguments to remove your current user bio"""
-        message = re.sub(re.compile(r'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*(),]|(?:%['
-                                    r'0-9a-fA-F][0-9a-fA-F]))+'), 'omitted', message)
+        if message:
+            message = re.sub(re.compile(r'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*(),]|(?:%['
+                                        r'0-9a-fA-F][0-9a-fA-F]))+'), 'omitted', message)
         await self.bot.conn.execute('UPDATE user_data SET user_bio=$1 WHERE user_id=$2', message, ctx.author.id)
         await ctx.message.add_reaction(ctx.tick(True))
 
