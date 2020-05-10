@@ -301,7 +301,7 @@ class Dev(commands.Cog):
         """Run command as another user"""
         if not isinstance(target, (discord.Member, discord.User)):
             new_ctx = await copy_ctx(self, ctx, command, author=ctx.author)
-            await new_ctx.reinvoke(restart=True)
+            await new_ctx.reinvoke()
             return
         new_ctx = await copy_ctx(self, ctx, command, author=target)
         await self.bot.invoke(new_ctx)
