@@ -86,10 +86,12 @@ class Fun(commands.Cog):
 
     @commands.command()
     async def morse(self, ctx, *, message):
+        """Convert a message to morse code"""
         await ctx.send(to_morse(message))
 
     @commands.command()
     async def demorse(self, ctx, *, morse):
+        """Convert a message from morse code"""
         await ctx.send(from_morse(morse))
 
     @commands.command()
@@ -109,6 +111,7 @@ class Fun(commands.Cog):
     @commands.command()
     async def vote(self, ctx, *, poll):
         """Create an easy poll"""
+        # TODO: Make the message edit itself when the reactions are updated so that it's easier to tell what the actual votes are
         embed = discord.Embed(
             title=' ',
             description=f'**Cast your vote:**\n{poll}',

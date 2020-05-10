@@ -89,12 +89,13 @@ async def get_sub(self, ctx, sort, subreddit, safe):
 
 
 class Api(commands.Cog):
+    """Interact with various APIs"""
     def __init__(self, bot):
         self.bot = bot
 
     @commands.group(invoke_without_command=True)
     async def rand(self, ctx, sort, subreddit):
-        """Asynchronously get a random post from a sort on a subreddit"""
+        """Get a random post from a sort on a subreddit"""
         post, embed = await get_sub(self, ctx, sort, subreddit, not ctx.channel.nsfw)
         await ctx.send(embed=embed)
 
@@ -106,6 +107,7 @@ class Api(commands.Cog):
 
     @commands.command(aliases=['sub'])
     async def subreddit(self, ctx, *, subreddit):
+        """Get some quick info on the named subreddit"""
         async with self.bot.session.get(f'https://reddit.com/r/{subreddit}/about/.json') as resp:
             if resp.status == 404:
                 raise errors.SubredditNotFound(f"'{subreddit}' was not found")
@@ -126,19 +128,20 @@ class Api(commands.Cog):
         await ctx.send(embed=embed)
 
     @commands.group(invoke_without_command=True, aliases=['r'])
-    async def redditor(self, ctx, *, user: str = None):
+    async def redditor(self, ctx, *, user = None):
         """Overview of a reddit user"""
-        user = user or ctx.author
-        if user == ctx.author:
+        if user is None:
             try:
                 user = (await self.bot.conn.fetch('SELECT default_reddit FROM user_data WHERE user_id=$1', ctx.author.id))[0]['default_reddit']
+                if user is None:
+                    raise IndexError
             except IndexError:
                 raise commands.CommandError("You do not appear to have set a default reddit account yet, please do so "
                                             "before calling this command with no arguments")
         else:
             user = user.replace('u/', '')
         async with self.bot.session.get(f'https://www.reddit.com/user/{user}/about/.json') as resp:
-            if resp.status == 404 or user is None:
+            if resp.status == 404:
                 raise errors.ApiError(f'User was not found')
             usr = (await resp.json())['data']
         async with self.bot.session.get(f'https://www.reddit.com/user/{user}/trophies/.json') as resp:
@@ -169,11 +172,15 @@ class Api(commands.Cog):
         await ctx.send(embed=embed)
 
     @redditor.command(aliases=['mod'])
-    async def modstats(self, ctx, user: str = None):
+    async def modstats(self, ctx, user = None):
         """View moderator stats for a redditor"""
-        user = user or ctx.author
-        if user == ctx.author:
-            user = (await self.bot.conn.fetch('SELECT default_reddit FROM user_data WHERE user_id=$1', ctx.author.id))[0]['default_reddit']
+        if user is None:
+            try:
+                user = (await self.bot.conn.fetch('SELECT default_reddit FROM user_data WHERE user_id=$1', ctx.author.id))[0]['default_reddit']
+                if user is None:
+                    raise IndexError
+            except IndexError:
+                raise commands.CommandError("You do not appear to have set a default reddit account yet, please do so before calling this command with no arguments")
         else:
             user = user.replace('u/', '')
         async with self.bot.session.get(f'https://www.reddit.com/user/{user}/moderated_subreddits/.json') as r:
@@ -320,12 +327,14 @@ class Api(commands.Cog):
         menu = CSMenu(source, delete_message_after=True)
         await menu.start(ctx)
 
-    @commands.group()
+    @commands.group(aliases=['fn'])
     async def fortnite(self, ctx):
+        """Various commands to interact with the Fortnite API"""
         pass
 
     @fortnite.command(aliases=['shop'])
     async def itemshop(self, ctx):
+        """Lists out the items currently in the Fortnite item shop"""
         async with self.bot.session.get(
                 'https://api.fortnitetracker.com/v1/store', headers={'TRN-Api-Key': os.getenv('FORTNITE_KEY')}) as resp:
             js = await resp.json()
@@ -344,6 +353,10 @@ class Api(commands.Cog):
 
     @fortnite.command(name='stats')
     async def _fnstats(self, ctx, platform, *, epic_name):
+        """
+        Lists out some stats for the specified player.
+            - Platform is a required argument, and can be any one of `pc`, `touch`, `xbl`, `psn`
+        """
         async with self.bot.session.get(
                 f'https://api.fortnitetracker.com/v1/profile/{platform}/{epic_name}',
                 headers={'TRN-Api-Key': os.getenv('FORTNITE_KEY')}) as resp:
