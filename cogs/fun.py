@@ -92,14 +92,9 @@ class Fun(commands.Cog):
     async def demorse(self, ctx, *, morse):
         await ctx.send(from_morse(morse))
 
-    @commands.group(invoke_without_command=True)
-    async def say(self, ctx, *, message):
-        """Say something as the bot"""
-        await ctx.safe_send(f'**{ctx.author.display_name} says:** {message}')
-
-    @say.command()
+    @commands.command()
     @commands.cooldown(1, 15, commands.BucketType.user)
-    async def emoji(self, ctx, *, message):
+    async def emojify(self, ctx, *, message):
         """Returns the inputted message, converted to emojis"""
         out = []
         for letter in list(message):
@@ -110,21 +105,6 @@ class Fun(commands.Cog):
             else:
                 out.append(letter)
         await ctx.send(f'**{ctx.author.name} says: **' + ' '.join(out) + '_ _')
-
-    @say.group(invoke_without_command=True)
-    async def embed(self, ctx, title, description):
-        """Send a message as an embed"""
-        col = ctx.author.colour
-        embed = discord.Embed(title=title, description=description, color=col)
-        embed.set_author(
-            name=ctx.author.display_name,
-            icon_url=ctx.author.avatar_url_as(static_format='png'))
-        await ctx.send(embed=embed)
-
-    @embed.command(name='dict')
-    async def dict_(self, ctx, *, data):
-        embed = cleanup_code(self, data)
-        await ctx.send(embed=discord.Embed.from_dict(ast.literal_eval(embed)))
 
     @commands.command()
     async def vote(self, ctx, *, poll):

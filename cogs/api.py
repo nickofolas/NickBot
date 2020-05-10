@@ -130,7 +130,11 @@ class Api(commands.Cog):
         """Overview of a reddit user"""
         user = user or ctx.author
         if user == ctx.author:
-            user = (await self.bot.conn.fetch('SELECT default_reddit FROM user_data WHERE user_id=$1', ctx.author.id))[0]['default_reddit']
+            try:
+                user = (await self.bot.conn.fetch('SELECT default_reddit FROM user_data WHERE user_id=$1', ctx.author.id))[0]['default_reddit']
+            except IndexError:
+                raise commands.CommandError("You do not appear to have set a default reddit account yet, please do so "
+                                            "before calling this command with no arguments")
         else:
             user = user.replace('u/', '')
         async with self.bot.session.get(f'https://www.reddit.com/user/{user}/about/.json') as resp:

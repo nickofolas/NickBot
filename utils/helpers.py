@@ -344,3 +344,7 @@ class BoolConverter(commands.Converter):
             return False
         else:
             raise commands.BadArgument('Input could not be converted into a true or false result')
+
+
+def prettify_text(content):
+    return content.replace('_', ' ').capitalize()

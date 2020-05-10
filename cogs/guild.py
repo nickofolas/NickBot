@@ -7,7 +7,7 @@ from discord.ext import commands
 from discord.ext.commands import has_permissions
 
 from utils.checks import is_owner_or_administrator
-from utils.helpers import BoolConverter
+from utils.helpers import BoolConverter, prettify_text
 
 
 class Arguments(argparse.ArgumentParser):
@@ -44,7 +44,7 @@ async def do_removal(ctx,
 
 
 class Guild(commands.Cog):
-    """Moderation commands, can only be used in a guild"""
+    """Everything to do with guild management can be found here"""
 
     def __init__(self, bot):
         self.bot = bot
@@ -200,19 +200,22 @@ class Guild(commands.Cog):
     @commands.group(name='config', aliases=['settings', 'cfg'], invoke_with_command=True)
     @is_owner_or_administrator()
     async def guild_config(self, ctx):
+        """
+        View or modify the configuration for the current guild.
+        """
         if ctx.invoked_subcommand is not None:
             return
         current_settings = dict((await self.bot.conn.fetch('SELECT * FROM guild_prefs WHERE guild_id=$1', ctx.guild.id))[0])
         readable_settings = list()
         for k, v in current_settings.items():
             if isinstance(v, bool):
-                readable_settings.append(f'**{discord.utils.escape_markdown(k)}** {ctx.tick(v)}')
+                readable_settings.append(f'**{discord.utils.escape_markdown(prettify_text(k))}** {ctx.tick(v)}')
             else:
-                readable_settings.append(f'**{discord.utils.escape_markdown(k)}** `{v}`')
+                readable_settings.append(f'**{discord.utils.escape_markdown(prettify_text(k))}** `{v}`')
         await ctx.send(embed=discord.Embed(
             title='Current Guild Settings', description='\n'.join(readable_settings[1:]), color=discord.Color.main))
 
-    @guild_config.command()
+    @guild_config.command(aliases=['pfx'])
     @is_owner_or_administrator()
     async def prefix(self, ctx, new_prefix=None):
         """Change the prefix for the current server"""
@@ -231,6 +234,9 @@ class Guild(commands.Cog):
     @guild_config.command(name='index')
     @is_owner_or_administrator()
     async def _index_emojis_toggle(self, ctx, on_off: BoolConverter):
+        """
+        Toggle whether or not emojis from the current guild will be indexed by emoji commands
+        """
         await self.bot.conn.execute('UPDATE guild_prefs SET index_emojis=$1 WHERE guild_id=$2', on_off, ctx.guild.id)
         await ctx.message.add_reaction(ctx.tick(True))
 
