@@ -53,7 +53,7 @@ class Data(commands.Cog):
             if re.search(content_check, i):
                 raise commands.CommandError('This trigger is too general')
         active = await self.bot.conn.fetch('SELECT kw FROM highlights WHERE user_id=$1', ctx.author.id)
-        if len(active) >= 5:
+        if len(active) >= self.max_highlights:
             raise commands.CommandError('You may only have 5 highlights at a time')
         if highlight_words in [rec['kw'] for rec in active]:
             raise commands.CommandError('You already have a highlight with this trigger')
