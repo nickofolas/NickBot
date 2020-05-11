@@ -11,7 +11,6 @@ from discord.ext import commands
 import utils.data_vis
 from utils.config import conf
 from utils.flags import UserFlags
-from utils.helpers import pluralize
 
 badges = {
     'discord_employee': '<:staff:699986149288181780>',
