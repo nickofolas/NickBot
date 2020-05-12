@@ -208,22 +208,13 @@ class Util(commands.Cog):
 
     @commands.command(aliases=['spoll'])
     async def strawpoll(self, ctx, question, deadline: HumanTime = None):
-        data = {
-            "poll": {
-                "title": question,
-                "answers": [
-                    "test",
-                    "test"
-                ]
-            }
-        }
+        data = {"poll": {"title": question, "answers": ["test", "test"]}}
         if deadline:
             zulu_deadline = deadline.isoformat()[:-6] + 'Z'
             data.update({"has_deadline": True, "deadline": str(zulu_deadline)})
         async with self.bot.session.post('https://strawpoll.com/api/poll', data=data) as resp:
             js = await resp.json()
         await ctx.send(f"Here's your poll: https://strawpoll.com/{js.get('content_id')}")
-
 
 
 def setup(bot):
