@@ -1,5 +1,4 @@
 import string
-import ast
 import random
 import io
 import asyncio
@@ -14,7 +13,6 @@ from uwuify import uwu_text as killmeplease
 from async_timeout import timeout
 
 from utils.config import conf
-from cogs.dev import cleanup_code
 from utils.paginator import BareBonesMenu, CSMenu
 
 CODE = {'A': '.-', 'B': '-...', 'C': '-.-.',
