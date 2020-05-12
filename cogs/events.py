@@ -21,9 +21,9 @@ class Events(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.hl_mailer.start()
-        self.update_hl_cache.start()
         self.hl_queue = list()
         self.bot.loop.create_task(self.build_hl_cache())
+        self.update_hl_cache.start()
 
     def cog_unload(self):
         self.hl_mailer.cancel()
@@ -57,14 +57,13 @@ class Events(commands.Cog):
 
     async def build_hl_cache(self):
         await self.bot.wait_until_ready()
-        temp_cache = []
+        self.hl_cache = []
         fetched = await self.bot.conn.fetch('SELECT user_id, kw, exclude_guild FROM highlights')
         for rec in fetched:
             i = list(tuple(rec))
             i[1] = re.compile(i[1], re.I)
             i = tuple(i)
-            temp_cache.append(i)
-        self.hl_cache = set(temp_cache)
+            self.hl_cache.append(i)
 
     @commands.Cog.listener()
     async def on_command(self, ctx):

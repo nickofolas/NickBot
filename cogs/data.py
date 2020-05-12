@@ -79,13 +79,13 @@ class Data(commands.Cog):
                         await self.bot.conn.fetch(
                             'SELECT kw, exclude_guild FROM highlights WHERE user_id=$1', ctx.author.id)]
         current = iterable_hls[highlight_index - 1][1]
-        if guild_id in current:
+        if current and guild_id in current:
             await self.bot.conn.execute('UPDATE highlights SET exclude_guild = array_remove(exclude_guild, $1) WHERE '
-                                        'user_id=$1 AND kw=$3',
+                                        'user_id=$2 AND kw=$3',
                                         guild_id, ctx.author.id, iterable_hls[highlight_index - 1][0])
         else:
             await self.bot.conn.execute('UPDATE highlights SET exclude_guild = array_append(exclude_guild, $1) WHERE '
-                                        'user_id=$1 AND kw=$3',
+                                        'user_id=$2 AND kw=$3',
                                         guild_id, ctx.author.id, iterable_hls[highlight_index - 1][0])
         await ctx.message.add_reaction(ctx.tick(True))
 
@@ -94,7 +94,7 @@ class Data(commands.Cog):
         """Display info on what triggers a specific highlight, or what guilds are muted from it"""
         hl_data = tuple(
             (await self.bot.conn.fetch('SELECT * FROM highlights WHERE user_id=$1',ctx.author.id))[highlight_index-1])
-        ex_guild_display = f"**Ignored Guilds** {', '.join(hl_data[2])}" if hl_data[2] else ''
+        ex_guild_display = f"**Ignored Guilds** {', '.join([self.bot.get_guild(i).name for i in hl_data[2]])}" if hl_data[2] else ''
         embed = discord.Embed(
             description=f'**Triggered by** "{hl_data[1]}"\n{ex_guild_display}',
             color=discord.Color.main)
