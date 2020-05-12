@@ -55,7 +55,7 @@ class Events(commands.Cog):
         if isinstance(error, (commands.CommandNotFound, commands.NotOwner)):
             return
         elif isinstance(error, commands.CommandOnCooldown):
-            return await ctx.message.add_reaction('⏰')
+            return await ctx.message.add_reaction('<:balarm_cl:709860023001415800>')
         await ctx.propagate_to_eh(self.bot, ctx, error)
 
     async def build_hl_cache(self):
