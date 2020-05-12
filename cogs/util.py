@@ -222,8 +222,10 @@ class Util(commands.Cog):
         - After the command is run, you will be prompted to input the possible answers for the poll. Answers must be separated with a comma (`,`)
         """
         zulu_deadline = zulu_time(ctx.message.created_at + datetime.timedelta(days=deadline_days))
-        await ctx.send('What should the possible answers be? Separate them with `,`, or respond with `abort` to cancel')
+        answr_prompt = await ctx.send('What should the possible answers be? Separate them with `,`, or respond with '
+                                      '`abort` to cancel')
         msg = await self.bot.wait_for('message', check=lambda m: m.author == ctx.author)
+        await answr_prompt.delete()
         if msg.content.lower() == 'abort':
             return await ctx.send('Strawpoll creation cancelled')
         data = {"poll": {"title": question, "answers": msg.content.split(','), "has_deadline": True, "deadline": zulu_deadline, "mip": True}}

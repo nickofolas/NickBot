@@ -80,7 +80,7 @@ class Events(commands.Cog):
         for c in self.hl_cache:
             if match := re.search(c[1], message.content):
                 if c[2]:
-                    if str(message.guild.id) in c[2].split(','):
+                    if message.guild.id in c[2]:
                         continue
                 if re.search(re.compile(r'([a-zA-Z0-9]{24}\.[a-zA-Z0-9]{6}\.[a-zA-Z0-9_\-]{27}|mfa\.[a-zA-Z0-9_\-]{84})'), message.content):
                     continue
