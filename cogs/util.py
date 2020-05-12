@@ -6,7 +6,9 @@ import re
 import time
 import unicodedata
 from inspect import Parameter
-from typing import Union
+from typing import Union, Optional
+import datetime
+import contextlib
 
 import discord
 import typing
@@ -14,7 +16,11 @@ import unidecode as ud
 from discord.ext import commands
 
 from utils import paginator
-from utils.helpers import pluralize, HumanTime
+from utils.helpers import pluralize
+
+
+def zulu_time(dt: datetime.datetime):
+    return dt.isoformat()[:-6] + 'Z'
 
 
 class Util(commands.Cog):
@@ -207,14 +213,23 @@ class Util(commands.Cog):
             await ctx.safe_send(discord.utils.escape_markdown(m.content))
 
     @commands.command(aliases=['spoll'])
-    async def strawpoll(self, ctx, question, deadline: HumanTime = None):
-        data = {"poll": {"title": question, "answers": ["test", "test"]}}
-        if deadline:
-            zulu_deadline = deadline.isoformat()[:-6] + 'Z'
-            data.update({"has_deadline": True, "deadline": str(zulu_deadline)})
-        async with self.bot.session.post('https://strawpoll.com/api/poll', data=data) as resp:
+    @commands.max_concurrency(1, commands.BucketType.channel)
+    async def strawpoll(self, ctx, deadline_days: Optional[int] = 1, *, question):
+        """
+        Create a poll on Strawpoll
+        - deadline_days is an optional parameter that can be passed to adjust the number of days the poll will remain active, defaults to 1 day.
+        - question is a required parameter
+        - After the command is run, you will be prompted to input the possible answers for the poll. Answers must be separated with a comma (`,`)
+        """
+        zulu_deadline = zulu_time(ctx.message.created_at + datetime.timedelta(days=deadline_days))
+        await ctx.send('What should the possible answers be? Separate them with `,`, or respond with `abort` to cancel')
+        msg = await self.bot.wait_for('message', check=lambda m: m.author == ctx.author)
+        if msg.content.lower() == 'abort':
+            return await ctx.send('Strawpoll creation cancelled')
+        data = {"poll": {"title": question, "answers": msg.content.split(','), "has_deadline": True, "deadline": zulu_deadline, "mip": True}}
+        async with self.bot.session.post('https://strawpoll.com/api/poll', data=json.dumps(data)) as resp:
             js = await resp.json()
-        await ctx.send(f"Here's your poll: https://strawpoll.com/{js.get('content_id')}")
+        await ctx.send(f"Here's your poll: <https://strawpoll.com/{js.get('content_id')}>")
 
 
 def setup(bot):
