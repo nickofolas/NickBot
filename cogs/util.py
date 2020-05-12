@@ -14,7 +14,7 @@ import unidecode as ud
 from discord.ext import commands
 
 from utils import paginator
-from utils.helpers import pluralize
+from utils.helpers import pluralize, HumanTime
 
 
 class Util(commands.Cog):
@@ -205,6 +205,25 @@ class Util(commands.Cog):
             converter = commands.MessageConverter()
             m = await converter.convert(ctx, message_id)
             await ctx.safe_send(discord.utils.escape_markdown(m.content))
+
+    @commands.command(aliases=['spoll'])
+    async def strawpoll(self, ctx, question, deadline: HumanTime = None):
+        data = {
+            "poll": {
+                "title": question,
+                "answers": [
+                    "test",
+                    "test"
+                ]
+            }
+        }
+        if deadline:
+            zulu_deadline = deadline.isoformat()[:-6] + 'Z'
+            data.update({"has_deadline": True, "deadline": str(zulu_deadline)})
+        async with self.bot.session.post('https://strawpoll.com/api/poll', data=data) as resp:
+            js = await resp.json()
+        await ctx.send(f"Here's your poll: https://strawpoll.com/{js.get('content_id')}")
+
 
 
 def setup(bot):
