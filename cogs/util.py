@@ -14,6 +14,7 @@ import unidecode as ud
 from discord.ext import commands
 
 from utils import paginator
+from utils.helpers import pluralize
 
 
 class Util(commands.Cog):
@@ -132,15 +133,11 @@ class Util(commands.Cog):
     @commands.command()
     async def playing(self, ctx, *, game):
         """Get the number of people playing a game in the server"""
-        mem = [
-            str(m.activity.name) for m in ctx.guild.members
-            if m.activity and m.activity.name == game
-        ]
+        total_playing = sum(game in [a.name for a in m.activities] for m in ctx.guild.members)
         await ctx.send(embed=discord.Embed(
             title='',
             description=(
-                f'{len(mem)} members are playing {game}'
-                if not len(mem) == 1 else f'1 member is playing {game}'
+                f'{total_playing} {pluralize("member", total_playing)} members are playing {game}'
             ),
             color=discord.Color.main))
 
