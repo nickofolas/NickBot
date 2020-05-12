@@ -22,12 +22,13 @@ class Events(commands.Cog):
         self.bot = bot
         self.hl_mailer.start()
         self.hl_queue = list()
-        self.bot.loop.create_task(self.build_hl_cache())
+        self.hl_cache = []
         self.update_hl_cache.start()
 
     def cog_unload(self):
         self.hl_mailer.cancel()
         self.update_hl_cache.cancel()
+        self.hl_cache = []
 
     @tasks.loop(seconds=10)
     async def hl_mailer(self):
