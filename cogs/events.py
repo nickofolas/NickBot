@@ -52,10 +52,10 @@ class Events(commands.Cog):
     # Provides general command error messages
     @commands.Cog.listener()
     async def on_command_error(self, ctx, error):
-        if isinstance(error, commands.CommandNotFound):
-            return await ctx.message.add_reaction('⏰')
-        elif isinstance(error, commands.NotOwner):
+        if isinstance(error, (commands.CommandNotFound, commands.NotOwner)):
             return
+        elif isinstance(error, commands.CommandOnCooldown):
+            return await ctx.message.add_reaction('⏰')
         await ctx.propagate_to_eh(self.bot, ctx, error)
 
     async def build_hl_cache(self):
