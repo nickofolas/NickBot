@@ -137,7 +137,7 @@ class Util(commands.Cog):
         await ctx.send(embed=discord.Embed(
             title='',
             description=(
-                f'{total_playing} {pluralize("member", total_playing)} members are playing {game}'
+                f'{total_playing} {pluralize("member", total_playing)} are playing {game}'
             ),
             color=discord.Color.main))
 
