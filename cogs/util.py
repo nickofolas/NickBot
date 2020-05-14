@@ -217,9 +217,11 @@ class Util(commands.Cog):
     async def strawpoll(self, ctx, deadline_days: Optional[int] = 1, *, question):
         """
         Create a poll on Strawpoll
-        - deadline_days is an optional parameter that can be passed to adjust the number of days the poll will remain active, defaults to 1 day.
+        - deadline_days is an optional parameter that can be passed to adjust the number of days the poll will remain
+        active, defaults to 1 day.
         - question is a required parameter
-        - After the command is run, you will be prompted to input the possible answers for the poll. Answers must be separated with a comma (`,`)
+        - After the command is run, you will be prompted to input the possible answers for the poll. Answers must be
+        separated with a comma (`,`)
         """
         zulu_deadline = zulu_time(ctx.message.created_at + datetime.timedelta(days=deadline_days))
         answr_prompt = await ctx.send('What should the possible answers be? Separate them with `,`, or respond with '

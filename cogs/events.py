@@ -55,7 +55,7 @@ class Events(commands.Cog):
         if isinstance(error, (commands.CommandNotFound, commands.NotOwner)):
             return
         elif isinstance(error, commands.CommandOnCooldown):
-            return await ctx.message.add_reaction('<:balarm_cl:709860023001415800>')
+            return await ctx.message.add_reaction('<:balarm_cl:710356767447711744>')
         await ctx.propagate_to_eh(self.bot, ctx, error)
 
     async def build_hl_cache(self):
@@ -143,11 +143,16 @@ class Events(commands.Cog):
         await self.bot.conn.execute(
             'INSERT INTO guild_prefs (guild_id, prefix) VALUES ($1, $2) ON CONFLICT (guild_id) DO UPDATE SET prefix=$2',
             guild.id, 'n/')
-        await (await self.bot.application_info()).owner.send(embed=embed)
+        await self.bot.logging_channels.get('guild_io').send(embed=embed)
 
     @commands.Cog.listener()
     async def on_guild_remove(self, guild):
         await self.bot.conn.execute('DELETE FROM guild_prefs WHERE guild_id=$1', guild.id)
+        embed = discord.Embed(
+            description=f'Removed from guild {guild.name} [{guild.id}]',
+            color=discord.Color.pornhub)
+        embed.set_thumbnail(url=guild.icon_url_as(static_format='png'))
+        await self.bot.logging_channels.get('guild_io').send(embed=embed)
 
 
 def setup(bot):

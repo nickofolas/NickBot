@@ -31,27 +31,24 @@ class StatusChart:
 
 
 def bar_make(
-        value: int,
-        gap: int,
-        fill_char: str = '█',
-        empty_char: str = ' ',
-        point_mode: bool = False,
-        length: int = 10):
+        value: int, gap: int, *,
+        fill: str = '█', empty: str = ' ',
+        point: bool = False, length: int = 10):
     bar = ''
 
     percentage = (value/gap) * length
 
-    if point_mode:
+    if point:
         for i in range(0, length + 1):
             if i == round(percentage):
-                bar += fill_char
+                bar += fill
             else:
-                bar += empty_char
+                bar += empty
         return bar
 
     for i in range(1, length + 1):
         if i <= percentage:
-            bar += fill_char
+            bar += fill
         else:
-            bar += empty_char
+            bar += empty
     return bar

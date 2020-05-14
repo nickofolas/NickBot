@@ -15,8 +15,8 @@ class Context(commands.Context):
 
     async def prompt(self, message):
         emojis = {
-            '<:c_:703740667926675536>': True,
-            '<:x_:703739402094117004>': False}
+            '<:c_:710356775701970987>': True,
+            '<:x_:710356782957985823>': False}
         msg = await self.send(message)
         for e in emojis.keys():
             await msg.add_reaction(e)
@@ -51,14 +51,18 @@ class Context(commands.Context):
 
     def tick(self, opt, label=None):
         lookup = {
-            True: '<:c_:703740667926675536>',
-            False: '<:x_:703739402094117004>',
-            None: '<:unicode_neutral:704141512912666624>',
+            True: '<:c_:710356775701970987>',
+            False: '<:x_:710356782957985823>',
+            None: '<:unicode_neutral:710356848447979671>',
         }
-        emoji = lookup.get(opt, '<:x_:703739402094117004>')
+        emoji = lookup.get(opt, '<:x_:710356782957985823>')
         if label is not None:
             return f'{emoji}: {label}'
         return emoji
+
+    @staticmethod
+    def codeblock(content, hl_lang=None):
+        return f'```{hl_lang or ""}\n' + content + '\n```'
 
     def tab(self, repeat=1):
         tabs = []
@@ -74,7 +78,7 @@ class Context(commands.Context):
     @staticmethod
     async def propagate_to_eh(bot, ctx, error):
         with suppress(Exception):
-            await ctx.message.add_reaction('<:blue_warn:703822784660373564>')
+            await ctx.message.add_reaction('<:bwarn:710356862142513172>')
             try:
                 reaction, user = await bot.wait_for(
                     'reaction_add',
@@ -82,9 +86,9 @@ class Context(commands.Context):
                     and u.id in [ctx.author.id, 680835476034551925], timeout=30.0
                 )
             except asyncio.TimeoutError:
-                await ctx.message.remove_reaction('<:blue_warn:703822784660373564>', ctx.me)
+                await ctx.message.remove_reaction('<:bwarn:710356862142513172>', ctx.me)
                 return
-            if str(reaction.emoji) == '<:blue_warn:703822784660373564>':
+            if str(reaction.emoji) == '<:bwarn:710356862142513172>':
                 return await ctx.send(error)
 
     class ExHandler:

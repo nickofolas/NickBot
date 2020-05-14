@@ -65,10 +65,10 @@ class NeoBot(commands.Bot):
                 self.load_extension(
                     f'cogs.{filename[:-3]}')  # Load all cogs upon starting up
                 self.all_cogs.append(filename[:-3].title())
-
             # self.load_extension('jishaku')
-        TOKEN = os.getenv("TOKEN")
-        self.run(TOKEN)
+        self.logging_channels = {
+            'guild_io': self.get_channel(710331034922647613)
+        }
 
     async def ainit(self):
         cn = {"user": os.getenv('DBUSER'), "password": os.getenv('DBPASS'), "database": os.getenv('DB'),
@@ -98,4 +98,5 @@ class NeoBot(commands.Bot):
         await super().close()
 
 
-NeoBot().run()
+TOKEN = os.getenv("TOKEN")
+NeoBot.run(TOKEN)

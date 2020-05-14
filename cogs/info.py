@@ -75,8 +75,7 @@ class Info(commands.Cog):
         self.bot = bot
 
     @commands.group(aliases=['ui'], invoke_without_command=True)
-    async def userinfo(self, ctx, *, target: Union[
-        discord.Member, discord.User, int] = None):
+    async def userinfo(self, ctx, *, target: Union[discord.Member, discord.User, int] = None):
         """Get information about the targeted user"""
         target = (await self.bot.fetch_user(target)) if \
             isinstance(target, int) else target or ctx.author
@@ -120,7 +119,7 @@ class Info(commands.Cog):
         embed = discord.Embed(
             title=tagline,
             colour=discord.Color.main)
-        embed.set_thumbnail(url=target.avatar_url_as(static_format='png'))
+        embed.set_thumbnail(url=target.avatar_url_as(static_format='png').__str__())
         status_display = status_display or ''
         embed.description = f"""
 {status_display}
@@ -199,9 +198,9 @@ class Info(commands.Cog):
                     value=', '.join(ac.artists))
                 e.add_field(name='**Album Name**', value=discord.utils.escape_markdown(ac.album))
                 bar = utils.data_vis.bar_make(
-                    val.seconds, g.seconds, '◉', '─', True,
-                    5) if ctx.author.is_on_mobile() else utils.data_vis.bar_make(
-                    val.seconds, g.seconds, '◉', '─', True, 25)
+                    val.seconds, g.seconds, fill='◉', empty='─', point=True, length=5) if ctx.author.is_on_mobile() \
+                    else utils.data_vis.bar_make(
+                    val.seconds, g.seconds, fill='◉', empty='─', point=True, length=25)
                 e.add_field(
                     name='**Song Progress**',
                     value=f'`{(val.seconds // 60) % 60:>02}:{val.seconds % 60:>02}` '
@@ -238,7 +237,7 @@ class Info(commands.Cog):
         embed.add_field(
             name='**General**',
             value=f"""
-**Channels** <:text_channel:687064764421373954> {len(guild.text_channels)} | <:voice_channel:687064782167212165> {len(guild.voice_channels)}
+**Channels** <:text_channel:687064764421373954> {len(guild.text_channels)} | <:voice_channel:687064782167212165> {len(guild.voice_channels)} 
 **Region** {str(guild.region).title()}
 **Verification Level** {str(guild.verification_level).capitalize()}
 **Emojis** {len([emoji for emoji in guild.emojis if not emoji.animated])}/{guild.emoji_limit}
@@ -284,9 +283,9 @@ class Info(commands.Cog):
                 f'<:expanded:702065051036680232> {cat.name}',
                 [ctx.tab(5) + (
                     ('<:text_channel:687064764421373954> ' + chan.name if not
-                    chan.overwrites_for(guild.default_role).read_messages
-                    is False else '<:text_locked:697526634848452639> '
-                                  + chan.name) if isinstance(chan, discord.TextChannel)
+                        chan.overwrites_for(guild.default_role).read_messages
+                        is False else '<:text_locked:697526634848452639> ' + chan.name)
+                    if isinstance(chan, discord.TextChannel)
                     else (
                         '<:voice_channel:687064782167212165> '
                         + chan.name if not

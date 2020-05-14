@@ -169,7 +169,7 @@ class Meta(commands.Cog):
         invite_url = discord.utils.oauth_url(self.bot.user.id, permissions)
         mem = psutil.virtual_memory()[2]
         vi = sys.version_info
-        ascii_bar = utils.data_vis.bar_make(round(mem / 10), 10, '▰', '▱')
+        ascii_bar = utils.data_vis.bar_make(round(mem / 10), 10, fill='▰', empty='▱')
         delta_uptime = datetime.utcnow() - self.bot.launch_time
         embed = discord.Embed(color=discord.Color.main)
         embed.set_footer(text=f'Python {vi.major}.{vi.minor}.{vi.micro} | discord.py {discord.__version__}')
