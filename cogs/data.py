@@ -119,6 +119,7 @@ class Data(commands.Cog):
         await ctx.message.add_reaction(ctx.tick(True))
 
     @highlight.command(name='test')
+    @commands.cooldown(1, 5, commands.BucketType.user)
     async def test_highlight(self, ctx, *, message):
         """Test your highlights by simulating a message event
         Pass a message that contains a highlights, and the

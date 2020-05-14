@@ -67,7 +67,7 @@ class Util(commands.Cog):
         for before, after, when in reversed(self.bot.snipes[target_channel.id]['edited']):
             if not before.content or not after.content:
                 continue
-            diff = difflib.ndiff(f'{before.content}\n'.splitlines(keepends=True),
+            diff = difflib.unified_diff(f'{before.content}\n'.splitlines(keepends=True),
                                  f'{after.content}\n'.splitlines(keepends=True))
             tup = ('```diff\n' + ''.join(diff) + '```', after, when)
             entries.append(tup)

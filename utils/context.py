@@ -1,5 +1,6 @@
 import re
 from contextlib import suppress
+import asyncio
 
 from discord.ext import commands
 import discord
@@ -74,11 +75,15 @@ class Context(commands.Context):
     async def propagate_to_eh(bot, ctx, error):
         with suppress(Exception):
             await ctx.message.add_reaction('<:blue_warn:703822784660373564>')
-            reaction, user = await bot.wait_for(
-                'reaction_add',
-                check=lambda r, u: r.message.id == ctx.message.id
-                and u.id in [ctx.author.id, 680835476034551925]
-            )
+            try:
+                reaction, user = await bot.wait_for(
+                    'reaction_add',
+                    check=lambda r, u: r.message.id == ctx.message.id
+                    and u.id in [ctx.author.id, 680835476034551925], timeout=30.0
+                )
+            except asyncio.TimeoutError:
+                await ctx.message.remove_reaction('<:blue_warn:703822784660373564>', ctx.me)
+                return
             if str(reaction.emoji) == '<:blue_warn:703822784660373564>':
                 return await ctx.send(error)
 
