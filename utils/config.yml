@@ -8,6 +8,7 @@ emoji_suite:
   'menu_dleft': '<:track_backward:710365198963179520>'
   'neutral_button': '<:unicode_neutral:710365227354685520>'
   'alarm': '<:balarm_cl:710365167996764201>'
+  'search': '<:search:710376307342704652>'
 number_emojis:
   '1': '1️⃣'
   '2': '2️⃣'

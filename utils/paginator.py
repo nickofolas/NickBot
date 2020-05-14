@@ -1,3 +1,4 @@
+import asyncio
 import copy
 from datetime import datetime
 
@@ -58,6 +59,18 @@ class CSMenu(menus.MenuPages):
         """go to the last page"""
         # The call here is safe because it's guarded by skip_if
         await self.show_page(self._source.get_max_pages() - 1)
+
+    @menus.button(conf['emoji_suite']['search'], position=menus.First(2))
+    async def go_to_inputted_page(self, payload):
+        prompt = await self.ctx.send('Enter the number of the page you would like to go to')
+        try:
+            msg = await self.bot.wait_for('message', check=lambda m: m.author.id == self._author_id, timeout=10.0)
+            ind = int(msg.content)
+            await self.show_checked_page(ind - 1)
+        except asyncio.TimeoutError:
+            pass
+        finally:
+            await prompt.delete()
 
     @menus.button(f'{conf["emoji_suite"]["x_button"]}\ufe0f', position=menus.First(1))
     async def stop_pages(self, payload):
