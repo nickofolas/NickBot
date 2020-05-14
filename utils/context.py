@@ -53,7 +53,7 @@ class Context(commands.Context):
     def tick(self, opt, label=None):
         lookup = {
             True: conf['emoji_suite']['check_button'],
-            False: conf['emoji_suite']['check_button'],
+            False: conf['emoji_suite']['x_button'],
             None: conf['emoji_suite']['neutral_button'],
         }
         emoji = lookup.get(opt, conf['emoji_suite']['x_button'])
