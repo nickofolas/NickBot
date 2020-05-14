@@ -121,10 +121,10 @@ class Dev(commands.Cog):
         except Exception as e:
             return await ctx.safe_send(f'```py\n{e.__class__.__name__}: {e}\n```')
 
-        func = env['func']
+        evaluated_func = env['func']
         try:
             with redirect_stdout(stdout):
-                ret = await func()
+                result = await evaluated_func()
         except Exception:
             value = stdout.getvalue()
             sent = await ctx.safe_send(f'```py\n{value}{traceback.format_exc()}\n```')
@@ -134,17 +134,17 @@ class Dev(commands.Cog):
                 await ctx.message.add_reaction(ctx.tick(True))
             except Exception:
                 pass
-            if ret is None:
+            if result is None:
                 if value:
                     sent = await ctx.safe_send(f'{value}')
             else:
-                self._last_result = ret
-                if isinstance(ret, discord.Embed):
-                    sent = await ctx.send(embed=ret)
-                elif isinstance(ret, discord.File):
-                    sent = await ctx.send(file=ret)
+                self._last_result = result
+                if isinstance(result, discord.Embed):
+                    sent = await ctx.send(embed=result)
+                elif isinstance(result, discord.File):
+                    sent = await ctx.send(file=result)
                 else:
-                    sent = await ctx.safe_send(f'{value}{ret}')
+                    sent = await ctx.safe_send(f'{value}{result}')
         if sent:
             await sent.add_reaction(ctx.tick(False))
             try:

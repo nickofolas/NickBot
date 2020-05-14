@@ -54,8 +54,6 @@ class NeoBot(commands.Bot):
                          allowed_mentions=discord.AllowedMentions(everyone=False, users=False, roles=False))
         self.session = aiohttp.ClientSession()
         self.snipes = {}
-        # self.socket_stats = {}
-        self.launch_time = datetime.utcnow()
         self.all_cogs = list()
         self.persistent_status = False
         self.loop.create_task(self.ainit())

@@ -259,6 +259,7 @@ class Api(commands.Cog):
         await ctx.send(embed=embed)
 
     @commands.command()
+    @commands.cooldown(1, 5, commands.BucketType.channel)
     async def pypi(self, ctx, *, package_name):
         """
         Search PyPi for the inputted python package
