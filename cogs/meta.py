@@ -54,12 +54,12 @@ class EmbeddedHelpCommand(commands.HelpCommand):
         def key(c):
             return c.cog_name or '\u200bUncategorized'
         bot = self.context.bot
-        embed = discord.Embed(color=discord.Color.main).set_author(name=f'{bot.user.name} help page')
+        embed = discord.Embed(title=f'{bot.user.name} Help', color=discord.Color.main)
         description = f'Use `{self.clean_prefix}help <command/category>` for more help\n\n'
         entries = await self.filter_commands(bot.commands, sort=True, key=key)
         for cog, cmds in itertools.groupby(entries, key=key):
             cmds = sorted(cmds, key=lambda c: c.name)
-            description += f'**➤ {cog}**\n{" • ".join([c.name for c in cmds])}\n'
+            description += f'**➣ {cog}**\n{" • ".join([c.name for c in cmds])}\n'
         embed.description = description
         await self.context.send(embed=embed)
 
