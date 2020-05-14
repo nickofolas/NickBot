@@ -1,20 +1,12 @@
-from typing import Union
-import time
-from datetime import datetime, timedelta
-import asyncio
-import random
 import copy
+import random
 import re
 import string
 
-import asyncpg
 import discord
 from discord.ext import commands
-import aiosqlite as asq
-import humanize
 
 from utils.paginator import BareBonesMenu, CSMenu
-from utils.helpers import pluralize
 
 
 class Data(commands.Cog):
@@ -30,7 +22,8 @@ class Data(commands.Cog):
         Base command for keyword highlights. Run with no arguments to list your active highlights.
         """
         hl_list = []
-        fetched = [rec['kw'] for rec in await self.bot.conn.fetch('SELECT kw FROM highlights WHERE user_id=$1', ctx.author.id)]
+        fetched = [rec['kw'] for rec in
+                   await self.bot.conn.fetch('SELECT kw FROM highlights WHERE user_id=$1', ctx.author.id)]
         for i in range(self.max_highlights):
             to_append = f"`{(i + 1)}` {fetched[i]}" if i < len(fetched) else ''
             hl_list.append(to_append)
@@ -47,7 +40,8 @@ class Data(commands.Cog):
         NOTE: It may take up to a minute for a new highlight to take effect
         """
         if len(highlight_words) < 3 or len(highlight_words) > 100:
-            raise commands.CommandError('Highlights must be more than 2 characters long and at most 100 characters long')
+            raise commands.CommandError(
+                'Highlights must be more than 2 characters long and at most 100 characters long')
         content_check = re.compile(fr'{highlight_words}', re.I)
         for i in ('afssafasfa', '12421', '\n', ' ', string.ascii_letters, string.digits):
             if re.search(content_check, i):
@@ -73,6 +67,8 @@ class Data(commands.Cog):
             - If the specified guild is already being ignored, running the command,
             and passing that guild a second time will remove it from the list
         NOTE: It may take up to a minute for this to take effect"""
+        if not isinstance(highlight_index, int):
+            raise commands.CommandError('Specify a highlight by its index (found in your list of highlights)')
         guild_id = guild_id or ctx.guild.id
         iterable_hls = [(rec['kw'], rec['exclude_guild'])
                         for rec in
@@ -92,9 +88,13 @@ class Data(commands.Cog):
     @highlight.command(name='info')
     async def view_highlight_info(self, ctx, highlight_index: int):
         """Display info on what triggers a specific highlight, or what guilds are muted from it"""
+        if not isinstance(highlight_index, int):
+            raise commands.CommandError('Specify a highlight by its index (found in your list of highlights)')
         hl_data = tuple(
-            (await self.bot.conn.fetch('SELECT * FROM highlights WHERE user_id=$1',ctx.author.id))[highlight_index-1])
-        ex_guild_display = f"**Ignored Guilds** {', '.join([self.bot.get_guild(i).name for i in hl_data[2]])}" if hl_data[2] else ''
+            (await self.bot.conn.fetch('SELECT * FROM highlights WHERE user_id=$1', ctx.author.id))[
+                highlight_index - 1])
+        ex_guild_display = f"**Ignored Guilds** {', '.join([self.bot.get_guild(i).name for i in hl_data[2]])}" if \
+        hl_data[2] else ''
         embed = discord.Embed(
             description=f'**Triggered by** "{hl_data[1]}"\n{ex_guild_display}',
             color=discord.Color.main)
@@ -106,11 +106,8 @@ class Data(commands.Cog):
         Remove one, or multiple highlights by index
         NOTE: It may take up to a minute for this to take effect
         """
-        for i in highlight_index:
-            try:
-                int(i)
-            except Exception:
-                raise TypeError
+        if not all(map(lambda i: isinstance(i, int), highlight_index)):
+            raise commands.CommandError('Use the index of a highlight (found in your list of highlights) to remove it')
         fetched = [rec['kw'] for rec in
                    await self.bot.conn.fetch("SELECT kw from highlights WHERE user_id=$1", ctx.author.id)]
         for num in highlight_index:
@@ -195,6 +192,8 @@ class Data(commands.Cog):
         """
         Remove one, or multiple todos by index
         """
+        if not all(map(lambda i: isinstance(i, int), todo_index)):
+            raise commands.CommandError('Use the index of a todo (found in your list of todos) to remove it')
         fetched = [rec['content'] for rec in
                    await self.bot.conn.fetch("SELECT content from todo WHERE user_id=$1", ctx.author.id)]
         for num in todo_index:

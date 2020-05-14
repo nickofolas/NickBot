@@ -54,7 +54,7 @@ class EmbeddedHelpCommand(commands.HelpCommand):
         def key(c):
             return c.cog_name or '\u200bUncategorized'
         bot = self.context.bot
-        embed = discord.Embed(color=discord.Color.main)
+        embed = discord.Embed(color=discord.Color.main).set_author(name=f'{bot.name} help page')
         description = f'Use `{self.clean_prefix}help <command/category>` for more help\n\n'
         entries = await self.filter_commands(bot.commands, sort=True, key=key)
         for cog, cmds in itertools.groupby(entries, key=key):

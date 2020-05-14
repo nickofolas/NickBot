@@ -72,15 +72,15 @@ class Fun(commands.Cog):
         self.bot = bot
 
     @commands.command(aliases=['bin'])
-    async def binary(self, ctx, *, input):
+    async def binary(self, ctx, *, content):
         """Convert stuff to and from binary"""
         try:
-            n = int(input, 2)
+            n = int(content, 2)
             await ctx.safe_send(
                 '**Converted from binary: **'
                 + n.to_bytes((n.bit_length() + 7) // 8, 'big').decode())
         except Exception:
-            await ctx.safe_send(str(bin(int.from_bytes(input.encode(), 'big'))))
+            await ctx.safe_send(str(bin(int.from_bytes(content.encode(), 'big'))))
 
     @commands.command()
     async def morse(self, ctx, *, message):

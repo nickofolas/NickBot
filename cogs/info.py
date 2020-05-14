@@ -211,15 +211,6 @@ class Info(commands.Cog):
         else:
             await ctx.send("A Spotify status couldn't be detected!")
 
-    @userinfo.command(name='shared')
-    @commands.is_owner()
-    async def shared_guilds(self, ctx, *, target: Union[discord.Member, discord.User, int] = None):
-        target = (target.id if isinstance(target, (discord.Member, discord.User)) else target) or ctx.author.id
-        template = discord.Embed(title=f'Guilds shared between {self.bot.get_user(target)} and {ctx.me}',
-                                 color=discord.Color.main)
-        await ctx.quick_menu([*(g.name for g in self.bot.guilds if target in [m.id for m in g.members])], 10,
-                             template=template, delete_message_after=True)
-
     @commands.group(
         aliases=['guild', 'guildinfo', 'server'],
         invoke_without_command=True)
