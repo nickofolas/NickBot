@@ -139,6 +139,15 @@ class Events(commands.Cog):
             embed.add_field(
                 name='**Guild Invite**',
                 value=(await guild.text_channels[0].create_invite()))
+        with suppress(Exception):
+            async for a in guild.audit_logs(limit=5):
+                if a.action == discord.AuditLogAction.bot_add:
+                    action = a
+                    break
+            embed.add_field(
+                name='**Added By**',
+                value=action.user
+            )
 
         await self.bot.conn.execute(
             'INSERT INTO guild_prefs (guild_id, prefix) VALUES ($1, $2) ON CONFLICT (guild_id) DO UPDATE SET prefix=$2',
