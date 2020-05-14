@@ -55,7 +55,7 @@ class Events(commands.Cog):
         if isinstance(error, (commands.CommandNotFound, commands.NotOwner)):
             return
         elif isinstance(error, commands.CommandOnCooldown):
-            return await ctx.message.add_reaction('<:balarm_cl:710356767447711744>')
+            return await ctx.message.add_reaction(conf['emoji_suite']['alarm'])
         await ctx.propagate_to_eh(self.bot, ctx, error)
 
     async def build_hl_cache(self):

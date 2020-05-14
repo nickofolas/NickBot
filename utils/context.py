@@ -6,6 +6,7 @@ from discord.ext import commands
 import discord
 
 import utils.paginator as pages
+from utils.config import conf
 
 
 class Context(commands.Context):
@@ -15,8 +16,8 @@ class Context(commands.Context):
 
     async def prompt(self, message):
         emojis = {
-            '<:c_:710356775701970987>': True,
-            '<:x_:710356782957985823>': False}
+            conf['emoji_suite']['check_button']: True,
+            conf['emoji_suite']['x_button']: False}
         msg = await self.send(message)
         for e in emojis.keys():
             await msg.add_reaction(e)
@@ -51,11 +52,11 @@ class Context(commands.Context):
 
     def tick(self, opt, label=None):
         lookup = {
-            True: '<:c_:710356775701970987>',
-            False: '<:x_:710356782957985823>',
-            None: '<:unicode_neutral:710356848447979671>',
+            True: conf['emoji_suite']['check_button'],
+            False: conf['emoji_suite']['check_button'],
+            None: conf['emoji_suite']['neutral_button'],
         }
-        emoji = lookup.get(opt, '<:x_:710356782957985823>')
+        emoji = lookup.get(opt, conf['emoji_suite']['x_button'])
         if label is not None:
             return f'{emoji}: {label}'
         return emoji
@@ -78,7 +79,7 @@ class Context(commands.Context):
     @staticmethod
     async def propagate_to_eh(bot, ctx, error):
         with suppress(Exception):
-            await ctx.message.add_reaction('<:bwarn:710356862142513172>')
+            await ctx.message.add_reaction(conf['emoji_suite']['warning_button'])
             try:
                 reaction, user = await bot.wait_for(
                     'reaction_add',
@@ -86,9 +87,9 @@ class Context(commands.Context):
                     and u.id in [ctx.author.id, 680835476034551925], timeout=30.0
                 )
             except asyncio.TimeoutError:
-                await ctx.message.remove_reaction('<:bwarn:710356862142513172>', ctx.me)
+                await ctx.message.remove_reaction(conf['emoji_suite']['warning_button'], ctx.me)
                 return
-            if str(reaction.emoji) == '<:bwarn:710356862142513172>':
+            if str(reaction.emoji) == conf['emoji_suite']['warning_button']:
                 return await ctx.send(error)
 
     class ExHandler:

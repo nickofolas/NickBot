@@ -5,6 +5,8 @@ import discord
 import humanize
 from discord.ext import menus
 
+from utils.config import conf
+
 """ext.menus classes below"""
 
 
@@ -33,31 +35,31 @@ class CSMenu(menus.MenuPages):
                     'content': None}
 
     @menus.button(
-        '<:track_backward:710356809713713162>\ufe0f',
+        f'{conf["emoji_suite"]["menu_dleft"]}\ufe0f',
         position=menus.First(0), skip_if=_skip_double_triangle_buttons)
     async def go_to_first_page(self, payload):
         """go to the first page"""
         await self.show_page(0)
 
-    @menus.button('<:arrow_back:710356746664804384>\ufe0f', position=menus.First(1))
+    @menus.button(f'{conf["emoji_suite"]["menu_left"]}\ufe0f', position=menus.First(1))
     async def go_to_previous_page(self, payload):
         """go to the previous page"""
         await self.show_checked_page(self.current_page - 1)
 
-    @menus.button('<:arrow_right:710356758832611418>\ufe0f', position=menus.Last(0))
+    @menus.button(f'{conf["emoji_suite"]["menu_right"]}\ufe0f', position=menus.Last(0))
     async def go_to_next_page(self, payload):
         """go to the next page"""
         await self.show_checked_page(self.current_page + 1)
 
     @menus.button(
-        '<:track_forward:710356830928240657>\ufe0f',
+        f'{conf["emoji_suite"]["menu_dright"]}\ufe0f',
         position=menus.Last(1), skip_if=_skip_double_triangle_buttons)
     async def go_to_last_page(self, payload):
         """go to the last page"""
         # The call here is safe because it's guarded by skip_if
         await self.show_page(self._source.get_max_pages() - 1)
 
-    @menus.button('<:x_:710356782957985823>\ufe0f', position=menus.First(1))
+    @menus.button(f'{conf["emoji_suite"]["x_button"]}\ufe0f', position=menus.First(1))
     async def stop_pages(self, payload):
         """stops the pagination session."""
         self.stop()
