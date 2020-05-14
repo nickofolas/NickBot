@@ -66,9 +66,8 @@ class NeoBot(commands.Bot):
                     f'cogs.{filename[:-3]}')  # Load all cogs upon starting up
                 self.all_cogs.append(filename[:-3].title())
             # self.load_extension('jishaku')
-        self.logging_channels = {
-            'guild_io': self.get_channel(710331034922647613)
-        }
+        TOKEN = os.getenv("TOKEN")
+        self.run(TOKEN)
 
     async def ainit(self):
         cn = {"user": os.getenv('DBUSER'), "password": os.getenv('DBPASS'), "database": os.getenv('DB'),
@@ -91,6 +90,9 @@ class NeoBot(commands.Bot):
             colour=discord.Color.main).set_thumbnail(url=self.user.avatar_url_as(static_format='png'))
         embed.timestamp = datetime.utcnow()
         await user.send(embed=embed)
+        self.logging_channels = {
+            'guild_io': self.get_channel(710331034922647613)
+        }
 
     async def close(self):
         await self.session.close()
@@ -98,5 +100,4 @@ class NeoBot(commands.Bot):
         await super().close()
 
 
-TOKEN = os.getenv("TOKEN")
-NeoBot.run(TOKEN)
+NeoBot().run()
