@@ -10,20 +10,12 @@ from utils.paginator import BareBonesMenu, CSMenu
 
 
 def index_check(command_input):
-    if isinstance(command_input, list):
-        for i in command_input:
-            try:
-                int(i)
-            except ValueError:
-                return False
-        return True
+    try:
+        int(command_input[0])
+    except ValueError:
+        return False
     else:
-        try:
-            int(command_input)
-        except ValueError:
-            return False
-        else:
-            return True
+        return True
 
 
 class Data(commands.Cog):
@@ -118,12 +110,12 @@ class Data(commands.Cog):
         await ctx.send(embed=embed)
 
     @highlight.command(name='remove', aliases=['rm', 'delete', 'del', 'yeet'])
-    async def remove_highlight(self, ctx, *highlight_index):
+    async def remove_highlight(self, ctx, highlight_index: commands.Greedy[int]):
         """
         Remove one, or multiple highlights by index
         NOTE: It may take up to a minute for this to take effect
         """
-        if not index_check(highlight_index):
+        if not highlight_index:
             raise commands.CommandError('Use the index of a highlight (found in your list of highlights) to remove it')
         fetched = [rec['kw'] for rec in
                    await self.bot.conn.fetch("SELECT kw from highlights WHERE user_id=$1", ctx.author.id)]
@@ -205,11 +197,11 @@ class Data(commands.Cog):
         await ctx.message.add_reaction(ctx.tick(True))
 
     @todo_rw.command(name='remove', aliases=['rm', 'delete', 'del', 'yeet'])
-    async def remove_todo(self, ctx, *todo_index):
+    async def remove_todo(self, ctx, todo_index: commands.Greedy[int]):
         """
         Remove one, or multiple todos by index
         """
-        if not index_check(todo_index):
+        if not todo_index:
             raise commands.CommandError('Use the index of a todo (found in your list of todos) to remove it')
         fetched = [rec['content'] for rec in
                    await self.bot.conn.fetch("SELECT content from todo WHERE user_id=$1", ctx.author.id)]
