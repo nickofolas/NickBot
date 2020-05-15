@@ -78,7 +78,7 @@ class NeoBot(commands.Bot):
         return await super().get_context(message, cls=cls)
 
     async def global_cooldown(self, ctx):
-        if ctx.invoked_with == self.help_command.command_attrs.get('name'):
+        if ctx.invoked_with == self.help_command.command_attrs.get('name', 'help'):
             return True
         bucket = self._cd.get_bucket(ctx.message)
         retry_after = bucket.update_rate_limit()

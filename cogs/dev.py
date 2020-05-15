@@ -213,10 +213,10 @@ class Dev(commands.Cog):
         table = tabulate(list(list(r.values()) for r in results), headers=headers, tablefmt='pretty')
         await ctx.safe_send(f'```\n{table}```\nReturned {rows} {pluralize("row", rows)} in {dt:.2f}ms')
 
-    @commands.group(name='dev')
+    @commands.group(name='dev', invoke_without_command=True)
     @commands.is_owner()
     async def dev_command_group(self, ctx):
-        pass
+        await ctx.send("We get it buddy, you're super cool because you can use the dev commands")
 
     @dev_command_group.command(name='logs')
     @commands.is_owner()

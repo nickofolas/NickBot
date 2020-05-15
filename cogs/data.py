@@ -78,6 +78,7 @@ class Data(commands.Cog):
         NOTE: It may take up to a minute for this to take effect"""
         if not index_check(highlight_index):
             raise commands.CommandError('Specify a highlight by its index (found in your list of highlights)')
+        highlight_index = int(highlight_index)
         guild_id = guild_id or ctx.guild.id
         iterable_hls = [(rec['kw'], rec['exclude_guild'])
                         for rec in
@@ -99,6 +100,7 @@ class Data(commands.Cog):
         """Display info on what triggers a specific highlight, or what guilds are muted from it"""
         if not index_check(highlight_index):
             raise commands.CommandError('Specify a highlight by its index (found in your list of highlights)')
+        highlight_index = int(highlight_index)
         hl_data = tuple(
             (await self.bot.conn.fetch('SELECT * FROM highlights WHERE user_id=$1', ctx.author.id))[
                 highlight_index - 1])
@@ -148,7 +150,7 @@ class Data(commands.Cog):
         if conf:
             await self.bot.conn.execute('DELETE FROM highlights WHERE user_id=$1', ctx.author.id)
 
-    @highlight.group(name='dev')
+    @highlight.group(invoke_without_command=True, name='dev')
     @commands.is_owner()
     async def hl_dev(self, ctx):
         pass
