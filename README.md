@@ -6,7 +6,7 @@ This bot doesn't have any specific set of features it focuses on, but rather a w
 
 Want to add it to your own server?
 
-[Use this link](https://discordapp.com/oauth2/authorize?client_id=680863597600964679&scope=bot&permissions=8), or use a Discord
+[Use this link](https://discordapp.com/oauth2/authorize?client_id=680863597600964679&scope=bot&permissions=1878523719), or use a Discord
 permissions calculator and apply a different integer to the `permissions` parameter.
 
 # Support
