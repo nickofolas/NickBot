@@ -111,14 +111,14 @@ class Data(commands.Cog):
             (await self.bot.conn.fetch('SELECT * FROM highlights WHERE user_id=$1', ctx.author.id))[
                 highlight_index - 1])
         ex_guild_display = f"**Ignored Guilds** {', '.join([self.bot.get_guild(i).name for i in hl_data[2]])}" if \
-        hl_data[2] else ''
+            hl_data[2] else ''
         embed = discord.Embed(
             description=f'**Triggered by** "{hl_data[1]}"\n{ex_guild_display}',
             color=discord.Color.main)
         await ctx.send(embed=embed)
 
     @highlight.command(name='remove', aliases=['rm', 'delete', 'del', 'yeet'])
-    async def remove_highlight(self, ctx, highlight_index: commands.Greedy[int]):
+    async def remove_highlight(self, ctx, *highlight_index):
         """
         Remove one, or multiple highlights by index
         NOTE: It may take up to a minute for this to take effect
@@ -205,7 +205,7 @@ class Data(commands.Cog):
         await ctx.message.add_reaction(ctx.tick(True))
 
     @todo_rw.command(name='remove', aliases=['rm', 'delete', 'del', 'yeet'])
-    async def remove_todo(self, ctx, todo_index: commands.Greedy[int]):
+    async def remove_todo(self, ctx, *todo_index):
         """
         Remove one, or multiple todos by index
         """
