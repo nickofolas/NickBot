@@ -89,7 +89,7 @@ class Dev(commands.Cog):
         stdout, stderr = await do_shell(args)
         output = stdout + stderr
         entries = list(clean_bytes(output))
-        source = ShellMenu(entries, code_lang=hl_lang, per_page=1985)
+        source = ShellMenu(entries, code_lang=hl_lang, per_page=1925)
         menu = CSMenu(source, delete_message_after=True)
         await menu.start(ctx)
 
@@ -224,7 +224,7 @@ class Dev(commands.Cog):
         stdout, stderr = await do_shell('journalctl -u mybot -n 300 --no-pager -o cat')
         output = stdout + stderr
         entries = list(clean_bytes(output))
-        source = ShellMenu(entries, code_lang='sh', per_page=1985)
+        source = ShellMenu(entries, code_lang='sh', per_page=1925)
         menu = CSMenu(source, delete_message_after=True)
         await menu.start(ctx)
 
