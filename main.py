@@ -57,6 +57,8 @@ class NeoBot(commands.Bot):
         self.all_cogs = list()
         self.persistent_status = False
         self.loop.create_task(self.ainit())
+        self._cd = commands.CooldownMapping.from_cooldown(1.0, 2.5, commands.BucketType.user)
+        self.add_check(self.global_cooldown)
 
         for filename in os.listdir('./cogs'):
             if filename.endswith('.py'):
@@ -74,6 +76,15 @@ class NeoBot(commands.Bot):
 
     async def get_context(self, message, *, cls=utils.context.Context):
         return await super().get_context(message, cls=cls)
+
+    async def global_cooldown(self, ctx):
+        if ctx.invoked_with == self.help_command.command_attrs.get('name'):
+            return True
+        bucket = self._cd.get_bucket(ctx.message)
+        retry_after = bucket.update_rate_limit()
+        if retry_after:
+            raise commands.CommandOnCooldown(bucket, retry_after)
+        return True
 
     async def on_ready(self):
         user = self.get_user(680835476034551925)

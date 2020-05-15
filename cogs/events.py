@@ -108,8 +108,8 @@ class Events(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message_edit(self, before, after):
-        if after.content != before.content:
-            await self.bot.process_commands(after)
+        if after.content == before.content:
+            return
         if not self.bot.snipes.get(after.channel.id):
             self.bot.snipes[after.channel.id] = {'deleted': collections.deque(list(), 2), 'edited': collections.deque(list(), 2)}
         if after.content and not after.author.bot:
