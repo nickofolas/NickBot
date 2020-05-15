@@ -108,36 +108,17 @@ class Meta(commands.Cog):
     def cog_unload(self):
         self.bot.help_command = self.old_help
 
-    @commands.group(invoke_without_command=True, aliases=['src'])
+    @commands.command(aliases=['src'])
     @commands.is_owner()
-    async def source(self, ctx, *, cmd):
-        """Inspect and get the source code for any function or command"""
-        try:
-            cb = self.bot.get_command(cmd).callback
-            lines = [
-                line for line in inspect.getsource(cb)
-                .replace('```', '`\N{zero width space}`')
-            ]
-        except AttributeError:
-            func = import_expression.eval(cmd)
-            lines = [
-                line for line in inspect.getsource(func)
-                .replace('```', '`\N{zero width space}`')
-            ]
-        entries = lines
-        source = ShellMenu(entries, code_lang='py', per_page=1500)
-        menu = CSMenu(source, delete_message_after=True)
-        await menu.start(ctx)
-
-    @source.command(name='github', aliases=['gh'])
-    @commands.is_owner()
-    async def github_link(self, ctx, *, cmd):
+    async def source(self, ctx, *, cmd=None):
+        if cmd is None:
+            return await ctx.send('<https://github.com/nickofolas/neo>')
         c = self.bot.get_command(cmd).callback
         file = c.__code__.co_filename
         location = os.path.relpath(file)
         lines, first_line = inspect.getsourcelines(c)
         last_line = first_line + (len(lines) - 1)
-        await ctx.send(f'<https://github.com/nickofolas/NickBot/blob/master/{location}#L{first_line}-L{last_line}>')
+        await ctx.send(f'<https://github.com/nickofolas/neo/blob/master/{location}#L{first_line}-L{last_line}>')
 
     @commands.command()
     async def cogs(self, ctx):
@@ -157,7 +138,7 @@ class Meta(commands.Cog):
 
     async def fetch_latest_commit(self):
         headers = {'Authorization': f'token  {os.getenv("GITHUB_TOKEN")}'}
-        url = 'https://api.github.com/repos/nickofolas/NickBot/commits'
+        url = 'https://api.github.com/repos/nickofolas/neo/commits'
         async with self.bot.session.get(f'{url}/master', headers=headers) as resp1:
             self.last_commit_cache = await resp1.json()
 
