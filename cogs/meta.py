@@ -126,7 +126,6 @@ class Meta(commands.Cog):
         self.bot.help_command = self.old_help
 
     @commands.command(aliases=['src'])
-    @commands.is_owner()
     async def source(self, ctx, *, cmd=None):
         if cmd is None:
             return await ctx.send('<https://github.com/nickofolas/neo>')
