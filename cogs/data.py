@@ -171,7 +171,7 @@ class Data(commands.Cog):
     async def import_from_highlight(self, ctx, message: discord.Message):
         if message.author.id == 292212176494657536:
             if e := message.embeds:
-                if not e[0].title == '**Triggers**':
+                if not e[0].title == 'Triggers':
                     return
                 await ctx.send(f'{e[0].title} {e[0].description}')
 
