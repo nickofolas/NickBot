@@ -21,6 +21,8 @@ import os
 import random
 import textwrap
 import time
+from collections import namedtuple
+from typing import List
 
 import aiohttp
 import async_cse as cse
@@ -31,7 +33,9 @@ from discord.ext import commands
 
 import utils.errors as errors
 from utils.config import conf
-from utils.paginator import GoogleMenu, CSMenu
+from utils.paginator import PagedEmbedMenu, CSMenu
+
+GoogleResults = namedtuple('GoogleResults', ['title', 'description', 'result_url', 'image_url'])
 
 
 def filter_posts(obj):
@@ -103,6 +107,19 @@ async def get_sub(self, ctx, sort, subreddit, safe):
             url=f"https://www.reddit.com/user/{post['author']}"
         )
     return post, embed
+
+
+def build_google_embeds(results: List[GoogleResults]):
+    embeds = set()
+    for r in results:
+        embed = discord.Embed(color=discord.Color.main)
+        embed.title = r.title
+        embed.description = r.description
+        embed.url = r.result_url
+        if r.image_url:
+            embed.set_image(url=r.image_url)
+        embeds.add(embed)
+    return embeds
 
 
 class Api(commands.Cog):
@@ -329,10 +346,13 @@ class Api(commands.Cog):
         page_entries = []
         res = await cli.search(query)
         await cli.close()
-        for result in res:
-            res_tup = (result.title, result.description, result.url, result.image_url)
-            page_entries.append(res_tup)
-        source = GoogleMenu(page_entries)
+        results = [GoogleResults(
+            title=result.title,
+            description=result.description,
+            result_url=result.url,
+            image_url=result.image_url) for result in res]
+        embeds = build_google_embeds(results)
+        source = PagedEmbedMenu([i for i in range(len(embeds))], embeds)
         menu = CSMenu(source, delete_message_after=True)
         await menu.start(ctx)
 
@@ -343,13 +363,15 @@ class Api(commands.Cog):
         """
         keys = os.getenv('IMAGE_TOKENS').split(',')
         cli = cse.Search(list(keys))
-        page_entries = []
         res = await cli.search(query, image_search=True)
         await cli.close()
-        for result in res:
-            res_tup = (result.title, result.description, result.url, result.image_url)
-            page_entries.append(res_tup)
-        source = GoogleMenu(page_entries, image=True)
+        results = [GoogleResults(
+            title=result.title,
+            description=result.description,
+            result_url=result.url,
+            image_url=result.image_url) for result in res]
+        embeds = build_google_embeds(results)
+        source = PagedEmbedMenu([i for i in range(len(embeds))], embeds)
         menu = CSMenu(source, delete_message_after=True)
         await menu.start(ctx)
 

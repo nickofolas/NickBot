@@ -18,6 +18,7 @@ along with neo.  If not, see <https://www.gnu.org/licenses/>.
 import asyncio
 import copy
 from datetime import datetime
+from typing import Set
 
 import discord
 import humanize
@@ -107,6 +108,15 @@ class GoogleMenu(menus.ListPageSource):
             embed.set_image(url=page[3])
             embed.description = None
         return embed
+
+
+class PagedEmbedMenu(menus.ListPageSource):
+    def __init__(self, entries, embeds: Set[discord.Embed]):
+        self.embeds = embeds
+        super().__init__(entries, per_page=1)
+
+    async def format_page(self, menu, page):
+        return self.embeds[page]
 
 
 class BareBonesMenu(menus.ListPageSource):
