@@ -180,15 +180,12 @@ class Meta(commands.Cog):
                 {ascii_bar}
             """)
             )
-        com_msg = self.last_commit_cache['commit']['message']
-        embed.add_field(
-            name=f'**Latest Commit -** `{self.last_commit_cache["sha"][:7]}`',
-            value='\n'.join(['\n'.join(textwrap.wrap(line, 25, break_long_words=False, replace_whitespace=False))
-                             for line in com_msg.splitlines() if line.strip() != ''])
-        )
+        com_url = self.last_commit_cache['url']
+        com_id_brief = self.last_commit_cache["sha"][:7]
         links_val = f'[Invite URL]({invite_url})'
         if ctx.author not in self.bot.get_guild(696739356815392779).members:
             links_val += f'\nJoin the [support server](https://discord.gg/tjq68yq)'
+        links_val += f'\nLatest commit [`{com_id_brief}`]({com_url})'
         embed.add_field(name='**Links**', value=links_val, inline=False)
         await ctx.send(embed=embed)
 
