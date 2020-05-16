@@ -294,13 +294,19 @@ class Api(commands.Cog):
             for key, value in info.get('project_urls').items():
                 if 'doc' in key.lower() or 'issu' in key.lower():
                     found[key] = value
-        embed = discord.Embed(color=discord.Color.main)
-        embed.description = info['summary']
-        embed.title = info['name']
-        embed.set_author(name=info['author'])
+        embed = discord.Embed(color=discord.Color.main).set_thumbnail(url='https://i.imgur.com/UWgCSMs.png')
+        embed.description = info.get('summary')
+        embed.title = info.get('name')
+        embed.set_author(name=info.get('author'))
         embed.add_field(
-            name='Links',
+            name='Info',
             value='\n'.join([f'[{k}]({v})' for k, v in found.items() if v is not None]),
+        )
+        embed.add_field(
+            name='_ _',
+            value=textwrap.dedent(f"""
+            ⚖️ {info.get('license')}
+            """)
         )
         embed.set_footer(text=f"Version: {info['version']}")
         await ctx.send(embed=embed)
@@ -353,7 +359,7 @@ class Api(commands.Cog):
         menu = CSMenu(source, delete_message_after=True)
         await menu.start(ctx)
 
-    @commands.group(aliases=['fn'])
+    @commands.group(aliases=['fn'], invoke_without_command=True)
     async def fortnite(self, ctx):
         """Various commands to interact with the Fortnite API"""
         pass
