@@ -169,7 +169,7 @@ class Data(commands.Cog):
 
     @highlight.command(name='import')
     @commands.max_concurrency(1, commands.BucketType.channel)
-    async def import_from_highlight(self, ctx, message: discord.Message):
+    async def import_from_highlight(self, ctx):
         await ctx.send('Please call your lists of highlights from <@292212176494657536>')
         msg = await self.bot.wait_for('message', check=lambda m: m.author.id == 292212176494657536, timeout=15.0)
         if msg.embeds:
