@@ -318,12 +318,17 @@ class Api(commands.Cog):
             name='Info',
             value='\n'.join([f'[{k}]({v})' for k, v in found.items() if v is not None]),
         )
+        info2_dict = {
+            '⚖️': info.get('license'),
+            '<:python:596577462335307777>': info.get('requires_python')
+        }
+        info2 = str()
+        for k, v in info2_dict.items:
+            if v:
+                info2 += f'{k} {v}\n'
         embed.add_field(
             name='_ _',
-            value=textwrap.dedent(f"""
-            ⚖️ {info.get('license')}
-            <:python:596577462335307777> {info.get('requires_python')}
-            """)
+            value=info2
         )
         embed.set_footer(text=f"Version: {info['version']}")
         await ctx.send(embed=embed)
