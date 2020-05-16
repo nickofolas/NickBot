@@ -25,13 +25,21 @@ def is_owner_or_administrator():
     async def predicate(ctx):
         is_owner = await ctx.bot.is_owner(ctx.author)
         return is_owner or ctx.channel.permissions_for(ctx.author).administrator
+
     return commands.check(predicate)
 
 
-def exclude_channels(id: Union[list, int]):
+def exclude_channels(guild_id: Union[list, int]):
     def predicate(ctx):
-        if isinstance(id, int):
-            return ctx.channel.id != id
+        if isinstance(guild_id, int):
+            return ctx.channel.id != guild_id
         else:
-            return ctx.channel.id not in id
+            return ctx.channel.id not in guild_id
+
+    return commands.check(predicate)
+
+
+def check_member_in_guild(user_id: int):
+    def predicate(ctx):
+        return user_id in [m.id for m in ctx.guild.members]
     return commands.check(predicate)

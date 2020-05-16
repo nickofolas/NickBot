@@ -24,6 +24,7 @@ import discord
 from discord.ext import commands
 
 from utils.paginator import BareBonesMenu, CSMenu
+from utils.checks import check_member_in_guild
 
 
 def index_check(command_input):
@@ -168,6 +169,7 @@ class Data(commands.Cog):
             await self.bot.conn.execute('DELETE FROM highlights WHERE user_id=$1', ctx.author.id)
 
     @highlight.command(name='import')
+    @check_member_in_guild(292212176494657536)
     @commands.max_concurrency(1, commands.BucketType.channel)
     async def import_from_highlight(self, ctx):
         await ctx.send('Please call your lists of highlights from <@292212176494657536>')
