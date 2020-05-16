@@ -87,10 +87,9 @@ class Events(commands.Cog):
                 if re.search(re.compile(r'([a-zA-Z0-9]{24}\.[a-zA-Z0-9]{6}\.[a-zA-Z0-9_\-]{27}|mfa\.[a-zA-Z0-9_\-]{84})'), message.content):
                     continue
                 alerted = self.bot.get_user(c[0])
-                if (datetime.utcnow() - (discord.utils.get(
-                        reversed(self.bot.cached_messages),
+                if m := discord.utils.get(reversed(self.bot.cached_messages),
                         channel=message.channel,
-                        author=alerted)).created_at).total_seconds() < 300:
+                        author=alerted) and (datetime.utcnow() - m.created_at).total_seconds() < 300:
                     continue
                 context_list = []
                 async for m in message.channel.history(limit=5):
