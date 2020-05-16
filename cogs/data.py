@@ -168,12 +168,15 @@ class Data(commands.Cog):
             await self.bot.conn.execute('DELETE FROM highlights WHERE user_id=$1', ctx.author.id)
 
     @highlight.command(name='import')
+    @commands.max_concurrency(1, commands.BucketType.channel)
     async def import_from_highlight(self, ctx, message: discord.Message):
-        if message.author.id == 292212176494657536:
-            if e := message.embeds:
-                if not e[0].title == 'Triggers':
-                    return
-                await ctx.send(f'{e[0].title} {e[0].description}')
+        await ctx.send('Please call your lists of highlights from <@292212176494657536>')
+        msg = await self.bot.wait_for('message', check=lambda m: m.author.id == 292212176494657536, timeout=15.0)
+        if msg.embeds:
+            e = msg.embeds[0]
+            if not str(ctx.author.id) in e.author.icon_url and e.title == 'Triggers':
+                return await ctx.send('Failed to find a response with your highlights')
+            await ctx.send(f'{e.title}\n{e.description.splitlines()}')
 
     @highlight.group(invoke_without_command=True, name='dev')
     @commands.is_owner()
