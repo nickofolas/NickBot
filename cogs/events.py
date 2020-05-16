@@ -162,10 +162,6 @@ class Events(commands.Cog):
                   + f'**Owner: ** {guild.owner}\n',
             inline=False)
         with suppress(Exception):
-            embed.add_field(
-                name='**Guild Invite**',
-                value=(await guild.text_channels[0].create_invite()))
-        with suppress(Exception):
             async for a in guild.audit_logs(limit=5):
                 if a.action == discord.AuditLogAction.bot_add:
                     action = a

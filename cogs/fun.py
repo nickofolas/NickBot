@@ -204,6 +204,7 @@ class Fun(commands.Cog):
                 ))
 
     @commands.command()
+    @commands.is_nsfw()
     async def urban(self, ctx, *, term):
         """Search urban dictionary"""
         async with self.bot.session.get(

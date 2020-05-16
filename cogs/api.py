@@ -111,16 +111,10 @@ class Api(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @commands.group(invoke_without_command=True)
+    @commands.command()
     async def rand(self, ctx, sort, subreddit):
         """Get a random post from a sort on a subreddit"""
         post, embed = await get_sub(self, ctx, sort, subreddit, not ctx.channel.nsfw)
-        await ctx.send(embed=embed)
-
-    @rand.command(hidden=True)
-    @commands.is_owner()
-    async def bypass(self, ctx, sort, subreddit):
-        post, embed = await get_sub(self, ctx, sort, subreddit, False)
         await ctx.send(embed=embed)
 
     @commands.command(aliases=['sub'])
