@@ -32,7 +32,7 @@ def check_hl_regex(highlight_kw):
     if len(highlight_kw) < 3 or len(highlight_kw) > 100:
         raise commands.CommandError(
             'Highlights must be more than 2 characters long and at most 100 characters long')
-    if re.search(check_re, r'|'):
+    if '|' in highlight_kw:
         raise commands.CommandError('This trigger uses a blocked character')
     for i in ('afssafasfa', '12421', '\n', ' ', string.ascii_letters, string.digits):
         if re.search(check_re, i):
