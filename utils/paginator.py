@@ -111,9 +111,9 @@ class GoogleMenu(menus.ListPageSource):
 
 
 class PagedEmbedMenu(menus.ListPageSource):
-    def __init__(self, entries, embeds: List[discord.Embed]):
+    def __init__(self, embeds: List[discord.Embed]):
         self.embeds = embeds
-        super().__init__(entries, per_page=1)
+        super().__init__([i for i in range(len(embeds))], per_page=1)
 
     async def format_page(self, menu, page):
         return self.embeds[page]

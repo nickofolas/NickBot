@@ -135,7 +135,7 @@ class Api(commands.Cog):
     async def rand(self, ctx, sort, subreddit):
         """Get a random post from a sort on a subreddit"""
         embeds = await get_sub(self, ctx, sort, subreddit, not ctx.channel.nsfw)
-        source = PagedEmbedMenu([i for i in range(len(embeds))], embeds)
+        source = PagedEmbedMenu(embeds)
         menu = CSMenu(source, delete_message_after=True)
         await menu.start(ctx)
 
@@ -357,7 +357,7 @@ class Api(commands.Cog):
             result_url=result.url,
             image_url=result.image_url) for result in res]
         embeds = build_google_embeds(results)
-        source = PagedEmbedMenu([i for i in range(len(embeds))], embeds)
+        source = PagedEmbedMenu(embeds)
         menu = CSMenu(source, delete_message_after=True)
         await menu.start(ctx)
 
@@ -376,7 +376,7 @@ class Api(commands.Cog):
             result_url=result.url,
             image_url=result.image_url) for result in res]
         embeds = build_google_embeds(results)
-        source = PagedEmbedMenu([i for i in range(len(embeds))], embeds)
+        source = PagedEmbedMenu(embeds)
         menu = CSMenu(source, delete_message_after=True)
         await menu.start(ctx)
 
