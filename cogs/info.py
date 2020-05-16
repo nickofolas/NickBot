@@ -18,6 +18,7 @@ along with neo.  If not, see <https://www.gnu.org/licenses/>.
 import io
 import itertools
 import re
+import textwrap
 from datetime import datetime
 from typing import Union
 
@@ -138,10 +139,10 @@ class Info(commands.Cog):
             colour=discord.Color.main)
         embed.set_thumbnail(url=target.avatar_url_as(static_format='png').__str__())
         status_display = status_display or ''
-        embed.description = f"""
-{status_display}
-{badge_list or ''}{' <:nitro:707724974248427642>' if is_nitro else ''}
-            """
+        embed.description = textwrap.dedent(f"""
+        {status_display}
+        {badge_list or ''}{' <:nitro:707724974248427642>' if is_nitro else ''}
+        """)
         stats_disp = str()
         stats_disp += f'**Registered **{humanize.naturaltime(datetime.utcnow() - target.created_at)}'
         stats_disp += f'\n{guild_level_stats}' if guild_level_stats else ''
@@ -242,15 +243,15 @@ class Info(commands.Cog):
         embed.set_author(
             name=f'{guild.name} | {guild.id}',
             icon_url=guild.icon_url_as(static_format='png'), url=guild.icon_url_as(static_format='png'))
+        stats_val = f'**Channels** <:text_channel:687064764421373954> {len(guild.text_channels)} | <:voice_channel' \
+                    f':687064782167212165> {len(guild.voice_channels)}\n'
+        stats_val += f'**Region** {str(guild.region).title()}\n'
+        stats_val += f'**Verification Level** {str(guild.verification_level).capitalize()}\n'
+        stats_val += f'**Emojis** {len([emoji for emoji in guild.emojis if not emoji.animated])}/{guild.emoji_limit}\n'
+        stats_val += f'**Max Upload** {round(guild.filesize_limit * 0.00000095367432)}MB'
         embed.add_field(
             name='**General**',
-            value=f"""
-**Channels** <:text_channel:687064764421373954> {len(guild.text_channels)} | <:voice_channel:687064782167212165> {len(guild.voice_channels)} 
-**Region** {str(guild.region).title()}
-**Verification Level** {str(guild.verification_level).capitalize()}
-**Emojis** {len([emoji for emoji in guild.emojis if not emoji.animated])}/{guild.emoji_limit}
-**Max Upload** {round(guild.filesize_limit * 0.00000095367432)}MB
-            """,
+            value=stats_val,
             inline=True)
         statuses = {v: 0 for v in conf['emoji_dict'].values()}
         ls = sorted([m.status for m in guild.members])

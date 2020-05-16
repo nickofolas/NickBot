@@ -172,13 +172,13 @@ class Meta(commands.Cog):
         embed.set_author(name=f'Owner: {appinfo.owner}')
         embed.add_field(
             name='**Bot Info**',
-            value=f"""
-**Current Uptime **{humanize.naturaldelta(self.bot.loop.time())}
-**Total Guilds **{len(self.bot.guilds):,}
-**Visible Users **{len(self.bot.users):,}
-**Memory % **{mem}
-{ascii_bar}
-            """
+            value=textwrap.dedent(f"""
+                **Current Uptime **{humanize.naturaldelta(self.bot.loop.time())}
+                **Total Guilds **{len(self.bot.guilds):,}
+                **Visible Users **{len(self.bot.users):,}
+                **Memory % **{mem}
+                {ascii_bar}
+            """)
             )
         com_msg = self.last_commit_cache['commit']['message']
         embed.add_field(

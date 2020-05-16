@@ -135,11 +135,11 @@ class Api(commands.Cog):
             url=f"https://reddit.com{js['url']}",
             color=discord.Color.main).set_thumbnail(
             url=js['icon_img'])
-        embed.description = f"""
-**Title** {js['title']}
-**Created** {humanize.naturaltime(time.time() - js['created_utc'])}
-**Subscribers** {js['subscribers']:,}
-"""
+        embed.description = textwrap.dedent(f"""
+        **Title** {js['title']}
+        **Created** {humanize.naturaltime(time.time() - js['created_utc'])}
+        **Subscribers** {js['subscribers']:,}
+        """)
         if js['over18'] is True:
             embed.description += '**Content Warning** NSFW'
             embed.set_thumbnail(url='')
@@ -182,11 +182,11 @@ class Api(commands.Cog):
         ).set_thumbnail(url=usr['icon_img'].split('?', 1)[0])
         embed.add_field(
             name='<:karma:701164781238878270> Karma',
-            value=f"""
-**{usr['link_karma'] + usr['comment_karma']:,}** combined
-**{usr['comment_karma']:,}** comment
-**{usr['link_karma']:,}** post
-            """)
+            value=textwrap.dedent(f"""
+            **{usr['link_karma'] + usr['comment_karma']:,}** combined
+            **{usr['comment_karma']:,}** comment
+            **{usr['link_karma']:,}** post
+            """))
         embed.set_footer(
             text=f'Account created {humanize.naturaltime(time.time() - usr["created_utc"])}'
         )
@@ -256,22 +256,22 @@ class Api(commands.Cog):
         embed = discord.Embed(color=discord.Color.main).set_author(name=f'{country.title()} COVID-19')
         embed.add_field(
             name='Cases',
-            value=f"""
-**Total Cases: **{js['cases']:,}
-**Total deaths: **{js['deaths']:,}
-**Recovered Cases: **{js['recovered']:,}
-                """
+            value=textwrap.dedent(f"""
+            **Total Cases: **{js['cases']:,}
+            **Total deaths: **{js['deaths']:,}
+            **Recovered Cases: **{js['recovered']:,}
+            """)
         )
         if country != 'global':
             embed.add_field(
                 name='More Stats',
-                value=f"""
-**Critical Cases: **{js['critical']:,}
-**Total Tests: **{js['totalTests']:,}
-**Tests/mil: **{js['testsPerOneMillion']:,}
-**Cases/mil: **{js['casesPerOneMillion']:,}
-**Deaths/mil: **{js['deathsPerOneMillion']:,}
-                """
+                value=textwrap.dedent(f"""
+                **Critical Cases: **{js['critical']:,}
+                **Total Tests: **{js['totalTests']:,}
+                **Tests/mil: **{js['testsPerOneMillion']:,}
+                **Cases/mil: **{js['casesPerOneMillion']:,}
+                **Deaths/mil: **{js['deathsPerOneMillion']:,}
+                """)
             )
         await ctx.send(embed=embed)
 
