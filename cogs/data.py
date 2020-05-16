@@ -171,10 +171,13 @@ class Data(commands.Cog):
     @commands.max_concurrency(1, commands.BucketType.channel)
     async def import_from_highlight(self, ctx):
         await ctx.send('Please call your lists of highlights from <@292212176494657536>')
-        msg = await self.bot.wait_for('message', check=lambda m: m.author.id == 292212176494657536, timeout=15.0)
+        await self.bot.wait_for('message', check=lambda m: m.author.id == ctx.author.id, timeout=15.0)
+        msg = await self.bot.wait_for('message',
+                                      check=lambda m: m.author.id == 292212176494657536 and m.embeds and str(
+                                          ctx.author.id) in m.embeds[0].author.icon_url)
         if msg.embeds:
             e = msg.embeds[0]
-            if not str(ctx.author.id) in e.author.icon_url and e.title == 'Triggers':
+            if e.title != 'Triggers':
                 return await ctx.send('Failed to find a response with your highlights')
             await ctx.send(f'{e.title}\n{e.description.splitlines()}')
 
