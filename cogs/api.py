@@ -322,6 +322,7 @@ class Api(commands.Cog):
             name='_ _',
             value=textwrap.dedent(f"""
             ⚖️ {info.get('license')}
+            <:python:596577462335307777> {info.get('requires_python')}
             """)
         )
         embed.set_footer(text=f"Version: {info['version']}")

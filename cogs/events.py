@@ -108,7 +108,7 @@ class Events(commands.Cog):
                 alerted = self.bot.get_user(c[0])
                 if m := discord.utils.get(reversed(self.bot.cached_messages),
                                           channel=message.channel,
-                                          author=alerted) and (datetime.utcnow() - m.created_at).total_seconds() < 300:
+                                          author=alerted) and (datetime.utcnow() - m.created_at).total_seconds() < 60:
                     continue
                 context_list = []
                 async for m in message.channel.history(limit=5):

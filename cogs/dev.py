@@ -332,7 +332,7 @@ class Dev(commands.Cog):
             self, ctx, command, channel=channel)
         await self.bot.invoke(new_ctx)
 
-    @commands.command(aliases=['die'])
+    @commands.command(aliases=['die', 'kys'])
     @commands.is_owner()
     async def reboot(self, ctx):
         """Kills all of the bot's processes"""
