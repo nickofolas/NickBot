@@ -80,14 +80,29 @@ class EmbeddedHelpCommand(commands.HelpCommand):
         embed.description = description
         await self.context.send(embed=embed)
 
-    async def send_cog_help(self, cog):
-        embed = discord.Embed(title=f'{cog.qualified_name} Category', color=discord.Color.main)\
-            .set_footer(text='⇶ indicates subcommands')
-        description = f'{cog.description or ""}\n\n'
-        entries = await self.filter_commands(cog.get_commands(), sort=True)
+    @staticmethod
+    def cog_group_common_fmt(embed, description, entries):
         description += "\n".join([f'{"⇶" if isinstance(c, commands.Group) else "⇾"} **{c.name}** -'
                                   f' {c.short_doc or "No description"}' for c in entries])
+        embed.set_footer(text='⇶ indicates subcommands')
         embed.description = description
+
+    async def send_cog_help(self, cog):
+        embed = discord.Embed(title=f'{cog.qualified_name} Category', color=discord.Color.main)
+        description = f'{cog.description or ""}\n\n'
+        entries = await self.filter_commands(cog.get_commands(), sort=True)
+        self.cog_group_common_fmt(embed, description, entries)
+        await self.context.send(embed=embed)
+
+    async def send_group_help(self, group):
+        embed = discord.Embed(title=self.get_command_signature(group), color=discord.Color.main)
+        description = f'{group.help or "No description provided"}\n\n'
+        entries = await self.filter_commands(group.commands, sort=True)
+        self.cog_group_common_fmt(embed, description, entries)
+        footer = embed.footer.text
+        if c := retrieve_checks(group):
+            footer += f' | Checks: {c}'
+        embed.set_footer(text=footer)
         await self.context.send(embed=embed)
 
     async def send_command_help(self, command):
@@ -96,19 +111,6 @@ class EmbeddedHelpCommand(commands.HelpCommand):
         embed.description = description
         if c := retrieve_checks(command):
             embed.set_footer(text=f'Checks: {c}')
-        await self.context.send(embed=embed)
-
-    async def send_group_help(self, group):
-        embed = discord.Embed(title=self.get_command_signature(group), color=discord.Color.main)
-        description = f'{group.help or "No description provided"}\n\n'
-        entries = await self.filter_commands(group.commands, sort=True)
-        description += "\n".join([f'{"⇶" if isinstance(c, commands.Group) else "⇾"} **{c.name}** -'
-                                  f' {c.short_doc or "No description"}' for c in entries])
-        embed.description = description
-        footer_text = '⇶ indicates subcommands'
-        if c := retrieve_checks(group):
-            footer_text += f' | Checks: {c}'
-        embed.set_footer(text=footer_text)
         await self.context.send(embed=embed)
 
 
