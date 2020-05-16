@@ -1,3 +1,20 @@
+"""
+neo Discord bot
+Copyright (C) 2020 nickofolas
+
+neo is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License as published
+by the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+neo is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Affero General Public License for more details.
+
+You should have received a copy of the GNU Affero General Public License
+along with neo.  If not, see <https://www.gnu.org/licenses/>.
+"""
 import asyncio
 import collections
 from contextlib import suppress
@@ -84,19 +101,22 @@ class Events(commands.Cog):
                 if c[2]:
                     if message.guild.id in c[2]:
                         continue
-                if re.search(re.compile(r'([a-zA-Z0-9]{24}\.[a-zA-Z0-9]{6}\.[a-zA-Z0-9_\-]{27}|mfa\.[a-zA-Z0-9_\-]{84})'), message.content):
+                if re.search(
+                        re.compile(r'([a-zA-Z0-9]{24}\.[a-zA-Z0-9]{6}\.[a-zA-Z0-9_\-]{27}|mfa\.[a-zA-Z0-9_\-]{84})'),
+                        message.content):
                     continue
                 alerted = self.bot.get_user(c[0])
                 if m := discord.utils.get(reversed(self.bot.cached_messages),
-                        channel=message.channel,
-                        author=alerted) and (datetime.utcnow() - m.created_at).total_seconds() < 300:
+                                          channel=message.channel,
+                                          author=alerted) and (datetime.utcnow() - m.created_at).total_seconds() < 300:
                     continue
                 context_list = []
                 async for m in message.channel.history(limit=5):
                     avatar_index = m.author.default_avatar.value
                     hl_underline = m.content.replace(match.group(0), f'**__{match.group(0)}__**')
                     repl = r'<a?:\w*:\d*>'
-                    context_list.append(f"{conf['default_discord_users'][avatar_index]} **{m.author.name}:** {re.sub(repl, ':question:', hl_underline)}")
+                    context_list.append(
+                        f"{conf['default_discord_users'][avatar_index]} **{m.author.name}:** {re.sub(repl, ':question:', hl_underline)}")
                 context_list = reversed(context_list)
                 embed = discord.Embed(
                     title=f'A word has been highlighted!',
@@ -104,7 +124,7 @@ class Events(commands.Cog):
                     color=discord.Color.main)
                 embed.timestamp = message.created_at
                 if (
-                    alerted in message.guild.members and alerted.id != message.author.id and message.channel
+                        alerted in message.guild.members and alerted.id != message.author.id and message.channel
                         .permissions_for(message.guild.get_member(alerted.id)).read_messages and not message.author.bot
                 ):
                     if len(self.hl_queue) < 40 and [i[0] for i in self.hl_queue].count(alerted) < 5:
@@ -115,14 +135,16 @@ class Events(commands.Cog):
         if after.content == before.content:
             return
         if not self.bot.snipes.get(after.channel.id):
-            self.bot.snipes[after.channel.id] = {'deleted': collections.deque(list(), 2), 'edited': collections.deque(list(), 2)}
+            self.bot.snipes[after.channel.id] = {'deleted': collections.deque(list(), 2),
+                                                 'edited': collections.deque(list(), 2)}
         if after.content and not after.author.bot:
             self.bot.snipes[after.channel.id]['edited'].append((before, after, datetime.utcnow()))
 
     @commands.Cog.listener()
     async def on_message_delete(self, message):
         if not self.bot.snipes.get(message.channel.id):
-            self.bot.snipes[message.channel.id] = {'deleted': collections.deque(list(), 2), 'edited': collections.deque(list(), 2)}
+            self.bot.snipes[message.channel.id] = {'deleted': collections.deque(list(), 2),
+                                                   'edited': collections.deque(list(), 2)}
         if message.content and not message.author.bot:
             self.bot.snipes[message.channel.id]['deleted'].append((message, datetime.utcnow()))
         # Adds the message to the dict of messages for sniping
@@ -136,8 +158,8 @@ class Events(commands.Cog):
         embed.add_field(
             name='**Members**',
             value=f'**Total:** {len(guild.members)}\n'
-            + f'**Admins:** {len([m for m in guild.members if m.guild_permissions.administrator])}\n'
-            + f'**Owner: ** {guild.owner}\n',
+                  + f'**Admins:** {len([m for m in guild.members if m.guild_permissions.administrator])}\n'
+                  + f'**Owner: ** {guild.owner}\n',
             inline=False)
         with suppress(Exception):
             embed.add_field(

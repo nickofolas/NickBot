@@ -1,7 +1,20 @@
-# Using code provided by Rapptz under the MIT License
-# Copyright ©︎ 2015 Rapptz
-# R. Danny licensing:
-# https://github.com/Rapptz/RoboDanny
+"""
+neo Discord bot
+Copyright (C) 2020 nickofolas
+
+neo is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License as published
+by the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+neo is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Affero General Public License for more details.
+
+You should have received a copy of the GNU Affero General Public License
+along with neo.  If not, see <https://www.gnu.org/licenses/>.
+"""
 import re
 import io
 import os
@@ -12,6 +25,11 @@ from discord.ext import commands
 
 # TODO: rtfs to search dpy source
 
+
+# Using code provided by Rapptz under the MIT License
+# Copyright ©︎ 2015 Rapptz
+# R. Danny licensing:
+# https://github.com/Rapptz/RoboDanny
 
 def finder(text, collection, *, key=None, lazy=True):
     suggestions = []
