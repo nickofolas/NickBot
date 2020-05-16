@@ -39,7 +39,7 @@ def index_check(command_input):
 class Data(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.max_highlights = 5
+        self.max_highlights = 10
 
     # BEGIN HIGHLIGHTS GROUP ~
 
@@ -177,11 +177,24 @@ class Data(commands.Cog):
         msg = await self.bot.wait_for('message',
                                       check=lambda m: m.author.id == 292212176494657536 and m.embeds and str(
                                           ctx.author.id) in m.embeds[0].author.icon_url)
-        if msg.embeds:
-            e = msg.embeds[0]
-            if e.title != 'Triggers':
-                return await ctx.send('Failed to find a response with your highlights')
-            await ctx.send(f'{e.title}\n{e.description.splitlines()}')
+        if not msg.embeds:
+            return
+        e = msg.embeds[0]
+        if e.title != 'Triggers':
+            return await ctx.send('Failed to find a response with your highlights')
+        imported_highlights = e.description.splitlines()
+        added = 0
+        for new_hl in imported_highlights:
+            active = await self.bot.conn.fetch('SELECT kw FROM highlights WHERE user_id=$1', ctx.author.id)
+            if len(active) >= self.max_highlights:
+                break
+            if new_hl in [rec['kw'] for rec in active]:
+                raise commands.CommandError('You already have a highlight with this trigger')
+            await self.bot.conn.execute(
+                'INSERT INTO highlights(user_id, kw) VALUES ( $1, $2 )',
+                ctx.author.id, fr"{new_hl}")
+            added += 1
+        await ctx.send(f'Imported {added} highlights')
 
     @highlight.group(invoke_without_command=True, name='dev')
     @commands.is_owner()
