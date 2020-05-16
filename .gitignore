@@ -142,3 +142,4 @@ cython_debug/
 prefixes.json
 TODO.txt
 *.db
+_config.yml
