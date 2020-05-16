@@ -121,7 +121,7 @@ class NeoBot(commands.Bot):
         }
 
     async def close(self):
-        [task.cancel() for task in all_tasks(loop=self.loop.tasks)]
+        [task.cancel() for task in all_tasks(loop=self.loop)]
         await self.session.close()
         await self.conn.close()
         await super().close()
