@@ -1,4 +1,4 @@
-# Nick of O-Bot
+# neo
 A Discord bot with some fun features, written primarily for fun.
 
 # Features
