@@ -167,6 +167,14 @@ class Data(commands.Cog):
         if conf:
             await self.bot.conn.execute('DELETE FROM highlights WHERE user_id=$1', ctx.author.id)
 
+    @highlight.command(name='import')
+    async def import_from_highlight(self, ctx, message: discord.Message):
+        if message.author.id == 292212176494657536:
+            if e := message.embeds:
+                if not e[0].title == '**Triggers**':
+                    return
+                await ctx.send(f'{e[0].title} {e[0].description}')
+
     @highlight.group(invoke_without_command=True, name='dev')
     @commands.is_owner()
     async def hl_dev(self, ctx):

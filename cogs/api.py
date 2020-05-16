@@ -86,7 +86,7 @@ async def get_sub(self, ctx, sort, subreddit, safe):
             listing = list(filter(lambda p: p.get('over_18') is False, listing))
         try:
             posts = random.sample(list(filter(filter_posts, listing)), k=5)
-        except IndexError:
+        except ValueError:
             raise commands.CommandError('No SFW posts found')
         embeds = list()
         for post in posts:
@@ -348,7 +348,6 @@ class Api(commands.Cog):
         """
         keys = os.getenv('SEARCH_TOKENS').split(',')
         cli = cse.Search(list(keys))
-        page_entries = []
         res = await cli.search(query)
         await cli.close()
         results = [GoogleResults(

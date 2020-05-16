@@ -96,24 +96,10 @@ class CSMenu(menus.MenuPages):
         self.stop()
 
 
-class GoogleMenu(menus.ListPageSource):
-    def __init__(self, entr, *, per_page=1, image: bool = False):
-        super().__init__(entr, per_page=per_page)
-        self.image = image
-
-    async def format_page(self, menu, page):
-        embed = discord.Embed(
-            title=page[0], description=page[1], url=page[2], color=discord.Color.main)
-        if self.image:
-            embed.set_image(url=page[3])
-            embed.description = None
-        return embed
-
-
 class PagedEmbedMenu(menus.ListPageSource):
     def __init__(self, embeds: List[discord.Embed]):
         self.embeds = embeds
-        super().__init__([i for i in range(len(embeds))], per_page=1)
+        super().__init__([*range(len(embeds))], per_page=1)
 
     async def format_page(self, menu, page):
         return self.embeds[page]
