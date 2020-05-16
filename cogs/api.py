@@ -85,28 +85,31 @@ async def get_sub(self, ctx, sort, subreddit, safe):
         if safe is True:
             listing = list(filter(lambda p: p.get('over_18') is False, listing))
         try:
-            post = random.choice(list(filter(filter_posts, listing)))
+            posts = random.sample(list(filter(filter_posts, listing)), k=5)
         except IndexError:
             raise commands.CommandError('No SFW posts found')
-        if post['selftext']:
-            text = textwrap.shorten(post['selftext'], width=1500)
-        else:
-            text = ''
-        post_delta = time.time() - post['created_utc']
-        embed = discord.Embed(
-            title=textwrap.shorten(post['title'], width=252),
-            description=f"**<:upvote:698744205710852167> {post['ups']} | {post['num_comments']} "
-                        f":speech_balloon:**\n {text}",
-            url="https://www.reddit.com" + post['permalink'],
-            color=discord.Color.main)
-        embed.set_image(
-            url=post['url'])
-        embed.set_footer(text=f'r/{post["subreddit"]} | Submitted {humanize.naturaltime(post_delta)}')
-        embed.set_author(
-            name=post['author'],
-            url=f"https://www.reddit.com/user/{post['author']}"
-        )
-    return post, embed
+        embeds = list()
+        for post in posts:
+            if post['selftext']:
+                text = textwrap.shorten(post['selftext'], width=1500)
+            else:
+                text = ''
+            post_delta = time.time() - post['created_utc']
+            embed = discord.Embed(
+                title=textwrap.shorten(post['title'], width=252),
+                description=f"**<:upvote:698744205710852167> {post['ups']} | {post['num_comments']} "
+                            f":speech_balloon:**\n {text}",
+                url="https://www.reddit.com" + post['permalink'],
+                color=discord.Color.main)
+            embed.set_image(
+                url=post['url'])
+            embed.set_footer(text=f'r/{post["subreddit"]} | Submitted {humanize.naturaltime(post_delta)}')
+            embed.set_author(
+                name=post['author'],
+                url=f"https://www.reddit.com/user/{post['author']}"
+            )
+            embeds.append(embed)
+    return embeds
 
 
 def build_google_embeds(results: List[GoogleResults]):
@@ -131,8 +134,10 @@ class Api(commands.Cog):
     @commands.command()
     async def rand(self, ctx, sort, subreddit):
         """Get a random post from a sort on a subreddit"""
-        post, embed = await get_sub(self, ctx, sort, subreddit, not ctx.channel.nsfw)
-        await ctx.send(embed=embed)
+        embeds = await get_sub(self, ctx, sort, subreddit, not ctx.channel.nsfw)
+        source = PagedEmbedMenu([i for i in range(len(embeds))], embeds)
+        menu = CSMenu(source, delete_message_after=True)
+        await menu.start(ctx)
 
     @commands.command(aliases=['sub'])
     async def subreddit(self, ctx, *, subreddit):
