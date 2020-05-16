@@ -27,6 +27,18 @@ from utils.paginator import BareBonesMenu, CSMenu
 from utils.checks import check_member_in_guild
 
 
+def check_hl_regex(highlight_kw):
+    check_re = re.compile(fr'{highlight_kw}', re.I)
+    if len(highlight_kw) < 3 or len(highlight_kw) > 100:
+        raise commands.CommandError(
+            'Highlights must be more than 2 characters long and at most 100 characters long')
+    if re.search(check_re, r'|'):
+        raise commands.CommandError('This trigger uses a blocked character')
+    for i in ('afssafasfa', '12421', '\n', ' ', string.ascii_letters, string.digits):
+        if re.search(check_re, i):
+            raise commands.CommandError('This trigger is too general')
+
+
 def index_check(command_input):
     try:
         int(command_input[0])
@@ -66,13 +78,7 @@ class Data(commands.Cog):
         supported.
         NOTE: It may take up to a minute for a new highlight to take effect
         """
-        if len(highlight_words) < 3 or len(highlight_words) > 100:
-            raise commands.CommandError(
-                'Highlights must be more than 2 characters long and at most 100 characters long')
-        content_check = re.compile(fr'{highlight_words}', re.I)
-        for i in ('afssafasfa', '12421', '\n', ' ', string.ascii_letters, string.digits):
-            if re.search(content_check, i):
-                raise commands.CommandError('This trigger is too general')
+        check_hl_regex(highlight_words)
         active = await self.bot.conn.fetch('SELECT kw FROM highlights WHERE user_id=$1', ctx.author.id)
         if len(active) >= self.max_highlights:
             raise commands.CommandError(f'You may only have {self.max_highlights} highlights at a time')
@@ -172,19 +178,25 @@ class Data(commands.Cog):
     @check_member_in_guild(292212176494657536)
     @commands.max_concurrency(1, commands.BucketType.channel)
     async def import_from_highlight(self, ctx):
+        """
+        Import your highlights from the <@292212176494657536> bot (can only be run in shared guilds)
+        Imports every highlight it can while maintaining the maximum number of slots.
+        """
         await ctx.send('Please call your lists of highlights from <@292212176494657536>')
         await self.bot.wait_for('message', check=lambda m: m.author.id == ctx.author.id, timeout=15.0)
         msg = await self.bot.wait_for('message',
                                       check=lambda m: m.author.id == 292212176494657536 and m.embeds and str(
                                           ctx.author.id) in m.embeds[0].author.icon_url)
-        if not msg.embeds:
-            return
         e = msg.embeds[0]
         if e.title != 'Triggers':
             return await ctx.send('Failed to find a response with your highlights')
         imported_highlights = e.description.splitlines()
         added = 0
         for new_hl in imported_highlights:
+            try:
+                check_hl_regex(new_hl)
+            except commands.CommandError:
+                continue
             active = await self.bot.conn.fetch('SELECT kw FROM highlights WHERE user_id=$1', ctx.author.id)
             if len(active) >= self.max_highlights:
                 break
