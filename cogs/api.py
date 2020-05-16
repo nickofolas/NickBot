@@ -312,8 +312,7 @@ class Api(commands.Cog):
                     found[key] = value
         embed = discord.Embed(color=discord.Color.main).set_thumbnail(url='https://i.imgur.com/UWgCSMs.png')
         embed.description = info.get('summary')
-        embed.title = info.get('name')
-        embed.set_author(name=info.get('author'))
+        embed.title = f"{info.get('name')} {info['version']}"
         embed.add_field(
             name='Info',
             value='\n'.join([f'[{k}]({v})' for k, v in found.items() if v is not None]),
@@ -328,7 +327,7 @@ class Api(commands.Cog):
                 info2 += f'{k} {v}\n'
         if info2:
             embed.add_field(name='_ _', value=info2)
-        embed.set_footer(text=f"Version: {info['version']}")
+        embed.set_footer(text=info.get('author'))
         await ctx.send(embed=embed)
 
     @commands.group(aliases=['tr'], invoke_without_command=True)
