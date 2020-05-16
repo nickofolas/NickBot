@@ -180,7 +180,7 @@ class Meta(commands.Cog):
                 {ascii_bar}
             """)
             )
-        com_url = self.last_commit_cache['url']
+        com_url = self.last_commit_cache['html_url']
         com_id_brief = self.last_commit_cache["sha"][:7]
         links_val = f'[Invite URL]({invite_url})'
         if ctx.author not in self.bot.get_guild(696739356815392779).members:
