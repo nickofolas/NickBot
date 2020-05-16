@@ -18,7 +18,7 @@ along with neo.  If not, see <https://www.gnu.org/licenses/>.
 import asyncio
 import copy
 from datetime import datetime
-from typing import Set
+from typing import List
 
 import discord
 import humanize
@@ -111,7 +111,7 @@ class GoogleMenu(menus.ListPageSource):
 
 
 class PagedEmbedMenu(menus.ListPageSource):
-    def __init__(self, entries, embeds: Set[discord.Embed]):
+    def __init__(self, entries, embeds: List[discord.Embed]):
         self.embeds = embeds
         super().__init__(entries, per_page=1)
 

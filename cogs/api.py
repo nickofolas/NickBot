@@ -110,7 +110,7 @@ async def get_sub(self, ctx, sort, subreddit, safe):
 
 
 def build_google_embeds(results: List[GoogleResults]):
-    embeds = set()
+    embeds = list()
     for r in results:
         embed = discord.Embed(color=discord.Color.main)
         embed.title = r.title
@@ -118,7 +118,7 @@ def build_google_embeds(results: List[GoogleResults]):
         embed.url = r.result_url
         if r.image_url:
             embed.set_image(url=r.image_url)
-        embeds.add(embed)
+        embeds.append(embed)
     return embeds
 
 
