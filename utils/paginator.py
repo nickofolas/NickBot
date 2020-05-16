@@ -77,7 +77,7 @@ class CSMenu(menus.MenuPages):
         # The call here is safe because it's guarded by skip_if
         await self.show_page(self._source.get_max_pages() - 1)
 
-    @menus.button(conf['emoji_suite']['search'], position=menus.First(2))
+    @menus.button(conf['emoji_suite']['search'], position=menus.First(2), skip_if=_skip_double_triangle_buttons)
     async def go_to_inputted_page(self, payload):
         prompt = await self.ctx.send('Enter the number of the page you would like to go to')
         try:
