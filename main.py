@@ -18,7 +18,7 @@ along with neo.  If not, see <https://www.gnu.org/licenses/>.
 import os
 import warnings
 from datetime import datetime
-import random
+from asyncio import all_tasks
 from contextlib import suppress
 import logging
 
@@ -121,6 +121,7 @@ class NeoBot(commands.Bot):
         }
 
     async def close(self):
+        [task.cancel() for task in all_tasks(loop=self.loop.tasks)]
         await self.session.close()
         await self.conn.close()
         await super().close()
