@@ -15,94 +15,88 @@ GNU Affero General Public License for more details.
 You should have received a copy of the GNU Affero General Public License
 along with neo.  If not, see <https://www.gnu.org/licenses/>.
 """
-class flag_value:
-    def __init__(self, func):
-        self.flag = func(None)
-        self.__doc__ = func.__doc__
-
-    def __get__(self, instance, owner):
-        return instance._has_flag(self.flag)
-
-
-class UserFlags:
-    def __init__(self, value: int = 0):
+class Flags:
+    def __init__(self, value):
         self.value = value
-
-    def __repr__(self):
-        return '<%s value=%s>' % (self.__class__.__name__, self.value)
+        self.flags = [*self.__iter__()]
 
     def __iter__(self):
-        for name, value in self.__class__.__dict__.items():
-            if isinstance(value, flag_value) and self._has_flag(value.flag):
-                yield name
+        for k, v in self.__class__.__dict__.items():
+            if not isinstance(v, property):
+                continue
+            if self.has_flag(self.__getattribute__(k)):
+                yield k
 
-    def _has_flag(self, o):
-        return (self.value & o) == o
+    def __repr__(self):
+        return f"<{self.__class__.__name__} value={self.value} flags={[*self.__iter__()]}>"
 
-    @flag_value
+    def has_flag(self, v):
+        return (self.value & v) == v
+
+    @property
     def discord_employee(self):
         return 1 << 0
 
-    @flag_value
+    @property
     def discord_partner(self):
         return 1 << 1
 
-    @flag_value
+    @property
     def hs_events(self):
         return 1 << 2
 
-    @flag_value
+    @property
     def bug_hunter_lvl1(self):
         return 1 << 3
 
-    @flag_value
+    @property
     def mfa_sms(self):
         return 1 << 4
 
-    @flag_value
+    @property
     def premium_promo_dismissed(self):
         return 1 << 5
 
-    @flag_value
+    @property
     def hs_bravery(self):
         return 1 << 6
 
-    @flag_value
+    @property
     def hs_brilliance(self):
         return 1 << 7
 
-    @flag_value
+    @property
     def hs_balance(self):
         return 1 << 8
 
-    @flag_value
+    @property
     def early_supporter(self):
         return 1 << 9
 
-    @flag_value
+    @property
     def team_user(self):
         return 1 << 10
 
-    @flag_value
+    @property
     def system(self):
         return 1 << 12
 
-    @flag_value
+    @property
     def unread_sys_msg(self):
         return 1 << 13
 
-    @flag_value
+    @property
     def bug_hunter_lvl2(self):
         return 1 << 14
 
-    @flag_value
+    @property
     def underage_deleted(self):
         return 1 << 15
 
-    @flag_value
+    @property
     def verified_bot(self):
         return 1 << 16
 
-    @flag_value
+    @property
     def verified_dev(self):
         return 1 << 17

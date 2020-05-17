@@ -28,7 +28,7 @@ from discord.ext import commands
 
 import utils.data_vis
 from utils.config import conf
-from utils.flags import UserFlags
+from utils.flags import Flags
 
 badges = {
     'discord_employee': '<:staff:699986149288181780>',
@@ -107,10 +107,9 @@ class Info(commands.Cog):
                 'user_bio']
         except IndexError:
             bio = None
-        flag_vals = UserFlags(
-            (await self.bot.http.get_user(target.id))['public_flags'])
+        flag_vals = Flags((await self.bot.http.get_user(target.id))['public_flags']).flags
         for i in badges.keys():
-            if i in [*flag_vals]:
+            if i in flag_vals:
                 badge_list.append(badges[i])
         badge_list = ' '.join(badge_list)
         guild_level_stats = f"**Joined Guild **" \
@@ -121,10 +120,9 @@ class Info(commands.Cog):
         tagline = f'{target} '
         if target.bot:
             bot_tag = '<:verified1:704885163003478069><:verified2:704885180162244749> ' if 'verified_bot' in \
-                                                                                           [
-                                                                                               *flag_vals] else '<:bot:699991045886312488> '
+                flag_vals else '<:bot:699991045886312488> '
         tagline += f'{bot_tag} '
-        if 'system' in [*flag_vals]:
+        if 'system' in flag_vals:
             tagline += f'<:system1:706565390712701019><:system2:706565410463678485> '
         if ctx.guild and isinstance(target, discord.Member):
             if target == ctx.guild.owner:
