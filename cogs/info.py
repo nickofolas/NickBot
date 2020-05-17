@@ -75,7 +75,7 @@ class UserInfo:
 
     @property
     def user_status(self):
-        if not self.context.guild:
+        if not isinstance(self.user, discord.Member):
             return None
         status_icon = conf['emoji_dict'][str(self.user.status)]
         multi_status = [
