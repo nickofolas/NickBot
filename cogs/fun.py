@@ -26,7 +26,7 @@ import discord
 from fuzzywuzzy import process
 from PIL import Image
 from discord.ext import commands
-from uwuify import uwu_text as killmeplease
+import uwuify
 from async_timeout import timeout
 
 from utils.config import conf
@@ -281,7 +281,7 @@ class Fun(commands.Cog):
         """
         Do you hate yourself with a passion? This is the command for you!
         """
-        await ctx.safe_send(killmeplease(message))
+        await ctx.safe_send(uwuify.uwu(message, flags=uwuify.SMILEY))
 
     @commands.command(aliases=['WorldHealthOrganization'])
     async def who(self, ctx):
