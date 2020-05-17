@@ -25,7 +25,7 @@ import shlex
 import textwrap
 import time
 import traceback
-from contextlib import redirect_stdout
+from contextlib import redirect_stdout, suppress
 from typing import Union
 
 import discord
@@ -125,20 +125,15 @@ class Dev(commands.Cog):
             'message': ctx.message,
             '_': self._last_result
         }
-
         env.update(globals())
-
         body = cleanup_code(body)
         stdout = io.StringIO()
         sent = None
-
         to_compile = f'async def func():\n{textwrap.indent(body, "  ")}'
-
         try:
             import_expression.exec(to_compile, env)
         except Exception as e:
             return await ctx.safe_send(f'```py\n{e.__class__.__name__}: {e}\n```')
-
         evaluated_func = env['func']
         try:
             with redirect_stdout(stdout):
@@ -148,10 +143,8 @@ class Dev(commands.Cog):
             sent = await ctx.safe_send(f'```py\n{value}{traceback.format_exc()}\n```')
         else:
             value = stdout.getvalue()
-            try:
+            with suppress(Exception):
                 await ctx.message.add_reaction(ctx.tick(True))
-            except Exception:
-                pass
             if result is None:
                 if value:
                     sent = await ctx.safe_send(f'{value}')
@@ -198,17 +191,6 @@ class Dev(commands.Cog):
         await ctx.send(f'Cmd `{command_string}` executed in {end - start:.3f}s')
 
     @commands.command()
-    async def clean(self, ctx, amount: int = 10):
-        """Cleanup messages from the bot"""
-        try:
-            await ctx.message.delete()
-        except Exception:
-            pass
-        async for m in ctx.channel.history(limit=amount):
-            if m.author == self.bot.user:
-                await m.delete()
-
-    @commands.command()
     async def sql(self, ctx, *, query: str):
         """Run SQL statements"""
         is_multistatement = query.count(';') > 1
@@ -230,6 +212,7 @@ class Dev(commands.Cog):
 
     @commands.group(name='dev', invoke_without_command=True)
     async def dev_command_group(self, ctx):
+        """Some dev commands"""
         await ctx.send("We get it buddy, you're super cool because you can use the dev commands")
 
     @dev_command_group.command(name='logs')
@@ -341,13 +324,17 @@ class Dev(commands.Cog):
 
     @commands.command(name='extensions', aliases=['ext'])
     async def _dev_extensions(self, ctx, *, args=None):
+        """
+        View or manage extensions
+        r, l, u are valid flag options
+        """
         mode_mapping = {'r': self.bot.reload_extension, 'l': self.bot.load_extension, 'u': self.bot.unload_extension}
         if args is None:
             return await ctx.send(embed=discord.Embed(
                 description='\n'.join([*self.bot.extensions.keys()]), color=discord.Color.main))
         parser = Arguments(add_help=False, allow_abbrev=False)
-        parser.add_argument('--mode', choices=['r', 'l', 'u'])
-        parser.add_argument('--pull', action='store_true')
+        parser.add_argument('-m', '--mode', choices=['r', 'l', 'u'])
+        parser.add_argument('-p', '--pull', action='store_true')
         parser.add_argument('extension', nargs='*', default='*')
         args = parser.parse_args(shlex.split(args))
         if args.pull:

@@ -21,7 +21,6 @@ from contextlib import suppress
 import re
 from datetime import datetime
 
-import aiosqlite as asq
 import asyncpg
 import discord
 from discord.ext import commands, tasks

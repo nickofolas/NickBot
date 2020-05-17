@@ -22,7 +22,6 @@ from asyncio import all_tasks
 from contextlib import suppress
 import logging
 
-import aiosqlite as asq
 from discord.ext import commands
 import discord
 import aiohttp

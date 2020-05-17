@@ -1,0 +1,14 @@
+aiohttp
+git+https://github.com/Rapptz/discord.py@master
+humanize
+aiogoogletrans
+tabulate
+fuzzywuzzy
+Pillow
+uwuify
+psutil
+Unidecode
+asyncpg
+PyYAML
+matplotlib
+python-dotenv
