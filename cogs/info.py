@@ -160,8 +160,7 @@ class Info(commands.Cog):
             if isinstance(user, discord.Member) and ctx.guild else ''
         embed = discord.Embed(
             title=user_info.tagline,
-            colour=discord.Color.main)
-        embed.set_thumbnail(url=user.avatar_url_as(static_format='png').__str__())
+            colour=discord.Color.main).set_thumbnail(url=user.avatar_url_as(static_format='png').__str__())
         status_display = user_info.user_status or ''
         embed.description = textwrap.dedent(f"""
         {status_display}
@@ -174,7 +173,7 @@ class Info(commands.Cog):
         if acts := [a async for a in user_info.user_activities]:
             embed.add_field(
                 name='Activities',
-                value='\n'.join(acts) or '',
+                value='\n'.join(acts),
                 inline=False
             )
         if bio:

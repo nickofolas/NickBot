@@ -31,7 +31,6 @@ from discord.ext import commands
 
 import utils
 from utils.config import conf
-from utils.paginator import ShellMenu, CSMenu
 
 
 checked_perms = ['is_owner', 'guild_only', 'dm_only', 'is_nsfw']
@@ -174,6 +173,11 @@ class Meta(commands.Cog):
         links_val += f'\nLatest commit [`{com_id_brief}`]({com_url})'
         embed.add_field(name='**Links**', value=links_val, inline=False)
         await ctx.send(embed=embed)
+
+    @commands.command(name='license', aliases=['copyright'])
+    async def _view_license(self, ctx):
+        """View neo's license"""
+        await ctx.send(embed=discord.Embed(description=conf['license'], color=discord.Color.main))
 
 
 def setup(bot):
