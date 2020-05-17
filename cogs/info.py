@@ -171,10 +171,10 @@ class Info(commands.Cog):
         stats_disp += f'**Registered **{humanize.naturaltime(datetime.utcnow() - user.created_at)}'
         stats_disp += f'\n{guild_level_stats}' if guild_level_stats else ''
         embed.add_field(name='Stats', value=stats_disp)
-        if acts := user_info.user_activities:
+        if user_info.user_activities:
             embed.add_field(
                 name='Activities',
-                value='\n'.join(acts) or '',
+                value='\n'.join([a async for a in user_info.user_activities]) or '',
                 inline=False
             )
         if bio:

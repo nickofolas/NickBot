@@ -311,7 +311,7 @@ class Api(commands.Cog):
                 if 'doc' in key.lower() or 'issu' in key.lower():
                     found[key] = value
         embed = discord.Embed(color=discord.Color.main).set_thumbnail(url='https://i.imgur.com/UWgCSMs.png')
-        embed.description = info.get('summary')
+        embed.description = textwrap.fill(info.get('summary'), width=40)
         embed.title = f"{info.get('name')} {info['version']}"
         embed.add_field(
             name='Info',
