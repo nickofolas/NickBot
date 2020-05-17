@@ -413,8 +413,11 @@ class Dev(commands.Cog):
                 description='\n'.join([*self.bot.extensions.keys()]), color=discord.Color.main))
         parser = Arguments(add_help=False, allow_abbrev=False)
         parser.add_argument('--mode', choices=['r', 'l', 'u'])
+        parser.add_argument('--pull', action='store_true')
         parser.add_argument('extension', nargs='*', default='*')
         args = parser.parse_args(shlex.split(args))
+        if args.pull:
+            await do_shell('git pull')
         mode = mode_mapping.get(args.mode) if args.mode else self.bot.reload_extension
         extensions = [*self.bot.extensions.keys()] if args.extension == '*' else args.extension
         for ext in extensions:
