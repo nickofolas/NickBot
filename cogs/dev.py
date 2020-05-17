@@ -409,7 +409,8 @@ class Dev(commands.Cog):
     async def _dev_extensions(self, ctx, *, args=None):
         mode_mapping = {'r': self.bot.reload_extension, 'l': self.bot.load_extension, 'u': self.bot.unload_extension}
         if args is None:
-            return await ctx.send(embed=discord.Embed(description='\n'.join([*self.bot.extensions.keys()])))
+            return await ctx.send(embed=discord.Embed(
+                description='\n'.join([*self.bot.extensions.keys()]), color=discord.Color.main))
         parser = Arguments(add_help=False, allow_abbrev=False)
         parser.add_argument('--mode', choices=['r', 'l', 'u'])
         parser.add_argument('extension', nargs='*', default='*')
@@ -418,6 +419,8 @@ class Dev(commands.Cog):
         extensions = [*self.bot.extensions.keys()] if args.extension == '*' else args.extension
         for ext in extensions:
             mode(ext)
+        await ctx.message.add_reaction(ctx.tick(True))
+        # TODO: Write a context manager for ^ this so it doesnt always react true
 
 
 def setup(bot):
