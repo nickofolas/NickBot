@@ -15,6 +15,8 @@ GNU Affero General Public License for more details.
 You should have received a copy of the GNU Affero General Public License
 along with neo.  If not, see <https://www.gnu.org/licenses/>.
 """
+
+
 class Flags:
     def __init__(self, value):
         self.value = value
@@ -24,11 +26,11 @@ class Flags:
         for k, v in self.__class__.__dict__.items():
             if not isinstance(v, property):
                 continue
-            if self.has_flag(self.__getattribute__(k)):
+            if self.has_flag(getattr(self, k)):
                 yield k
 
     def __repr__(self):
-        return f"<{self.__class__.__name__} value={self.value} flags={[*self.__iter__()]}>"
+        return f"<{self.__class__.__name__} value={self.value} flags={self.flags}>"
 
     def has_flag(self, v):
         return (self.value & v) == v
