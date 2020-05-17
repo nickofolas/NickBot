@@ -90,7 +90,7 @@ class UserInfo:
 
     @property
     async def user_activities(self):
-        if not self.context.guild and not isinstance(self.user, discord.Member):
+        if not isinstance(self.user, discord.Member):
             return
         for a in self.user.activities:
             if isinstance(a, discord.Spotify):
