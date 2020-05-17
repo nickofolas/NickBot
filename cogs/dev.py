@@ -92,8 +92,10 @@ class Dev(commands.Cog):
         self.bot = bot
         self._last_result = None
 
+    async def cog_check(self, ctx):
+        return await self.bot.is_owner(ctx.author)
+
     @commands.command(aliases=['sh'])
-    @commands.is_owner()
     async def shell(self, ctx, *, args):
         """Invokes the system shell,
         attempting to run the inputted command"""
@@ -111,7 +113,6 @@ class Dev(commands.Cog):
         await menu.start(ctx)
 
     @commands.command(name='eval')
-    @commands.is_owner()
     async def eval_(self, ctx, *, body: str):
         """Runs code that you input to the command"""
 
@@ -176,7 +177,6 @@ class Dev(commands.Cog):
                     await reaction.message.delete()
 
     @commands.command()
-    @commands.is_owner()
     async def debug(self, ctx, *, command_string):
         """Runs a command, checking for errors and returning exec time"""
         start = time.perf_counter()
@@ -198,7 +198,6 @@ class Dev(commands.Cog):
         await ctx.send(f'Cmd `{command_string}` executed in {end - start:.3f}s')
 
     @commands.command()
-    @commands.is_owner()
     async def clean(self, ctx, amount: int = 10):
         """Cleanup messages from the bot"""
         try:
@@ -210,7 +209,6 @@ class Dev(commands.Cog):
                 await m.delete()
 
     @commands.command()
-    @commands.is_owner()
     async def sql(self, ctx, *, query: str):
         """Run SQL statements"""
         is_multistatement = query.count(';') > 1
@@ -231,12 +229,10 @@ class Dev(commands.Cog):
         await ctx.safe_send(f'```\n{table}```\nReturned {rows} {pluralize("row", rows)} in {dt:.2f}ms')
 
     @commands.group(name='dev', invoke_without_command=True)
-    @commands.is_owner()
     async def dev_command_group(self, ctx):
         await ctx.send("We get it buddy, you're super cool because you can use the dev commands")
 
     @dev_command_group.command(name='logs')
-    @commands.is_owner()
     async def view_journal_ctl(self, ctx):
         stdout, stderr = await do_shell('journalctl -u neo -n 300 --no-pager -o cat')
         output = stdout + stderr
@@ -246,7 +242,6 @@ class Dev(commands.Cog):
         await menu.start(ctx)
 
     @dev_command_group.command(name='delete', aliases=['del'])
-    @commands.is_owner()
     async def delete_bot_msg(self, ctx, message_ids: commands.Greedy[int]):
         for m_id in message_ids:
             converter = commands.MessageConverter()
@@ -257,7 +252,6 @@ class Dev(commands.Cog):
         await ctx.message.add_reaction(ctx.tick(True))
 
     @commands.command(name='edit')
-    @commands.is_owner()
     async def args_edit(self, ctx, *, args: str):
         """
         Edit the bot's aspects using a command-line syntax.
@@ -312,7 +306,6 @@ class Dev(commands.Cog):
         )
 
     @commands.group(invoke_without_command=True)
-    @commands.is_owner()
     async def sudo(self, ctx, target: Union[discord.Member, discord.User, None], *, command):
         """Run command as another user"""
         if not isinstance(target, (discord.Member, discord.User)):
@@ -323,7 +316,6 @@ class Dev(commands.Cog):
         await self.bot.invoke(new_ctx)
 
     @sudo.command(name='in')
-    @commands.is_owner()
     async def _in(
             self, ctx,
             channel: discord.TextChannel,
@@ -333,7 +325,6 @@ class Dev(commands.Cog):
         await self.bot.invoke(new_ctx)
 
     @commands.command(aliases=['die', 'kys'])
-    @commands.is_owner()
     async def reboot(self, ctx):
         """Kills all of the bot's processes"""
         response = await ctx.prompt('Are you sure you want to reboot?')
@@ -341,7 +332,6 @@ class Dev(commands.Cog):
             await self.bot.close()
 
     @commands.command(name='screenshot', aliases=['ss'])
-    @commands.is_owner()
     async def _website_screenshot(self, ctx, *, site):
         """Take a screenshot of a site"""
         async with ctx.typing():
@@ -350,7 +340,6 @@ class Dev(commands.Cog):
             await ctx.send(embed=discord.Embed(colour=discord.Color.main).set_image(url=url))
 
     @commands.command()
-    @commands.is_owner()
     async def load(self, ctx, *, extension):  # Cog loading
         extension = extension.split(' ')
         ls = []
@@ -370,7 +359,6 @@ class Dev(commands.Cog):
             await ctx.message.add_reaction(ctx.tick(True))
 
     @commands.command()
-    @commands.is_owner()
     async def unload(self, ctx, *, extension):  # Cog loading
         extension = extension.split(' ')
         ls = []
@@ -392,7 +380,6 @@ class Dev(commands.Cog):
             await ctx.message.add_reaction(ctx.tick(True))
 
     @commands.command()
-    @commands.is_owner()
     async def reload(self, ctx, *, extension):  # Cog loading
         extension = extension.split(' ')
         """Pulls from git and then reloads all or specified cogs"""
@@ -417,6 +404,20 @@ class Dev(commands.Cog):
                 self.bot.reload_extension(f'cogs.{e.lower()}')
                 errored.append(e)
             await ctx.send(f'Succesfully reloaded {pluralize("extension", errored)} {", ".join(errored)}')
+
+    @commands.command(name='extensions', aliases=['ext'])
+    async def _dev_extensions(self, ctx, *, args=None):
+        mode_mapping = {'r': self.bot.reload_extension, 'l': self.bot.load_extension, 'u': self.bot.unload_extension}
+        if args is None:
+            return await ctx.send(embed=discord.Embed(description='\n'.join([*self.bot.extensions.keys()])))
+        parser = Arguments(add_help=False, allow_abbrev=False)
+        parser.add_argument('--mode', choices=['r', 'l', 'u'])
+        parser.add_argument('extension', nargs='*', default='*')
+        args = parser.parse_args(shlex.split(args))
+        mode = mode_mapping.get(args.mode) if args.mode else self.bot.reload_extension
+        extensions = [*self.bot.extensions.keys()] if args.extension == '*' else args.extension
+        for ext in extensions:
+            mode(ext)
 
 
 def setup(bot):

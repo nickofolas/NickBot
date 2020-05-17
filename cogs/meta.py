@@ -138,22 +138,6 @@ class Meta(commands.Cog):
         last_line = first_line + (len(lines) - 1)
         await ctx.send(f'<https://github.com/nickofolas/neo/blob/master/{location}#L{first_line}-L{last_line}>')
 
-    @commands.command()
-    async def cogs(self, ctx):
-        """List all active cogs"""
-        cog_listing = []
-        for each_cog in sorted(self.bot.all_cogs):
-            if each_cog in self.bot.cogs:
-                cog_listing.append(ctx.tick(True) + each_cog)
-            elif each_cog not in self.bot.cogs:
-                cog_listing.append(ctx.tick(False) + each_cog)  # This bit gets the different cogs and
-                # marks them as active or disabled
-        embed = discord.Embed(
-            title="All Cogs",
-            description='\n' + '\n'.join(cog_listing),
-            color=discord.Color.main)
-        await ctx.send(embed=embed)
-
     async def fetch_latest_commit(self):
         headers = {'Authorization': f'token  {os.getenv("GITHUB_TOKEN")}'}
         url = 'https://api.github.com/repos/nickofolas/neo/commits'
