@@ -281,7 +281,8 @@ class Fun(commands.Cog):
         """
         Do you hate yourself with a passion? This is the command for you!
         """
-        await ctx.safe_send(uwuify.uwu(message, flags=uwuify.SMILEY))
+        flags = uwuify.SMILEY
+        await ctx.safe_send(uwuify.uwu(message, flags=flags))
 
     @commands.command(aliases=['WorldHealthOrganization'])
     async def who(self, ctx):

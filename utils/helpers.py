@@ -15,9 +15,18 @@ GNU Affero General Public License for more details.
 You should have received a copy of the GNU Affero General Public License
 along with neo.  If not, see <https://www.gnu.org/licenses/>.
 """
+from collections import namedtuple
+from contextlib import suppress
+
+# noinspection PyPackageRequirements
 from discord.ext import commands
+import discord
 
 from utils.config import conf
+
+BetterUser = namedtuple('BetterUser', ['obj', 'http_dict'])
+u_conv = commands.UserConverter()
+m_conv = commands.MemberConverter()
 
 LANGUAGES = conf['hl_langs']
 
@@ -47,6 +56,24 @@ class BoolConverter(commands.Converter):
             return False
         else:
             raise commands.BadArgument('Input could not be converted into a true or false result')
+
+
+class BetterUserConverter(commands.Converter):
+    async def convert(self, ctx, argument):
+        out = ctx.author if not argument else None
+        for converter in (m_conv, u_conv):
+            if out:
+                break
+            with suppress(Exception):
+                out = await converter.convert(ctx, argument)
+        if out is None:
+            try:
+                out = await ctx.bot.fetch_user(argument)
+            except discord.HTTPException:
+                raise commands.CommandError("Invalid user provided")
+        http_dict = await ctx.bot.http.get_user(out.id)
+        return BetterUser(obj=out, http_dict=http_dict)
+
 
 def prettify_text(content):
     return content.replace('_', ' ').capitalize()

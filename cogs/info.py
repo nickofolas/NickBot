@@ -29,6 +29,7 @@ from discord.ext import commands
 import utils.data_vis
 from utils.config import conf
 from utils.flags import Flags
+from utils.helpers import BetterUserConverter
 
 badges = {
     'discord_employee': '<:staff:699986149288181780>',
@@ -51,38 +52,82 @@ activity_type_mapping = {
 }
 
 
-async def member_info(ctx, target, act, e):
-    status_icon = conf['emoji_dict'][str(target.status)]
-    multi_status = [
-        e[0] for e in [
-            ('Mobile', target.mobile_status),
-            ('Desktop', target.desktop_status),
-            ('Web', target.web_status)] if str(e[1]) != 'offline']
-    for a in target.activities:
-        if isinstance(a, discord.Spotify):
-            act.append('Listening to **Spotify**')
-        elif isinstance(a, discord.CustomActivity):
-            emoji = ''
-            try:
-                if a.emoji:
-                    emoji = await commands.EmojiConverter().convert(ctx,
-                                                                    a.emoji.id) if a.emoji.is_custom_emoji() else a.emoji
-            except commands.errors.BadArgument:
-                emoji = ':question:'
-            act.append(f'{emoji} {a.name or ""}')
-        elif isinstance(a, discord.Game):
-            act.append(f'Playing **{a.name}**')
-        elif isinstance(a, discord.Streaming):
-            act.append(f'Streaming **{a.name}**')
-            status_icon = '<:streaming:706635761000251442>'
-        elif isinstance(a, discord.activity.Activity):
-            act.append(f'{activity_type_mapping.get(a.type)} **{a.name}**')
-    acts = '\n'.join(sorted(act))
-    join_pos = f'{sorted(ctx.guild.members, key=lambda m: m.joined_at).index(target) + 1:,}'
-    status_display = f"{status_icon} " \
-                     f"{str(target.status).title().replace('Dnd', 'DND')}" \
-                     f" {('(' + ', '.join(multi_status) + ')' if multi_status else '')}"
-    return status_display, acts, act, join_pos
+class UserInfo:
+    def __init__(self, user, ctx, flags):
+        self.user = user
+        self.context = ctx
+        self.flags = flags
+
+    @property
+    def is_nitro(self):
+        if self.user.is_avatar_animated():
+            return True
+        elif self.context.guild and isinstance(self.user, discord.Member):
+            if self.user.premium_since:
+                return True
+        return False
+
+    @property
+    def join_pos(self):
+        if self.context.guild and isinstance(self.user, discord.Member):
+            return f'{sorted(self.context.guild.members, key=lambda m: m.joined_at).index(self.user) + 1:,}'
+        return None
+
+    @property
+    def user_status(self):
+        if not self.context.guild:
+            return None
+        status_icon = conf['emoji_dict'][str(self.user.status)]
+        multi_status = [
+            e[0] for e in [
+                ('Mobile', self.user.mobile_status),
+                ('Desktop', self.user.desktop_status),
+                ('Web', self.user.web_status)] if str(e[1]) != 'offline']
+        status_display = f"{status_icon} " \
+                         f"{str(self.user.status).title().replace('Dnd', 'DND')}" \
+                         f" {('(' + ', '.join(multi_status) + ')' if multi_status else '')}"
+        return status_display
+
+    @property
+    async def user_activities(self):
+        if not self.context.guild and not isinstance(self.user, discord.Member):
+            return
+        for a in self.user.activities:
+            if isinstance(a, discord.Spotify):
+                activity = 'Listening to **Spotify**'
+            elif isinstance(a, discord.CustomActivity):
+                emoji = ''
+                try:
+                    if a.emoji:
+                        emoji = await commands.EmojiConverter().convert(
+                            self.context,
+                            a.emoji.id) if a.emoji.is_custom_emoji() else a.emoji
+                except commands.errors.BadArgument:
+                    emoji = ':question:'
+                activity = f'{emoji} {a.name or ""}'
+            elif isinstance(a, discord.Game):
+                activity = f'Playing **{a.name}**'
+            elif isinstance(a, discord.Streaming):
+                activity = f'Streaming **{a.name}**'
+            elif isinstance(a, discord.activity.Activity):
+                activity = f'{activity_type_mapping.get(a.type)} **{a.name}**'
+            # noinspection PyUnboundLocalVariable
+            yield activity
+
+    @property
+    def tagline(self):
+        tagline = f'{self.user} '
+        if self.user.bot:
+            tagline += '<:verified1:704885163003478069><:verified2:704885180162244749> ' if 'verified_bot' in \
+                self.flags else '<:bot:699991045886312488> '
+        if self.context.guild and isinstance(self.user, discord.Member):
+            if self.user == self.context.guild.owner:
+                tagline += '<:serverowner:706224911500181546> '
+            if self.user.premium_since:
+                tagline += '<:booster:705917670691700776> '
+        if 'system' in self.flags:
+            tagline += f'<:system1:706565390712701019><:system2:706565410463678485> '
+        return tagline
 
 
 # noinspection SpellCheckingInspection
@@ -93,65 +138,43 @@ class Info(commands.Cog):
         self.bot = bot
 
     @commands.group(aliases=['ui'], invoke_without_command=True)
-    async def userinfo(self, ctx, *, target: Union[discord.Member, discord.User, int] = None):
+    async def userinfo(self, ctx, *, target=None):
         """Get information about the targeted user"""
-        target = (await self.bot.fetch_user(target)) if \
-            isinstance(target, int) else target or ctx.author
-        act, e, status_display, badge_list, join_pos = ([], [], None, [], None)
-        is_nitro = False
-        if isinstance(target, discord.Member) and ctx.guild:
-            status_display, acts, act, join_pos = \
-                await member_info(ctx, target, act, e)
+        target = await BetterUserConverter().convert(ctx, target)
+        user = target.obj
+        flags = Flags(target.http_dict['public_flags']).flags
+        user_info = UserInfo(user, ctx, flags)
+        badge_list = list()
         try:
-            bio = (await self.bot.conn.fetch('SELECT user_bio FROM user_data WHERE user_id=$1', target.id))[0][
+            bio = (await self.bot.conn.fetch('SELECT user_bio FROM user_data WHERE user_id=$1', user.id))[0][
                 'user_bio']
         except IndexError:
             bio = None
-        flag_vals = Flags((await self.bot.http.get_user(target.id))['public_flags']).flags
         for i in badges.keys():
-            if i in flag_vals:
+            if i in flags:
                 badge_list.append(badges[i])
         badge_list = ' '.join(badge_list)
         guild_level_stats = f"**Joined Guild **" \
-                            f"{humanize.naturaltime(datetime.utcnow() - target.joined_at)}" \
-                            f"\n**Join Position **{join_pos}" \
-            if isinstance(target, discord.Member) and ctx.guild else ''
-        bot_tag = ''
-        tagline = f'{target} '
-        if target.bot:
-            bot_tag = '<:verified1:704885163003478069><:verified2:704885180162244749> ' if 'verified_bot' in \
-                flag_vals else '<:bot:699991045886312488> '
-        tagline += f'{bot_tag} '
-        if 'system' in flag_vals:
-            tagline += f'<:system1:706565390712701019><:system2:706565410463678485> '
-        if ctx.guild and isinstance(target, discord.Member):
-            if target == ctx.guild.owner:
-                tagline += '<:serverowner:706224911500181546> '
-            if target.premium_since:
-                tagline += '<:booster:705917670691700776> '
-                is_nitro = True
-        if target.is_avatar_animated():
-            is_nitro = True
+                            f"{humanize.naturaltime(datetime.utcnow() - user.joined_at)}" \
+                            f"\n**Join Position **{user_info.join_pos}" \
+            if isinstance(user, discord.Member) and ctx.guild else ''
         embed = discord.Embed(
-            title=tagline,
+            title=user_info.tagline,
             colour=discord.Color.main)
-        embed.set_thumbnail(url=target.avatar_url_as(static_format='png').__str__())
-        status_display = status_display or ''
+        embed.set_thumbnail(url=user.avatar_url_as(static_format='png').__str__())
+        status_display = user_info.user_status or ''
         embed.description = textwrap.dedent(f"""
         {status_display}
-        {badge_list or ''}{' <:nitro:707724974248427642>' if is_nitro else ''}
+        {badge_list or ''}{' <:nitro:707724974248427642>' if user_info.is_nitro else ''}
         """)
         stats_disp = str()
-        stats_disp += f'**Registered **{humanize.naturaltime(datetime.utcnow() - target.created_at)}'
+        stats_disp += f'**Registered **{humanize.naturaltime(datetime.utcnow() - user.created_at)}'
         stats_disp += f'\n{guild_level_stats}' if guild_level_stats else ''
-        embed.add_field(
-            name='Stats',
-            value=stats_disp
-        )
-        if act:
+        embed.add_field(name='Stats', value=stats_disp)
+        if acts := user_info.user_activities:
             embed.add_field(
                 name='Activities',
-                value=acts or '',
+                value='\n'.join(acts) or '',
                 inline=False
             )
         if bio:
