@@ -340,6 +340,15 @@ class Dev(commands.Cog):
         if response:
             await self.bot.close()
 
+    @commands.command(name='screenshot', aliases=['ss'])
+    @commands.is_owner()
+    async def _website_screenshot(self, ctx, *, site):
+        """Take a screenshot of a site"""
+        async with ctx.typing():
+            response = await self.bot.session.get('https://magmachain.herokuapp.com/api/v1', headers={'website': site})
+            url = (await response.json())['snapshot']
+            await ctx.send(embed=discord.Embed(colour=discord.Color.main).set_image(url=url))
+
     @commands.command()
     @commands.is_owner()
     async def load(self, ctx, *, extension):  # Cog loading
