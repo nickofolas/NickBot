@@ -33,7 +33,6 @@ from tabulate import tabulate
 
 import utils
 from utils.formatters import return_lang_hl, pluralize
-from utils.paginator import ShellMenu, CSMenu
 from utils.converters import CBStripConverter
 
 status_dict = {

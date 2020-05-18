@@ -136,18 +136,6 @@ class BareBonesMenu(menus.ListPageSource):
                 return discord.Embed(description='\n'.join(page), color=discord.Color.main)
 
 
-class ShellMenu(menus.ListPageSource):
-    def __init__(self, *args, code_lang=None, **kwargs):
-        self.code_lang = code_lang
-        super().__init__(*args, **kwargs)
-
-    async def format_page(self, menu, page):
-        if isinstance(page, str):
-            return page
-        else:
-            return f'```{self.code_lang or ""}\n' + ''.join(page) + '```'
-
-
 class SnipeMenu(menus.ListPageSource):
     def __init__(self, entries, per_page=1):
         super().__init__(entries, per_page=per_page)

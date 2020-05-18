@@ -29,7 +29,7 @@ import async_cse as cse
 import discord
 import humanize
 import aiogoogletrans
-from discord.ext import commands
+from discord.ext import commands, flags
 
 import utils.errors as errors
 from utils.config import conf
@@ -64,7 +64,7 @@ async def do_translation(ctx, content, dest='en'):
     await ctx.send(embed=embed)
 
 
-async def get_sub(self, ctx, sort, subreddit, safe):
+async def get_sub(self, ctx, *, sort, subreddit, safe, amount=5):
     parameters = {
         'limit': '100'
     }
@@ -85,7 +85,7 @@ async def get_sub(self, ctx, sort, subreddit, safe):
         if safe is True:
             listing = list(filter(lambda p: p.get('over_18') is False, listing))
         try:
-            posts = random.sample(list(filter(filter_posts, listing)), k=5)
+            posts = random.sample(list(filter(filter_posts, listing)), k=amount)
         except ValueError:
             raise commands.CommandError('No SFW posts found')
         embeds = list()
@@ -134,7 +134,17 @@ class Api(commands.Cog):
     @commands.command()
     async def rand(self, ctx, sort, subreddit):
         """Get a random post from a sort on a subreddit"""
-        embeds = await get_sub(self, ctx, sort, subreddit, not ctx.channel.nsfw)
+        embeds = await get_sub(self, ctx, sort=sort, subreddit=subreddit, safe=not ctx.channel.nsfw)
+        source = PagedEmbedMenu(embeds)
+        menu = CSMenu(source, delete_message_after=True)
+        await menu.start(ctx)
+
+    @flags.add_flag('sub', nargs='?')
+    @flags.add_flag('-s', '--sort', choices=['top', 'new', 'rising', 'hot', 'controversial', 'best'], default='hot')
+    @flags.add_flag('-a', '--amount', type=int, default=5)
+    @flags.command(name='reddit')
+    async def _flags_reddit(self, ctx, **flags):
+        embeds = await get_sub(self, ctx, sort=flags['sort'], subreddit=flags['sub'], amount=flags['amount'], safe=not ctx.channel.nsfw)
         source = PagedEmbedMenu(embeds)
         menu = CSMenu(source, delete_message_after=True)
         await menu.start(ctx)
