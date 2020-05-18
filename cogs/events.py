@@ -81,29 +81,29 @@ class Events(commands.Cog):
         self.hl_cache = []
 
     @tasks.loop(seconds=10)
-    async def hl_mailer(self):
+    async def hl_mailer(self):  # Flushes the highlights queue every 10 seconds, delivering all messages
         for person, embed in set(self.hl_queue):
             try:
                 await person.send(embed=embed)
                 await asyncio.sleep(0.25)
-            except Exception:
+            except Exception:  # In case we can't DM them
                 continue
-        self.hl_queue = list()
+        self.hl_queue = list()  # We're done with this queue, so reset it
 
     @tasks.loop(minutes=1.0)
-    async def update_hl_cache(self):
+    async def update_hl_cache(self):  # Keeps the cache of highlights up to date
         await self.build_hl_cache()
 
     @hl_mailer.before_loop
     @update_hl_cache.before_loop
-    async def before_task_loops(self):
+    async def before_task_loops(self):  # Makes sure that the bot is ready before starting any loops
         await self.bot.wait_until_ready()
 
     async def build_hl_cache(self):
-        await self.bot.wait_until_ready()
+        await self.bot.wait_until_ready()  # Just for safety
         self.hl_cache = []
         fetched = await self.bot.conn.fetch('SELECT user_id, kw, exclude_guild FROM highlights')
-        for rec in fetched:
+        for rec in fetched:  # Loops over every Record in the highlights db, and adds it to the cache
             i = list(tuple(rec))
             i[1] = re.compile(i[1], re.I)
             i = tuple(i)
@@ -113,56 +113,56 @@ class Events(commands.Cog):
     @commands.Cog.listener()
     async def on_message(self, message):
         await self.bot.wait_until_ready()
-        if not hasattr(self, 'hl_cache'):
+        if not hasattr(self, 'hl_cache'):  # Gotta make sure we have the cache before starting anything
             return
         for c in self.hl_cache:
             with suppress(AttributeError, UnboundLocalError):
-                if match := re.search(c[1], message.content):
+                if match := re.search(c[1], message.content):  # Makes sure there's actually a match
                     if not hl_checks_one(c, message):
                         continue
-                    alerted = self.bot.get_user(c[0])
-                    if m := discord.utils.get(reversed(self.bot.cached_messages),
-                                              channel=message.channel,
-                                              author=alerted) and (
-                                    datetime.utcnow() - m.created_at).total_seconds() < 60:
-                        continue
-                    embed = await build_highlight_embed(match, message)
-                    if hl_send_predicates(alerted, message):
-                        if len(self.hl_queue) < 40 and [i[0] for i in self.hl_queue].count(alerted) < 5:
-                            self.hl_queue.append((alerted, embed))
+                alerted = self.bot.get_user(c[0])
+                if m := discord.utils.get(reversed(self.bot.cached_messages),  # Checks the interaction cooldown
+                                          channel=message.channel,
+                                          author=alerted) and (
+                                datetime.utcnow() - m.created_at).total_seconds() < 60:
+                    continue
+                embed = await build_highlight_embed(match, message)  # Builds the embed that'll be delivered
+                if hl_send_predicates(alerted, message):  # Checks that the predicates for sending are satisfied
+                    if len(self.hl_queue) < 40 and [i[0] for i in self.hl_queue].count(alerted) < 5:
+                        # Applies a final set of predicates to make sure that the queue's size is adequate
+                        self.hl_queue.append((alerted, embed))  # Adds the highlight to the queue
 
-    # Provides general command error messages
     @commands.Cog.listener()
     async def on_command_error(self, ctx, error):
         if isinstance(error, (commands.CommandNotFound, commands.NotOwner)):
-            return
+            return  # Ignores CommandNotFound and NotOwner because they're unnecessary
         elif isinstance(error, commands.CommandOnCooldown):
-            return await ctx.message.add_reaction(conf['emoji_suite']['alarm'])
-        await ctx.propagate_to_eh(self.bot, ctx, error)
+            return await ctx.message.add_reaction(conf['emoji_suite']['alarm'])  # Handles Cooldowns uniquely
+        await ctx.propagate_to_eh(self.bot, ctx, error)  # Anything else is propagated to the reaction handler
 
     @commands.Cog.listener()
     async def on_command(self, ctx):
         with suppress(asyncpg.exceptions.UniqueViolationError):
             await self.bot.conn.execute('INSERT INTO user_data (user_id) VALUES ($1)', ctx.author.id)
+            # Adds people to the user_data table whenever they execute their first command
 
     @commands.Cog.listener()
     async def on_message_edit(self, before, after):
         if after.content == before.content:
             return
-        if not self.bot.snipes.get(after.channel.id):
+        if not self.bot.snipes.get(after.channel.id):  # Creates the snipes cache
             self.bot.snipes[after.channel.id] = {'deleted': collections.deque(list(), 100),
                                                  'edited': collections.deque(list(), 100)}
-        if after.content and not after.author.bot:
+        if after.content and not after.author.bot:  # Updates the snipes edit cache
             self.bot.snipes[after.channel.id]['edited'].append((before, after, datetime.utcnow()))
 
     @commands.Cog.listener()
     async def on_message_delete(self, message):
-        if not self.bot.snipes.get(message.channel.id):
+        if not self.bot.snipes.get(message.channel.id):  # Creates the snipes cache
             self.bot.snipes[message.channel.id] = {'deleted': collections.deque(list(), 100),
                                                    'edited': collections.deque(list(), 100)}
-        if message.content and not message.author.bot:
+        if message.content and not message.author.bot:  # Updates the snipes deleted cache
             self.bot.snipes[message.channel.id]['deleted'].append((message, datetime.utcnow()))
-        # Adds the message to the dict of messages for sniping
 
     @commands.Cog.listener()
     async def on_guild_join(self, guild):
@@ -171,13 +171,13 @@ class Events(commands.Cog):
             color=discord.Color.main)
         embed.set_thumbnail(url=guild.icon_url_as(static_format='png'))
         embed.add_field(
-            name='**Members**',
+            name='**Members**',  # Basic stats about the guild
             value=f'**Total:** {len(guild.members)}\n'
                   + f'**Admins:** {len([m for m in guild.members if m.guild_permissions.administrator])}\n'
                   + f'**Owner: ** {guild.owner}\n',
             inline=False)
         with suppress(Exception):
-            async for a in guild.audit_logs(limit=5):
+            async for a in guild.audit_logs(limit=5):  # Tries to disclose who added the bot
                 if a.action == discord.AuditLogAction.bot_add:
                     action = a
                     break
@@ -186,7 +186,7 @@ class Events(commands.Cog):
                 value=action.user
             )
 
-        await self.bot.conn.execute(
+        await self.bot.conn.execute(  # Adds/updates this guild in the db using upsert syntax
             'INSERT INTO guild_prefs (guild_id, prefix) VALUES ($1, $2) ON CONFLICT (guild_id) DO UPDATE SET prefix=$2',
             guild.id, 'n/')
         await self.bot.logging_channels.get('guild_io').send(embed=embed)
@@ -194,9 +194,10 @@ class Events(commands.Cog):
     @commands.Cog.listener()
     async def on_guild_remove(self, guild):
         await self.bot.conn.execute('DELETE FROM guild_prefs WHERE guild_id=$1', guild.id)
+        # Removes guild from database
         embed = discord.Embed(
             description=f'Removed from guild {guild.name} [{guild.id}]',
-            color=discord.Color.pornhub)
+            color=discord.Color.pornhub)  # Don't ask
         embed.set_thumbnail(url=guild.icon_url_as(static_format='png'))
         await self.bot.logging_channels.get('guild_io').send(embed=embed)
 
