@@ -93,7 +93,7 @@ def handle_eval_exc(exception, ctx):
     formatted = ''.join(re.sub(r'File ".+",', 'File [omitted]', fmtd_exc))
     pages = _group(formatted, 1500)
     pages = [ctx.codeblock(page, 'py') for page in pages]
-    ctx.bot.loop.create_task(ctx.quick_menu(pages, 1, delete_message_after=True))
+    ctx.bot.loop.create_task(ctx.quick_menu(pages, 1, delete_message_after=True, timeout=None))
 
 
 # noinspection PyBroadException
@@ -122,7 +122,7 @@ class Dev(commands.Cog):
         cleaned = clean_bytes(output)
         pages = _group(cleaned, 1500)
         pages = [ctx.codeblock(page, hl_lang) for page in pages]
-        await ctx.quick_menu(pages, 1, delete_message_after=True)
+        await ctx.quick_menu(pages, 1, delete_message_after=True, timeout=None)
 
     @commands.command(name='eval')
     async def eval_(self, ctx, *, body: CBStripConverter):
@@ -160,7 +160,7 @@ class Dev(commands.Cog):
         if to_return:
             pages = _group(to_return, 1500)
             pages = [ctx.codeblock(page, 'py') for page in pages]
-            await ctx.quick_menu(pages, 1, delete_message_after=True)
+            await ctx.quick_menu(pages, 1, delete_message_after=True, timeout=None)
 
     @commands.command()
     async def debug(self, ctx, *, command_string):
