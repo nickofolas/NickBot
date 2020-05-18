@@ -195,14 +195,12 @@ class Guild(commands.Cog):
         await ctx.send(f'{member} was kicked - **{reason}**')
         await ctx.message.delete()
 
-    @commands.group(name='config', aliases=['settings', 'cfg'], invoke_with_command=True)
+    @commands.group(name='config', aliases=['settings', 'cfg'], invoke_without_command=True)
     @is_owner_or_administrator()
     async def guild_config(self, ctx):
         """
         View or modify the configuration for the current guild.
         """
-        if ctx.invoked_subcommand is not None:
-            return
         current_settings = dict((await self.bot.conn.fetch('SELECT * FROM guild_prefs WHERE guild_id=$1', ctx.guild.id))[0])
         readable_settings = list()
         for k, v in current_settings.items():
