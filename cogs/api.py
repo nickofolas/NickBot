@@ -68,7 +68,7 @@ async def get_sub(self, ctx, *, sort, subreddit, safe, amount=5):
     parameters = {'limit': '100'}
     if sort == 'top':
         parameters['t'] = 'all'
-    async with ctx.typing(), self.bot.session.get(
+    async with ctx.loading(tick=False), self.bot.session.get(
             f'https://www.reddit.com/r/{subreddit.replace("r/", "")}/{sort}.json',
             params=parameters) as r:
         if r.status == 404:
@@ -338,18 +338,19 @@ class Api(commands.Cog):
         """
         Search Google for the query
         """
-        keys = os.getenv('SEARCH_TOKENS').split(',')
-        cli = cse.Search(list(keys))
-        res = await cli.search(query)
-        await cli.close()
-        results = [GoogleResults(
-            title=result.title,
-            description=result.description,
-            result_url=result.url,
-            image_url=result.image_url) for result in res]
-        embeds = build_google_embeds(results)
-        source = PagedEmbedMenu(embeds)
-        menu = CSMenu(source, delete_message_after=True)
+        async with ctx.loading(tick=False):
+            keys = os.getenv('SEARCH_TOKENS').split(',')
+            cli = cse.Search(list(keys))
+            res = await cli.search(query)
+            await cli.close()
+            results = [GoogleResults(
+                title=result.title,
+                description=result.description,
+                result_url=result.url,
+                image_url=result.image_url) for result in res]
+            embeds = build_google_embeds(results)
+            source = PagedEmbedMenu(embeds)
+            menu = CSMenu(source, delete_message_after=True)
         await menu.start(ctx)
 
     @google.command(aliases=['img'])
@@ -357,18 +358,19 @@ class Api(commands.Cog):
         """
         Search Google Images for the query
         """
-        keys = os.getenv('IMAGE_TOKENS').split(',')
-        cli = cse.Search(list(keys))
-        res = await cli.search(query, image_search=True)
-        await cli.close()
-        results = [GoogleResults(
-            title=result.title,
-            description=result.description,
-            result_url=result.url,
-            image_url=result.image_url) for result in res]
-        embeds = build_google_embeds(results)
-        source = PagedEmbedMenu(embeds)
-        menu = CSMenu(source, delete_message_after=True)
+        async with ctx.loading(tick=False):
+            keys = os.getenv('IMAGE_TOKENS').split(',')
+            cli = cse.Search(list(keys))
+            res = await cli.search(query, image_search=True)
+            await cli.close()
+            results = [GoogleResults(
+                title=result.title,
+                description=result.description,
+                result_url=result.url,
+                image_url=result.image_url) for result in res]
+            embeds = build_google_embeds(results)
+            source = PagedEmbedMenu(embeds)
+            menu = CSMenu(source, delete_message_after=True)
         await menu.start(ctx)
 
     @commands.group(aliases=['fn'], invoke_without_command=True)

@@ -178,11 +178,11 @@ class Docs(commands.Cog):
             if obj is None:
                 return await ctx.safe_send(page_types[key])
         except KeyError:
-            await ctx.trigger_typing()
-            await self.rtfm_lookup_table_append(key, f'https://{key}.readthedocs.io/en/latest')
-            cache = list(self._rtfm_cache[key].items())
-            if obj is None:
-                return await ctx.safe_send(page_types[key])
+            async with ctx.loading(tick=False):
+                await self.rtfm_lookup_table_append(key, f'https://{key}.readthedocs.io/en/latest')
+                cache = list(self._rtfm_cache[key].items())
+                if obj is None:
+                    return await ctx.safe_send(page_types[key])
 
         obj = re.sub(r'^(?:discord\.(?:ext\.)?)?(?:commands\.)?(.+)', r'\1', obj)
 

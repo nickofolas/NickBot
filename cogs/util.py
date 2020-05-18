@@ -194,7 +194,7 @@ class Util(commands.Cog):
         image = image or await ctx.message.attachments[0].read()
         headers = {'Authorization': f"Client-ID {os.getenv('IMGUR_ID')}"}
         data = {'image': image}
-        async with ctx.typing(), self.bot.session.post('https://api.imgur.com/3/image', headers=headers,
+        async with ctx.loading(), self.bot.session.post('https://api.imgur.com/3/image', headers=headers,
                                                        data=data) as resp:
             re = await resp.json()
             await ctx.send('<' + re['data'].get('link') + '>')

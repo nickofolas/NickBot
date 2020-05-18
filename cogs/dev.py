@@ -116,12 +116,12 @@ class Dev(commands.Cog):
             hl_lang = return_lang_hl(args)
         if 'git diff' in args:
             hl_lang = 'diff'
-        await ctx.trigger_typing()
-        stdout, stderr = await do_shell(args)
-        output = stdout + stderr
-        cleaned = clean_bytes(output)
-        pages = _group(cleaned, 1500)
-        pages = [ctx.codeblock(page, hl_lang) for page in pages]
+        async with ctx.loading(tick=False):
+            stdout, stderr = await do_shell(args)
+            output = stdout + stderr
+            cleaned = clean_bytes(output)
+            pages = _group(cleaned, 1500)
+            pages = [ctx.codeblock(page, hl_lang) for page in pages]
         await ctx.quick_menu(pages, 1, delete_message_after=True, timeout=300)
 
     @commands.command(name='eval')
