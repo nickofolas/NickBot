@@ -30,8 +30,8 @@ from utils.config import CONFIG
 class Context(commands.Context):
 
     def __init__(self, **kwargs):
-        self._EMOJIS = self.bot.CONFIG.emoji_suite
         super().__init__(**kwargs)
+        self._EMOJIS = CONFIG.emoji_suite
 
     async def prompt(self, message):
         emojis = {

@@ -145,18 +145,17 @@ class Dev(commands.Cog):
             handle_eval_exc(e, ctx)
             return
         evaluated_func = env['func']
-        try:
-            with redirect_stdout(stdout):
-                result = await evaluated_func() or ''
-        except Exception as e:
-            handle_eval_exc(e, ctx)
-            return
-        else:
-            value = stdout.getvalue() or ''
-            with suppress(Exception):
-                await ctx.message.add_reaction(ctx.tick(True))
-            self._last_result = result
-            to_return = f'{value}{result}'
+        async with ctx.loading():
+            try:
+                with redirect_stdout(stdout):
+                    result = await evaluated_func() or ''
+            except Exception as e:
+                handle_eval_exc(e, ctx)
+                return
+            else:
+                value = stdout.getvalue() or ''
+                self._last_result = result
+                to_return = f'{value}{result}'
         if to_return:
             pages = _group(to_return, 1500)
             pages = [ctx.codeblock(page, 'py') for page in pages]
