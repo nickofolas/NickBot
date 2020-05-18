@@ -18,6 +18,7 @@ along with neo.  If not, see <https://www.gnu.org/licenses/>.
 import argparse
 import re
 import shlex
+from typing import Union
 
 import discord
 from discord.ext import commands
@@ -176,17 +177,12 @@ class Guild(commands.Cog):
 
     @commands.command()
     @has_permissions(ban_members=True)
-    async def ban(self, ctx, member: discord.Member, *, reason=None):
+    async def ban(self, ctx, member: Union[discord.Member, int], *, reason=None):
         """Issue a permanent ban - optional reason"""
-        try:
-            await member.send(
-                f'You have been permanently banned in the {ctx.guild} server. Reason: **{reason}**'
-            )
-        except Exception:
-            pass
-        await member.ban(reason=reason)
-        await ctx.send(f'{member} was permanently banned - **{reason}**')
-        await ctx.message.delete()
+        to_ban = discord.Object(id=member) if isinstance(member, int) else member
+        user_obj = await self.bot.fetch_user(member) if isinstance(member, int) else member
+        await ctx.guild.ban(to_ban, reason=f'{ctx.author} ({ctx.author.id}) - {reason}')
+        await ctx.send(f'Banned **{user_obj.name}**')
 
     @commands.command()
     @has_permissions(kick_members=True)
