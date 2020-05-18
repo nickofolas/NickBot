@@ -81,9 +81,20 @@ def clean_bytes(line):
     return re.sub(r'\x1b[^m]*m', '', text).replace("``", "`\u200b`").strip('\n')
 
 
+def paginate(iterable, page_len=50):
+    pages = []
+    while iterable:
+        pages.append(iterable[:page_len])
+        iterable = iterable[page_len:]
+    return pages
+
+
 def handle_eval_exc(exception, ctx):
     fmtd_exc = ''.join(traceback.format_exception(type(exception), exception, exception.__traceback__))
-    ctx.codeblock(''.join(re.sub(r'File ".+",', 'File [...]', fmtd_exc)), 'py')
+    formatted = ''.join(re.sub(r'File ".+",', 'File [omitted]', fmtd_exc))
+    pages = paginate(formatted, 1500)
+    pages = [ctx.codeblock(page, 'py') for page in pages]
+    ctx.bot.loop.create_task(ctx.quick_menu(pages, 1, delete_message_after=True))
 
 
 # noinspection PyBroadException
@@ -130,6 +141,7 @@ class Dev(commands.Cog):
         env.update(globals())
         stdout = io.StringIO()
         to_compile = f'async def func():\n{textwrap.indent(body, "  ")}'
+        paginator = commands.Paginator(prefix='```py', max_size=1500)
         try:
             import_expression.exec(to_compile, env)
         except Exception as e:
@@ -139,7 +151,7 @@ class Dev(commands.Cog):
 
         try:
             with redirect_stdout(stdout):
-                result = await evaluated_func()
+                result = await evaluated_func() or ''
 
         except Exception as e:
             return await ctx.send(handle_eval_exc(e, ctx))
@@ -148,7 +160,11 @@ class Dev(commands.Cog):
             with suppress(Exception):
                 await ctx.message.add_reaction(ctx.tick(True))
             self._last_result = result
-            await ctx.send(f'{value}{result}')
+            to_return = f'{value}{result}'
+        if to_return:
+            pages = paginate(to_return, 1500)
+            pages = [ctx.codeblock(page, 'py') for page in pages]
+            await ctx.quick_menu(pages, 1, delete_message_after=True)
 
     @commands.command()
     async def debug(self, ctx, *, command_string):
