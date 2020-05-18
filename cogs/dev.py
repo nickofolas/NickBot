@@ -83,7 +83,7 @@ def clean_bytes(line):
 
 def handle_eval_exc(exception, ctx):
     fmtd_exc = ''.join(traceback.format_exception(type(exception), exception, exception.__traceback__))
-    ctx.codeblock(re.sub(r'File ".+",', 'File [...]', fmtd_exc), 'py')
+    ctx.codeblock(''.join(re.sub(r'File ".+",', 'File [...]', fmtd_exc)), 'py')
 
 
 # noinspection PyBroadException
