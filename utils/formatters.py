@@ -19,6 +19,30 @@ import io
 
 import matplotlib.pyplot as plt
 
+from utils.config import conf
+
+
+LANGUAGES = conf['hl_langs']
+
+
+def return_lang_hl(input_string) -> str:
+    for possible_suffix in LANGUAGES:
+        if input_string.endswith(possible_suffix):
+            return possible_suffix
+    return 'sh'
+
+
+def pluralize(inp, value):
+    if isinstance(value, list):
+        inp = inp + 's' if len(value) != 1 else inp
+    if isinstance(value, int):
+        inp = inp + 's' if value != 1 else inp
+    return inp
+
+
+def prettify_text(content):
+    return content.replace('_', ' ').capitalize()
+
 
 def gen(guild, status_type):
     return len([m for m in guild.members if str(m.status) == status_type])

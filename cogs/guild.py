@@ -24,7 +24,8 @@ from discord.ext import commands
 from discord.ext.commands import has_permissions
 
 from utils.checks import is_owner_or_administrator
-from utils.helpers import BoolConverter, prettify_text
+from utils.converters import BoolConverter
+from utils.formatters import prettify_text
 
 
 class Arguments(argparse.ArgumentParser):

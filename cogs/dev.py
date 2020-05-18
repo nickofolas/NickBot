@@ -35,7 +35,7 @@ from tabulate import tabulate
 
 import utils
 from utils.config import conf
-from utils.helpers import return_lang_hl, pluralize
+from utils.formatters import return_lang_hl, pluralize
 from utils.paginator import ShellMenu, CSMenu
 
 

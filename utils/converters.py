@@ -22,28 +22,9 @@ from contextlib import suppress
 from discord.ext import commands
 import discord
 
-from utils.config import conf
-
 BetterUser = namedtuple('BetterUser', ['obj', 'http_dict'])
 u_conv = commands.UserConverter()
 m_conv = commands.MemberConverter()
-
-LANGUAGES = conf['hl_langs']
-
-
-def return_lang_hl(input_string) -> str:
-    for possible_suffix in LANGUAGES:
-        if input_string.endswith(possible_suffix):
-            return possible_suffix
-    return 'sh'
-
-
-def pluralize(inp, value):
-    if isinstance(value, list):
-        inp = inp + 's' if len(value) != 1 else inp
-    if isinstance(value, int):
-        inp = inp + 's' if value != 1 else inp
-    return inp
 
 
 class BoolConverter(commands.Converter):
@@ -73,7 +54,3 @@ class BetterUserConverter(commands.Converter):
                 raise commands.CommandError("Invalid user provided")
         http_dict = await ctx.bot.http.get_user(out.id)
         return BetterUser(obj=out, http_dict=http_dict)
-
-
-def prettify_text(content):
-    return content.replace('_', ' ').capitalize()

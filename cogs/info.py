@@ -26,10 +26,10 @@ import discord
 import humanize
 from discord.ext import commands
 
-import utils.data_vis
+import utils.formatters
 from utils.config import conf
 from utils.flags import Flags
-from utils.helpers import BetterUserConverter
+from utils.converters import BetterUserConverter
 
 badges = {
     'discord_employee': '<:staff:699986149288181780>',
@@ -235,9 +235,9 @@ class Info(commands.Cog):
                     name='**Song Artist(s)**',
                     value=', '.join(ac.artists))
                 e.add_field(name='**Album Name**', value=discord.utils.escape_markdown(ac.album))
-                bar = utils.data_vis.bar_make(
+                bar = utils.formatters.bar_make(
                     val.seconds, g.seconds, fill='◉', empty='─', point=True, length=5) if ctx.author.is_on_mobile() \
-                    else utils.data_vis.bar_make(
+                    else utils.formatters.bar_make(
                     val.seconds, g.seconds, fill='◉', empty='─', point=True, length=25)
                 e.add_field(
                     name='**Song Progress**',
@@ -294,10 +294,10 @@ class Info(commands.Cog):
             file=discord.File(
                 io.BytesIO(await self.bot.loop.run_in_executor(
                     None,
-                    utils.data_vis.StatusChart(
+                    utils.formatters.StatusChart(
                         guild,
                         ['Online', 'DND', 'Offline', 'Idle'],
-                        [utils.data_vis.gen(guild, i) for i in [
+                        [utils.formatters.gen(guild, i) for i in [
                             'online', 'dnd', 'offline', 'idle']],
                         ['#43b581', '#f04847', 'grey', '#f9a61a']).make_pie)),
                 filename='test.png'))

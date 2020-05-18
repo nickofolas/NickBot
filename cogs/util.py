@@ -33,7 +33,7 @@ import unidecode as ud
 from discord.ext import commands
 
 from utils import paginator
-from utils.helpers import pluralize
+from utils.formatters import pluralize
 
 
 def zulu_time(dt: datetime.datetime):
