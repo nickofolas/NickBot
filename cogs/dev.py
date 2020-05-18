@@ -271,7 +271,7 @@ class Dev(commands.Cog):
     @commands.command(name='screenshot', aliases=['ss'])
     async def _website_screenshot(self, ctx, *, site):
         """Take a screenshot of a site"""
-        async with ctx.typing():
+        async with ctx.loading(tick=False):
             response = await self.bot.session.get('https://magmachain.herokuapp.com/api/v1', headers={'website': site})
             url = (await response.json())['snapshot']
             await ctx.send(embed=discord.Embed(colour=discord.Color.main).set_image(url=url))
@@ -282,15 +282,14 @@ class Dev(commands.Cog):
     @flags.command(name='extensions', aliases=['ext'])
     async def _dev_extensions(self, ctx, **flags):
         """Manage extensions"""
-        mode_mapping = {'r': self.bot.reload_extension, 'l': self.bot.load_extension, 'u': self.bot.unload_extension}
-        if flags.get('pull'):
-            await do_shell('git pull')
-        mode = mode_mapping.get(flags['mode'])
-        extensions = [*self.bot.extensions.keys()] if flags['extension'][0] == '~' else flags['extension']
-        for ext in extensions:
-            mode(ext)
-        await ctx.message.add_reaction(ctx.tick(True))
-        # TODO: Write a context manager for ^ this so it doesnt always react true
+        async with ctx.loading():
+            mode_mapping = {'r': self.bot.reload_extension, 'l': self.bot.load_extension, 'u': self.bot.unload_extension}
+            if flags.get('pull'):
+                await do_shell('git pull')
+            mode = mode_mapping.get(flags['mode'])
+            extensions = [*self.bot.extensions.keys()] if flags['extension'][0] == '~' else flags['extension']
+            for ext in extensions:
+                mode(ext)
 
 
 def setup(bot):

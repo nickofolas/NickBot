@@ -290,17 +290,18 @@ class Info(commands.Cog):
     @commands.guild_only()
     async def pie(self, ctx, guild: int = None):
         guild = self.bot.get_guild(guild) or ctx.guild
-        await ctx.send(
-            file=discord.File(
-                io.BytesIO(await self.bot.loop.run_in_executor(
-                    None,
-                    utils.formatters.StatusChart(
-                        guild,
-                        ['Online', 'DND', 'Offline', 'Idle'],
-                        [utils.formatters.gen(guild, i) for i in [
-                            'online', 'dnd', 'offline', 'idle']],
-                        ['#43b581', '#f04847', 'grey', '#f9a61a']).make_pie)),
-                filename='test.png'))
+        async with ctx.loading(tick=False):
+            await ctx.send(
+                file=discord.File(
+                    io.BytesIO(await self.bot.loop.run_in_executor(
+                        None,
+                        utils.formatters.StatusChart(
+                            guild,
+                            ['Online', 'DND', 'Offline', 'Idle'],
+                            [utils.formatters.gen(guild, i) for i in [
+                                'online', 'dnd', 'offline', 'idle']],
+                            ['#43b581', '#f04847', 'grey', '#f9a61a']).make_pie)),
+                    filename='test.png'))
 
     @serverinfo.command()
     @commands.guild_only()

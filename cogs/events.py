@@ -30,6 +30,40 @@ from utils.config import conf
 ignored_cmds = re.compile(r'\.+')
 
 
+def hl_checks_one(c, message):
+    predicates = []
+    if c[2]:
+        predicates.append(message.guild.id not in c[2])
+    predicates.append(not re.search(re.compile(r'([a-zA-Z0-9]{24}\.[a-zA-Z0-9]{6}\.[a-zA-Z0-9_\-]{27}|mfa\.['
+                                               r'a-zA-Z0-9_\-]{84})'), message.content))
+    return all(predicates)
+
+
+async def build_highlight_embed(match, message):
+    context_list = []
+    async for m in message.channel.history(limit=5):
+        avatar_index = m.author.default_avatar.value
+        hl_underline = m.content.replace(match.group(0), f'**__{match.group(0)}__**')
+        repl = r'<a?:\w*:\d*>'
+        context_list.append(
+            f"{conf['default_discord_users'][avatar_index]} **{m.author.name}:** {re.sub(repl, ':question:', hl_underline)}")
+    context_list = reversed(context_list)
+    embed = discord.Embed(
+        title=f'A word has been highlighted!',
+        description='\n'.join(context_list) + f'\n[Jump URL]({message.jump_url})',
+        color=discord.Color.main)
+    embed.timestamp = message.created_at
+    return embed
+
+
+def hl_send_predicates(alerted, message):
+    preds = [alerted in message.guild.members,
+             alerted.id != message.author.id,
+             message.channel.permissions_for(message.guild.get_member(alerted.id)).read_messages,
+             not message.author.bot]
+    return all(preds)
+
+
 # noinspection PyCallingNonCallable
 class Events(commands.Cog):
     """Contains the listeners for the bot"""
@@ -65,15 +99,6 @@ class Events(commands.Cog):
     async def before_task_loops(self):
         await self.bot.wait_until_ready()
 
-    # Provides general command error messages
-    @commands.Cog.listener()
-    async def on_command_error(self, ctx, error):
-        if isinstance(error, (commands.CommandNotFound, commands.NotOwner)):
-            return
-        elif isinstance(error, commands.CommandOnCooldown):
-            return await ctx.message.add_reaction(conf['emoji_suite']['alarm'])
-        await ctx.propagate_to_eh(self.bot, ctx, error)
-
     async def build_hl_cache(self):
         await self.bot.wait_until_ready()
         self.hl_cache = []
@@ -84,11 +109,6 @@ class Events(commands.Cog):
             i = tuple(i)
             self.hl_cache.append(i)
 
-    @commands.Cog.listener()
-    async def on_command(self, ctx):
-        with suppress(asyncpg.exceptions.UniqueViolationError):
-            await self.bot.conn.execute('INSERT INTO user_data (user_id) VALUES ($1)', ctx.author.id)
-
     # Message events
     @commands.Cog.listener()
     async def on_message(self, message):
@@ -98,37 +118,32 @@ class Events(commands.Cog):
         for c in self.hl_cache:
             with suppress(AttributeError, UnboundLocalError):
                 if match := re.search(c[1], message.content):
-                    if c[2]:
-                        if message.guild.id in c[2]:
-                            continue
-                    if re.search(
-                            re.compile(r'([a-zA-Z0-9]{24}\.[a-zA-Z0-9]{6}\.[a-zA-Z0-9_\-]{27}|mfa\.[a-zA-Z0-9_\-]{84})'),
-                            message.content):
+                    if not hl_checks_one(c, message):
                         continue
                     alerted = self.bot.get_user(c[0])
                     if m := discord.utils.get(reversed(self.bot.cached_messages),
-                                            channel=message.channel,
-                                            author=alerted) and (datetime.utcnow() - m.created_at).total_seconds() < 60:
+                                              channel=message.channel,
+                                              author=alerted) and (
+                                    datetime.utcnow() - m.created_at).total_seconds() < 60:
                         continue
-                    context_list = []
-                    async for m in message.channel.history(limit=5):
-                        avatar_index = m.author.default_avatar.value
-                        hl_underline = m.content.replace(match.group(0), f'**__{match.group(0)}__**')
-                        repl = r'<a?:\w*:\d*>'
-                        context_list.append(
-                            f"{conf['default_discord_users'][avatar_index]} **{m.author.name}:** {re.sub(repl, ':question:', hl_underline)}")
-                    context_list = reversed(context_list)
-                    embed = discord.Embed(
-                        title=f'A word has been highlighted!',
-                        description='\n'.join(context_list) + f'\n[Jump URL]({message.jump_url})',
-                        color=discord.Color.main)
-                    embed.timestamp = message.created_at
-                    if (
-                            alerted in message.guild.members and alerted.id != message.author.id and message.channel
-                            .permissions_for(message.guild.get_member(alerted.id)).read_messages and not message.author.bot
-                    ):
+                    embed = await build_highlight_embed(match, message)
+                    if hl_send_predicates(alerted, message):
                         if len(self.hl_queue) < 40 and [i[0] for i in self.hl_queue].count(alerted) < 5:
                             self.hl_queue.append((alerted, embed))
+
+    # Provides general command error messages
+    @commands.Cog.listener()
+    async def on_command_error(self, ctx, error):
+        if isinstance(error, (commands.CommandNotFound, commands.NotOwner)):
+            return
+        elif isinstance(error, commands.CommandOnCooldown):
+            return await ctx.message.add_reaction(conf['emoji_suite']['alarm'])
+        await ctx.propagate_to_eh(self.bot, ctx, error)
+
+    @commands.Cog.listener()
+    async def on_command(self, ctx):
+        with suppress(asyncpg.exceptions.UniqueViolationError):
+            await self.bot.conn.execute('INSERT INTO user_data (user_id) VALUES ($1)', ctx.author.id)
 
     @commands.Cog.listener()
     async def on_message_edit(self, before, after):
