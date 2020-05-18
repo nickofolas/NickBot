@@ -65,22 +65,17 @@ async def do_translation(ctx, content, dest='en'):
 
 
 async def get_sub(self, ctx, *, sort, subreddit, safe, amount=5):
-    parameters = {
-        'limit': '100'
-    }
-    if sort not in (
-            'top', 'new', 'rising', 'hot', 'controversial', 'best'):
-        raise errors.SortError(f"'{sort}' is not a valid sort option")
+    parameters = {'limit': '100'}
     if sort == 'top':
         parameters['t'] = 'all'
     async with ctx.typing(), self.bot.session.get(
-            f'https://www.reddit.com/r/{subreddit}/{sort}.json',
+            f'https://www.reddit.com/r/{subreddit.replace("r/", "")}/{sort}.json',
             params=parameters) as r:
         if r.status == 404:
             raise errors.SubredditNotFound(f"'{subreddit}' was not found")
         if r.status == 403:
             raise errors.ApiError(f"Received 403 Forbidden - 'r/{subreddit}' is likely set to private")
-        res = await r.json()  # returns dict
+        res = await r.json()
         listing = [p['data'] for p in res['data']['children']]
         if safe is True:
             listing = list(filter(lambda p: p.get('over_18') is False, listing))
@@ -90,24 +85,15 @@ async def get_sub(self, ctx, *, sort, subreddit, safe, amount=5):
             raise commands.CommandError('No SFW posts found')
         embeds = list()
         for post in posts:
-            if post['selftext']:
-                text = textwrap.shorten(post['selftext'], width=1500)
-            else:
-                text = ''
-            post_delta = time.time() - post['created_utc']
+            text = textwrap.shorten(post['selftext'], width=1500) if post['selftext'] else ''
             embed = discord.Embed(
                 title=textwrap.shorten(post['title'], width=252),
                 description=f"**<:upvote:698744205710852167> {post['ups']} | {post['num_comments']} "
                             f":speech_balloon:**\n {text}",
                 url="https://www.reddit.com" + post['permalink'],
                 color=discord.Color.main)
-            embed.set_image(
-                url=post['url'])
-            embed.set_footer(text=f'r/{post["subreddit"]} | Submitted {humanize.naturaltime(post_delta)}')
-            embed.set_author(
-                name=post['author'],
-                url=f"https://www.reddit.com/user/{post['author']}"
-            )
+            embed.set_image(url=post['url'])
+            embed.set_author(name=post['author'], url=f"https://www.reddit.com/user/{post['author']}")
             embeds.append(embed)
     return embeds
 
