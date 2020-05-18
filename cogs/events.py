@@ -96,38 +96,39 @@ class Events(commands.Cog):
         if not hasattr(self, 'hl_cache'):
             return
         for c in self.hl_cache:
-            if match := re.search(c[1], message.content):
-                if c[2]:
-                    if message.guild.id in c[2]:
+            with suppress(AttributeError, UnboundLocalError):
+                if match := re.search(c[1], message.content):
+                    if c[2]:
+                        if message.guild.id in c[2]:
+                            continue
+                    if re.search(
+                            re.compile(r'([a-zA-Z0-9]{24}\.[a-zA-Z0-9]{6}\.[a-zA-Z0-9_\-]{27}|mfa\.[a-zA-Z0-9_\-]{84})'),
+                            message.content):
                         continue
-                if re.search(
-                        re.compile(r'([a-zA-Z0-9]{24}\.[a-zA-Z0-9]{6}\.[a-zA-Z0-9_\-]{27}|mfa\.[a-zA-Z0-9_\-]{84})'),
-                        message.content):
-                    continue
-                alerted = self.bot.get_user(c[0])
-                if m := discord.utils.get(reversed(self.bot.cached_messages),
-                                          channel=message.channel,
-                                          author=alerted) and (datetime.utcnow() - m.created_at).total_seconds() < 60:
-                    continue
-                context_list = []
-                async for m in message.channel.history(limit=5):
-                    avatar_index = m.author.default_avatar.value
-                    hl_underline = m.content.replace(match.group(0), f'**__{match.group(0)}__**')
-                    repl = r'<a?:\w*:\d*>'
-                    context_list.append(
-                        f"{conf['default_discord_users'][avatar_index]} **{m.author.name}:** {re.sub(repl, ':question:', hl_underline)}")
-                context_list = reversed(context_list)
-                embed = discord.Embed(
-                    title=f'A word has been highlighted!',
-                    description='\n'.join(context_list) + f'\n[Jump URL]({message.jump_url})',
-                    color=discord.Color.main)
-                embed.timestamp = message.created_at
-                if (
-                        alerted in message.guild.members and alerted.id != message.author.id and message.channel
-                        .permissions_for(message.guild.get_member(alerted.id)).read_messages and not message.author.bot
-                ):
-                    if len(self.hl_queue) < 40 and [i[0] for i in self.hl_queue].count(alerted) < 5:
-                        self.hl_queue.append((alerted, embed))
+                    alerted = self.bot.get_user(c[0])
+                    if m := discord.utils.get(reversed(self.bot.cached_messages),
+                                            channel=message.channel,
+                                            author=alerted) and (datetime.utcnow() - m.created_at).total_seconds() < 60:
+                        continue
+                    context_list = []
+                    async for m in message.channel.history(limit=5):
+                        avatar_index = m.author.default_avatar.value
+                        hl_underline = m.content.replace(match.group(0), f'**__{match.group(0)}__**')
+                        repl = r'<a?:\w*:\d*>'
+                        context_list.append(
+                            f"{conf['default_discord_users'][avatar_index]} **{m.author.name}:** {re.sub(repl, ':question:', hl_underline)}")
+                    context_list = reversed(context_list)
+                    embed = discord.Embed(
+                        title=f'A word has been highlighted!',
+                        description='\n'.join(context_list) + f'\n[Jump URL]({message.jump_url})',
+                        color=discord.Color.main)
+                    embed.timestamp = message.created_at
+                    if (
+                            alerted in message.guild.members and alerted.id != message.author.id and message.channel
+                            .permissions_for(message.guild.get_member(alerted.id)).read_messages and not message.author.bot
+                    ):
+                        if len(self.hl_queue) < 40 and [i[0] for i in self.hl_queue].count(alerted) < 5:
+                            self.hl_queue.append((alerted, embed))
 
     @commands.Cog.listener()
     async def on_message_edit(self, before, after):
