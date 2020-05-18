@@ -29,9 +29,9 @@ from utils.checks import check_member_in_guild
 
 def check_hl_regex(highlight_kw):
     check_re = re.compile(fr'{highlight_kw}', re.I)
-    if len(highlight_kw) < 3 or len(highlight_kw) > 100:
+    if len(highlight_kw) < 3:
         raise commands.CommandError(
-            'Highlights must be more than 2 characters long and at most 100 characters long')
+            'Highlights must be more than 2 characters long')
     if '|' in highlight_kw:
         raise commands.CommandError('This trigger uses a blocked character')
     for i in ('afssafasfa', '12421', '\n', ' ', string.ascii_letters, string.digits):
