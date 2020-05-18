@@ -16,6 +16,7 @@ You should have received a copy of the GNU Affero General Public License
 along with neo.  If not, see <https://www.gnu.org/licenses/>.
 """
 import asyncio
+import contextlib
 import copy
 from datetime import datetime
 from typing import List
@@ -94,10 +95,11 @@ class CSMenu(menus.MenuPages):
             msg = await self.bot.wait_for('message', check=lambda m: m.author.id == self._author_id, timeout=10.0)
             ind = int(msg.content)
             await self.show_checked_page(ind - 1)
+            with contextlib.suppress(Exception):
+                await prompt.delete()
+                await msg.delete()
         except asyncio.TimeoutError:
             pass
-        finally:
-            await prompt.delete()
 
     @menus.button(f'{conf["emoji_suite"]["x_button"]}\ufe0f', position=menus.First(1))
     async def stop_pages(self, payload):
