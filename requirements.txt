@@ -1,6 +1,6 @@
 aiohttp
-git+https://github.com/Rapptz/discord.py@master
 humanize
+jishaku
 aiogoogletrans
 tabulate
 fuzzywuzzy
@@ -12,3 +12,6 @@ asyncpg
 PyYAML
 matplotlib
 python-dotenv
+discord-flags
+git+https://github.com/Rapptz/discord.py@master
+git+https://github.com/Rapptz/discord-ext-menus

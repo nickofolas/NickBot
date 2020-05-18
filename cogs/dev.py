@@ -120,15 +120,14 @@ class Dev(commands.Cog):
         await ctx.trigger_typing()
         stdout, stderr = await do_shell(args)
         output = stdout + stderr
-        entries = list(clean_bytes(output))
-        source = ShellMenu(entries, code_lang=hl_lang, per_page=1925)
-        menu = CSMenu(source, delete_message_after=True)
-        await menu.start(ctx)
+        cleaned = clean_bytes(output)
+        pages = paginate(cleaned, 1500)
+        pages = [ctx.codeblock(page, hl_lang) for page in pages]
+        await ctx.quick_menu(pages, 1, delete_message_after=True)
 
     @commands.command(name='eval')
     async def eval_(self, ctx, *, body: CBStripConverter):
         """Runs code that you input to the command"""
-
         env = {
             'bot': self.bot,
             'ctx': ctx,
@@ -141,20 +140,18 @@ class Dev(commands.Cog):
         env.update(globals())
         stdout = io.StringIO()
         to_compile = f'async def func():\n{textwrap.indent(body, "  ")}'
-        paginator = commands.Paginator(prefix='```py', max_size=1500)
         try:
             import_expression.exec(to_compile, env)
         except Exception as e:
-            return await ctx.send(handle_eval_exc(e, ctx))
-
+            handle_eval_exc(e, ctx)
+            return
         evaluated_func = env['func']
-
         try:
             with redirect_stdout(stdout):
                 result = await evaluated_func() or ''
-
         except Exception as e:
-            return await ctx.send(handle_eval_exc(e, ctx))
+            handle_eval_exc(e, ctx)
+            return
         else:
             value = stdout.getvalue() or ''
             with suppress(Exception):
@@ -289,8 +286,8 @@ class Dev(commands.Cog):
         mode_mapping = {'r': self.bot.reload_extension, 'l': self.bot.load_extension, 'u': self.bot.unload_extension}
         if flags.get('pull'):
             await do_shell('git pull')
-        mode = mode_mapping.get(flags.get('mode'))
-        extensions = [*self.bot.extensions.keys()] if flags.get('extension')[0] == '~' else flags.get('extension')
+        mode = mode_mapping.get(flags['mode'])
+        extensions = [*self.bot.extensions.keys()] if flags['extension'][0] == '~' else flags['extension']
         for ext in extensions:
             mode(ext)
         await ctx.message.add_reaction(ctx.tick(True))
