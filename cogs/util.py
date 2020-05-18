@@ -15,6 +15,7 @@ GNU Affero General Public License for more details.
 You should have received a copy of the GNU Affero General Public License
 along with neo.  If not, see <https://www.gnu.org/licenses/>.
 """
+import copy
 import difflib
 import json
 import os
@@ -97,14 +98,14 @@ class Util(commands.Cog):
     async def ping(self, ctx):
         """Gets the bot's response time and latency"""
         start = time.perf_counter()
-        message = await ctx.send("_ _")
+        message = await ctx.send(embed=discord.Embed(
+            description=f':electric_plug: **Websocket** {round(self.bot.latency * 1000, 3)}ms',
+            color=discord.Color.main))
         end = time.perf_counter()
+        em = copy.copy(message.embeds[0])
         duration = (end - start) * 1000
-        embed = discord.Embed(
-            description=f':electric_plug: **Websocket** {round(self.bot.latency * 1000, 3)}ms\n'
-                        f':globe_with_meridians: **API** {duration:.3f}ms',
-            color=discord.Color.main)
-        await message.edit(embed=embed)
+        em.description += f'\n:globe_with_meridians: **API** {duration:.3f}ms'
+        await message.edit(embed=em)
 
     @commands.command(aliases=['inv'])
     async def invite(self, ctx, *, permissions=None):
