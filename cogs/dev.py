@@ -15,13 +15,11 @@ GNU Affero General Public License for more details.
 You should have received a copy of the GNU Affero General Public License
 along with neo.  If not, see <https://www.gnu.org/licenses/>.
 """
-import argparse
 import asyncio
 import copy
 import io
 import os
 import re
-import shlex
 import textwrap
 import time
 import traceback
@@ -34,14 +32,23 @@ from discord.ext import commands, flags
 from tabulate import tabulate
 
 import utils
-from utils.config import conf
 from utils.formatters import return_lang_hl, pluralize
 from utils.paginator import ShellMenu, CSMenu
+from utils.converters import CBStripConverter
 
-
-class Arguments(argparse.ArgumentParser):
-    def error(self, message):
-        raise RuntimeError(message)
+status_dict = {
+    'online': discord.Status.online,
+    'offline': discord.Status.offline,
+    'dnd': discord.Status.dnd,
+    'idle': discord.Status.idle
+}
+type_dict = {
+    'playing': 0,
+    'streaming': 'streaming',
+    'listening': 2,
+    'watching': 3,
+    'none': None
+}
 
 
 async def do_shell(args):
@@ -74,14 +81,9 @@ def clean_bytes(line):
     return re.sub(r'\x1b[^m]*m', '', text).replace("``", "`\u200b`").strip('\n')
 
 
-def cleanup_code(content):
-    """Automatically removes code blocks from the code."""
-    # remove ```py\n```
-    if content.startswith('```') and content.endswith('```'):
-        return '\n'.join(content.split('\n')[1:-1])
-
-    # remove `foo`
-    return content.strip('` \n')
+def handle_eval_exc(exception, ctx):
+    fmtd_exc = ''.join(traceback.format_exception(type(exception), exception, exception.__traceback__))
+    ctx.codeblock(re.sub(r'File ".+",', 'File [...]', fmtd_exc), 'py')
 
 
 # noinspection PyBroadException
@@ -96,7 +98,7 @@ class Dev(commands.Cog):
         return await self.bot.is_owner(ctx.author)
 
     @commands.command(aliases=['sh'])
-    async def shell(self, ctx, *, args):
+    async def shell(self, ctx, *, args: CBStripConverter):
         """Invokes the system shell,
         attempting to run the inputted command"""
         hl_lang = 'sh'
@@ -113,7 +115,7 @@ class Dev(commands.Cog):
         await menu.start(ctx)
 
     @commands.command(name='eval')
-    async def eval_(self, ctx, *, body: str):
+    async def eval_(self, ctx, *, body: CBStripConverter):
         """Runs code that you input to the command"""
 
         env = {
@@ -126,48 +128,32 @@ class Dev(commands.Cog):
             '_': self._last_result
         }
         env.update(globals())
-        body = cleanup_code(body)
         stdout = io.StringIO()
-        sent = None
         to_compile = f'async def func():\n{textwrap.indent(body, "  ")}'
         try:
             import_expression.exec(to_compile, env)
         except Exception as e:
-            return await ctx.safe_send(f'```py\n{e.__class__.__name__}: {e}\n```')
+            return await ctx.send(handle_eval_exc(e, ctx))
+
         evaluated_func = env['func']
+
         try:
             with redirect_stdout(stdout):
                 result = await evaluated_func()
-        except Exception:
-            value = stdout.getvalue()
-            sent = await ctx.safe_send(f'```py\n{value}{traceback.format_exc()}\n```')
+
+        except Exception as e:
+            return await ctx.send(handle_eval_exc(e, ctx))
         else:
             value = stdout.getvalue()
             with suppress(Exception):
                 await ctx.message.add_reaction(ctx.tick(True))
-            if result is None:
-                if value:
-                    sent = await ctx.safe_send(f'{value}')
+            self._last_result = result
+            if isinstance(result, discord.Embed):
+                await ctx.send(embed=result)
+            elif isinstance(result, discord.File):
+                await ctx.send(file=result)
             else:
-                self._last_result = result
-                if isinstance(result, discord.Embed):
-                    sent = await ctx.send(embed=result)
-                elif isinstance(result, discord.File):
-                    sent = await ctx.send(file=result)
-                else:
-                    sent = await ctx.safe_send(f'{value}{result}')
-        if sent:
-            await sent.add_reaction(ctx.tick(False))
-            try:
-                reaction, user = await self.bot.wait_for(
-                    'reaction_add',
-                    check=lambda r, u: r.message.id == sent.id and u.id == ctx.author.id,
-                    timeout=30)
-            except asyncio.TimeoutError:
-                await sent.remove_reaction(ctx.tick(False), ctx.me)
-            else:
-                if str(reaction.emoji) == str(ctx.tick(False)):
-                    await reaction.message.delete()
+                await ctx.safe_send(f'{value}{result}')
 
     @commands.command()
     async def debug(self, ctx, *, command_string):
@@ -191,7 +177,7 @@ class Dev(commands.Cog):
         await ctx.send(f'Cmd `{command_string}` executed in {end - start:.3f}s')
 
     @commands.command()
-    async def sql(self, ctx, *, query: str):
+    async def sql(self, ctx, *, query: CBStripConverter):
         """Run SQL statements"""
         is_multistatement = query.count(';') > 1
         if is_multistatement:
@@ -215,15 +201,6 @@ class Dev(commands.Cog):
         """Some dev commands"""
         await ctx.send("We get it buddy, you're super cool because you can use the dev commands")
 
-    @dev_command_group.command(name='logs')
-    async def view_journal_ctl(self, ctx):
-        stdout, stderr = await do_shell('journalctl -u neo -n 300 --no-pager -o cat')
-        output = stdout + stderr
-        entries = list(clean_bytes(output))
-        source = ShellMenu(entries, code_lang='sh', per_page=1925)
-        menu = CSMenu(source, delete_message_after=True)
-        await menu.start(ctx)
-
     @dev_command_group.command(name='delete', aliases=['del'])
     async def delete_bot_msg(self, ctx, message_ids: commands.Greedy[int]):
         for m_id in message_ids:
@@ -240,19 +217,6 @@ class Dev(commands.Cog):
     @flags.command(name='edit')
     async def args_edit(self, ctx, **flags):
         """Edit the bot"""
-        status_dict = {
-            'online': discord.Status.online,
-            'offline': discord.Status.offline,
-            'dnd': discord.Status.dnd,
-            'idle': discord.Status.idle
-        }
-        type_dict = {
-            'playing': 0,
-            'streaming': 'streaming',
-            'listening': 2,
-            'watching': 3,
-            'none': None
-        }
         if pres := flags.get('presence'):
             if type_dict.get(pres[0]) is None:
                 await self.bot.change_presence(status=ctx.me.status)
@@ -269,6 +233,7 @@ class Dev(commands.Cog):
             await ctx.me.edit(nick=nick if nick != 'None' else None)
         if stat := flags.get('status'):
             await self.bot.change_presence(status=status_dict[stat.lower()], activity=ctx.me.activity)
+        await ctx.message.add_reaction(ctx.tick(True))
 
     @commands.group(invoke_without_command=True)
     async def sudo(self, ctx, target: Union[discord.Member, discord.User, None], *, command):

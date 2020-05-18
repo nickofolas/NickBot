@@ -54,3 +54,8 @@ class BetterUserConverter(commands.Converter):
                 raise commands.CommandError("Invalid user provided")
         http_dict = await ctx.bot.http.get_user(out.id)
         return BetterUser(obj=out, http_dict=http_dict)
+
+
+class CBStripConverter(commands.Converter):
+    async def convert(self, ctx, argument) -> str:
+        return argument.strip('`')

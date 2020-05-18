@@ -37,11 +37,20 @@ class CSMenu(menus.MenuPages):
         for b in ['⏮️', '◀️', '⏹️', '▶️', '⏭️']:
             super().remove_button(b)
 
+    def should_add_reactions(self):
+        return True
+
     def _skip_double_triangle_buttons(self):
         max_pages = self._source.get_max_pages()
         if max_pages is None:
             return True
         return max_pages <= 2
+
+    def _skip_single_arrows(self):
+        max_pages = self._source.get_max_pages()
+        if max_pages is None:
+            return True
+        return max_pages == 1
 
     async def _get_kwargs_from_page(self, page):
         value = await discord.utils.maybe_coroutine(self._source.format_page, self, page)
@@ -60,12 +69,12 @@ class CSMenu(menus.MenuPages):
         """go to the first page"""
         await self.show_page(0)
 
-    @menus.button(f'{conf["emoji_suite"]["menu_left"]}\ufe0f', position=menus.First(1))
+    @menus.button(f'{conf["emoji_suite"]["menu_left"]}\ufe0f', position=menus.First(1), skip_if=_skip_single_arrows)
     async def go_to_previous_page(self, payload):
         """go to the previous page"""
         await self.show_checked_page(self.current_page - 1)
 
-    @menus.button(f'{conf["emoji_suite"]["menu_right"]}\ufe0f', position=menus.Last(0))
+    @menus.button(f'{conf["emoji_suite"]["menu_right"]}\ufe0f', position=menus.Last(), skip_if=_skip_single_arrows)
     async def go_to_next_page(self, payload):
         """go to the next page"""
         await self.show_checked_page(self.current_page + 1)
