@@ -96,20 +96,13 @@ class Util(commands.Cog):
     @commands.cooldown(1, 15, commands.BucketType.user)
     async def ping(self, ctx):
         """Gets the bot's response time and latency"""
-        typing_start = time.perf_counter()
-        await ctx.trigger_typing()
-        typing_end = time.perf_counter()
         start = time.perf_counter()
         message = await ctx.send("_ _")
         end = time.perf_counter()
         duration = (end - start) * 1000
-        typing_duration = (typing_end - typing_start) * 1000
         embed = discord.Embed(
-            title=' ',
-            description=':ping_pong: Pong!\n'
-                        f' Actual response time: {duration:.3f}ms\n'
-                        f' Websocket Latency: {round(self.bot.latency * 1000, 3)}ms\n'
-                        f' Typing latency: {typing_duration:.3f}ms',
+            description=f':electric_plug: **Websocket** {round(self.bot.latency * 1000, 3)}ms\n'
+                        f':globe_with_meridians: **API** {duration:.3f}ms',
             color=discord.Color.main)
         await message.edit(embed=embed)
 
