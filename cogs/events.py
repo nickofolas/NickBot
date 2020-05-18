@@ -120,17 +120,17 @@ class Events(commands.Cog):
                 if match := re.search(c[1], message.content):  # Makes sure there's actually a match
                     if not hl_checks_one(c, message):
                         continue
-                alerted = self.bot.get_user(c[0])
-                if m := discord.utils.get(reversed(self.bot.cached_messages),  # Checks the interaction cooldown
-                                          channel=message.channel,
-                                          author=alerted) and (
-                                datetime.utcnow() - m.created_at).total_seconds() < 60:
-                    continue
-                embed = await build_highlight_embed(match, message)  # Builds the embed that'll be delivered
-                if hl_send_predicates(alerted, message):  # Checks that the predicates for sending are satisfied
-                    if len(self.hl_queue) < 40 and [i[0] for i in self.hl_queue].count(alerted) < 5:
-                        # Applies a final set of predicates to make sure that the queue's size is adequate
-                        self.hl_queue.append((alerted, embed))  # Adds the highlight to the queue
+                    alerted = self.bot.get_user(c[0])
+                    if m := discord.utils.get(reversed(self.bot.cached_messages),  # Checks the interaction cooldown
+                                              channel=message.channel,
+                                              author=alerted) and (
+                                    datetime.utcnow() - m.created_at).total_seconds() < 60:
+                        continue
+                    embed = await build_highlight_embed(match, message)  # Builds the embed that'll be delivered
+                    if hl_send_predicates(alerted, message):  # Checks that the predicates for sending are satisfied
+                        if len(self.hl_queue) < 40 and [i[0] for i in self.hl_queue].count(alerted) < 5:
+                            # Applies a final set of predicates to make sure that the queue's size is adequate
+                            self.hl_queue.append((alerted, embed))  # Adds the highlight to the queue
 
     @commands.Cog.listener()
     async def on_command_error(self, ctx, error):
