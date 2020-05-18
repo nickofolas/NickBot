@@ -144,16 +144,11 @@ class Dev(commands.Cog):
         except Exception as e:
             return await ctx.send(handle_eval_exc(e, ctx))
         else:
-            value = stdout.getvalue()
+            value = stdout.getvalue() or ''
             with suppress(Exception):
                 await ctx.message.add_reaction(ctx.tick(True))
             self._last_result = result
-            if isinstance(result, discord.Embed):
-                await ctx.send(embed=result)
-            elif isinstance(result, discord.File):
-                await ctx.send(file=result)
-            else:
-                await ctx.safe_send(f'{value}{result}')
+            await ctx.send(f'{value}{result}')
 
     @commands.command()
     async def debug(self, ctx, *, command_string):

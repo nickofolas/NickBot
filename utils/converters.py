@@ -58,4 +58,8 @@ class BetterUserConverter(commands.Converter):
 
 class CBStripConverter(commands.Converter):
     async def convert(self, ctx, argument) -> str:
-        return argument.strip('`')
+        if argument.startswith('```') and argument.endswith('```'):
+            return '\n'.join(argument.split('\n')[1:-1])
+
+            # remove `foo`
+        return argument.strip('` \n')
