@@ -80,7 +80,7 @@ def clean_bytes(line):
     return re.sub(r'\x1b[^m]*m', '', text).replace("``", "`\u200b`").strip('\n')
 
 
-def paginate(iterable, page_len=50):
+def _group(iterable, page_len=50):
     pages = []
     while iterable:
         pages.append(iterable[:page_len])
@@ -91,7 +91,7 @@ def paginate(iterable, page_len=50):
 def handle_eval_exc(exception, ctx):
     fmtd_exc = ''.join(traceback.format_exception(type(exception), exception, exception.__traceback__))
     formatted = ''.join(re.sub(r'File ".+",', 'File [omitted]', fmtd_exc))
-    pages = paginate(formatted, 1500)
+    pages = _group(formatted, 1500)
     pages = [ctx.codeblock(page, 'py') for page in pages]
     ctx.bot.loop.create_task(ctx.quick_menu(pages, 1, delete_message_after=True))
 
@@ -120,7 +120,7 @@ class Dev(commands.Cog):
         stdout, stderr = await do_shell(args)
         output = stdout + stderr
         cleaned = clean_bytes(output)
-        pages = paginate(cleaned, 1500)
+        pages = _group(cleaned, 1500)
         pages = [ctx.codeblock(page, hl_lang) for page in pages]
         await ctx.quick_menu(pages, 1, delete_message_after=True)
 
@@ -158,7 +158,7 @@ class Dev(commands.Cog):
             self._last_result = result
             to_return = f'{value}{result}'
         if to_return:
-            pages = paginate(to_return, 1500)
+            pages = _group(to_return, 1500)
             pages = [ctx.codeblock(page, 'py') for page in pages]
             await ctx.quick_menu(pages, 1, delete_message_after=True)
 

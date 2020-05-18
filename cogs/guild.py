@@ -178,7 +178,7 @@ class Guild(commands.Cog):
     @commands.command()
     @has_permissions(ban_members=True)
     async def ban(self, ctx, member: Union[discord.Member, int], *, reason=None):
-        """Issue a permanent ban - optional reason"""
+        """Issue a ban, can use the ID of a member outside the guild to hackban them"""
         to_ban = discord.Object(id=member) if isinstance(member, int) else member
         user_obj = await self.bot.fetch_user(member) if isinstance(member, int) else member
         await ctx.guild.ban(to_ban, reason=f'{ctx.author} ({ctx.author.id}) - {reason}')
