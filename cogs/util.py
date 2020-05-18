@@ -86,7 +86,7 @@ class Util(commands.Cog):
             if not before.content or not after.content:
                 continue
             diff = difflib.unified_diff(f'{before.content}\n'.splitlines(keepends=True),
-                                 f'{after.content}\n'.splitlines(keepends=True))
+                                        f'{after.content}\n'.splitlines(keepends=True))
             tup = ('```diff\n' + ''.join(diff) + '```', after, when)
             entries.append(tup)
         source = paginator.SnipeMenu(entries)
@@ -101,8 +101,8 @@ class Util(commands.Cog):
         message = await ctx.send(embed=discord.Embed(
             description=f':electric_plug: **Websocket** {round(self.bot.latency * 1000, 3)}ms',
             color=discord.Color.main))
-        end = time.perf_counter()
         em = copy.copy(message.embeds[0])
+        end = time.perf_counter()
         duration = (end - start) * 1000
         em.description += f'\n:globe_with_meridians: **API** {duration:.3f}ms'
         await message.edit(embed=em)
@@ -241,7 +241,8 @@ class Util(commands.Cog):
         await answr_prompt.delete()
         if msg.content.lower() == 'abort':
             return await ctx.send('Strawpoll creation cancelled')
-        data = {"poll": {"title": question, "answers": msg.content.split(','), "has_deadline": True, "deadline": zulu_deadline, "mip": True}}
+        data = {"poll": {"title": question, "answers": msg.content.split(','), "has_deadline": True,
+                         "deadline": zulu_deadline, "mip": True}}
         async with self.bot.session.post('https://strawpoll.com/api/poll', data=json.dumps(data)) as resp:
             js = await resp.json()
         await ctx.send(f"Here's your poll: <https://strawpoll.com/{js.get('content_id')}>")

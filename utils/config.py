@@ -17,7 +17,18 @@ along with neo.  If not, see <https://www.gnu.org/licenses/>.
 """
 import yaml
 
+
+class DictConverter(object):
+    def __init__(self, d):
+        for a, b in d.items():
+            if isinstance(b, (list, tuple)):
+                setattr(self, a, [DictConverter(x) if isinstance(x, dict) else x for x in b])
+            else:
+                setattr(self, a, DictConverter(b) if isinstance(b, dict) else b)
+
+
 with open('utils/config.yml', 'r') as config:
     con = yaml.safe_load(config)
 
 conf = dict(con)
+CONFIG = DictConverter(conf)

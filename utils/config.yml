@@ -9,6 +9,7 @@ emoji_suite:
   'neutral_button': '<:unicode_neutral:710365227354685520>'
   'alarm': '<:balarm_cl:710365167996764201>'
   'search': '<:search:710376307342704652>'
+  'loading': '<a:loading:681628799376293912>'
 license: |
   neo Discord bot
   Copyright (C) 2020 nickofolas

@@ -15,6 +15,7 @@ GNU Affero General Public License for more details.
 You should have received a copy of the GNU Affero General Public License
 along with neo.  If not, see <https://www.gnu.org/licenses/>.
 """
+import contextlib
 import re
 from contextlib import suppress
 import asyncio
@@ -23,7 +24,9 @@ from discord.ext import commands
 import discord
 
 import utils.paginator as pages
-from utils.config import conf
+from utils.config import CONFIG
+
+_EMOJIS = CONFIG.emoji_suite
 
 
 class Context(commands.Context):
@@ -33,8 +36,8 @@ class Context(commands.Context):
 
     async def prompt(self, message):
         emojis = {
-            conf['emoji_suite']['check_button']: True,
-            conf['emoji_suite']['x_button']: False}
+            _EMOJIS.check_button: True,
+            _EMOJIS.x_button: False}
         msg = await self.send(message)
         for e in emojis.keys():
             await msg.add_reaction(e)
@@ -69,11 +72,11 @@ class Context(commands.Context):
 
     def tick(self, opt, label=None):
         lookup = {
-            True: conf['emoji_suite']['check_button'],
-            False: conf['emoji_suite']['x_button'],
-            None: conf['emoji_suite']['neutral_button'],
+            True: _EMOJIS.check_button,
+            False: _EMOJIS.x_button,
+            None: _EMOJIS.neutral_button,
         }
-        emoji = lookup.get(opt, conf['emoji_suite']['x_button'])
+        emoji = lookup.get(opt, _EMOJIS.x_button)
         if label is not None:
             return f'{emoji}: {label}'
         return emoji
@@ -93,10 +96,20 @@ class Context(commands.Context):
         menu = pages.CSMenu(source, **kwargs)
         await menu.start(self)
 
+    @contextlib.asynccontextmanager
+    async def loading(self):
+        clear_reacts = self.message.remove_reaction(_EMOJIS.loading, self.me)
+        try:
+            yield await self.message.add_reaction(_EMOJIS.loading)
+        except Exception as e:
+            await asyncio.gather(clear_reacts, self.propagate_to_eh(self.bot, self, e))
+        else:
+            await clear_reacts
+
     @staticmethod
     async def propagate_to_eh(bot, ctx, error):
         with suppress(Exception):
-            await ctx.message.add_reaction(conf['emoji_suite']['warning_button'])
+            await ctx.message.add_reaction(_EMOJIS.warning_button)
             try:
                 reaction, user = await bot.wait_for(
                     'reaction_add',
@@ -104,9 +117,9 @@ class Context(commands.Context):
                     and u.id in [ctx.author.id, 680835476034551925], timeout=30.0
                 )
             except asyncio.TimeoutError:
-                await ctx.message.remove_reaction(conf['emoji_suite']['warning_button'], ctx.me)
+                await ctx.message.remove_reaction(_EMOJIS.warning_button, ctx.me)
                 return
-            if str(reaction.emoji) == conf['emoji_suite']['warning_button']:
+            if str(reaction.emoji) == _EMOJIS.warning_button:
                 return await ctx.send(error)
 
     class ExHandler:
@@ -131,6 +144,7 @@ class Context(commands.Context):
             async with ctx.ExHandler(propagate=(bot, ctx)) as out:
                 await bot.get_command('lock').can_run(ctx)
         """
+        __slots__ = ('exception_type', 'propagate', 'message', 'res', 'ex_type', 'should_prop', 'bot', 'ctx')
 
         def __init__(
                 self, *, exception_type=None,
