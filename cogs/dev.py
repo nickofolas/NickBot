@@ -335,12 +335,12 @@ class Dev(commands.Cog):
         parser = Arguments(add_help=False, allow_abbrev=False)
         parser.add_argument('-m', '--mode', choices=['r', 'l', 'u'])
         parser.add_argument('-p', '--pull', action='store_true')
-        parser.add_argument('extension', nargs='*', default='*')
+        parser.add_argument('extension', nargs='*', default='~')
         args = parser.parse_args(shlex.split(args))
         if args.pull:
             await do_shell('git pull')
         mode = mode_mapping.get(args.mode) if args.mode else self.bot.reload_extension
-        extensions = [*self.bot.extensions.keys()] if args.extension == '*' else args.extension
+        extensions = [*self.bot.extensions.keys()] if args.extension == '~' else args.extension
         for ext in extensions:
             mode(ext)
         await ctx.message.add_reaction(ctx.tick(True))

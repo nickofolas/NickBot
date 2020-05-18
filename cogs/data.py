@@ -150,20 +150,6 @@ class Data(commands.Cog):
                                         ctx.author.id, fetched[num - 1])
         await ctx.message.add_reaction(ctx.tick(True))
 
-    @highlight.command(name='test')
-    @commands.cooldown(1, 5, commands.BucketType.user)
-    async def test_highlight(self, ctx, *, message):
-        """Test your highlights by simulating a message event
-        Pass a message that contains a highlights, and the
-        bot will simulate someone else sending that message, so you
-        can see what your highlight looks like in action."""
-        copied_message = copy.copy(ctx.message)
-        copied_message.content = message
-        filtered_members = [m for m in ctx.guild.members if m != ctx.author and not m.bot]
-        copied_message.author = random.choice(filtered_members)
-        self.bot.dispatch('message', copied_message)
-        await ctx.message.add_reaction(ctx.tick(True))
-
     @highlight.command(name='clear', aliases=['yeetall'])
     async def clear_highlights(self, ctx):
         """

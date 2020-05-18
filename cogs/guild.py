@@ -37,8 +37,6 @@ ereg = re.compile(
     r'(<a?:\w*:\d*>)|([\U00002600-\U000027BF])|([\U0001f300-\U0001f64F])|([\U0001f680-\U0001f6FF])'
 )
 
-units = {"s": 1, "m": 60, "h": 3600, "d": 86400, "w": 604800}
-
 
 async def do_removal(ctx,
                      limit,
@@ -124,33 +122,25 @@ class Guild(commands.Cog):
         except Exception as e:
             await ctx.send(str(e))
             return
-
         predicates = []
         if args.bot:
             predicates.append(args.bot)
-
         if args.embeds:
             predicates.append(args.embeds)
-
         if args.files:
             predicates.append(args.files)
-
         if args.reactions:
             predicates.append(args.reactions)
-
         if args.emoji:
             custom_emoji = re.compile(
                 r'(<a?:\w*:\d*>)|([\U00002600-\U000027BF])|([\U0001f300-\U0001f64F])|([\U0001f680-\U0001f6FF])'
             )
             predicates.append(lambda m: custom_emoji.search(m.content))
-
         if args.regex:
             custom_regex = re.compile(args.regex)
             predicates.append(lambda m, x=custom_regex: x.search(m.content))
-
         if args.code:
             predicates.append(lambda m: '```' in m.content)
-
         if args.user:
             users = []
             converter = commands.MemberConverter()
@@ -161,21 +151,16 @@ class Guild(commands.Cog):
                 except Exception as e:
                     await ctx.send(str(e))
                     return
-
             predicates.append(lambda m: m.author in users)
-
         if args.contains:
             predicates.append(
                 lambda m: any(sub in m.content for sub in args.contains))
-
         if args.starts:
             predicates.append(
                 lambda m: any(m.content.startswith(s) for s in args.starts))
-
         if args.ends:
             predicates.append(
                 lambda m: any(m.content.endswith(s) for s in args.ends))
-
         op = all if not args._or else any
 
         def predicate(m):
@@ -183,7 +168,6 @@ class Guild(commands.Cog):
             if args._not:
                 return not r
             return r
-
         args.search = max(0, min(2000, args.search))  # clamp from 0-2000
         if not args.nohide:
             await ctx.message.delete()
