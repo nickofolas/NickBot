@@ -20,12 +20,10 @@ import itertools
 import os
 import sys
 import textwrap
-from datetime import datetime
 from contextlib import suppress
 
 import discord
 import humanize
-import import_expression
 import psutil
 from discord.ext import commands
 
@@ -50,8 +48,7 @@ def retrieve_checks(command):
 class EmbeddedHelpCommand(commands.HelpCommand):
     def __init__(self):
         super().__init__(command_attrs={
-            'help': 'Shows help for the bot, a category, or a command.',
-            'cooldown': commands.Cooldown(1, 2.5, commands.BucketType.user)
+            'help': 'Shows help for the bot, a category, or a command.'
         })
 
     def get_command_signature(self, command):

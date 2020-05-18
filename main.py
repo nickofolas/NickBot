@@ -30,6 +30,7 @@ import async_cleverbot as ac
 import asyncpg
 
 import utils.context
+from utils.config import build, DictConverter
 
 load_dotenv()
 
@@ -74,6 +75,7 @@ class NeoBot(commands.Bot):
         self.persistent_status = False
         self.loop.create_task(self.ainit())
         self._cd = commands.CooldownMapping.from_cooldown(1.0, 2.5, commands.BucketType.user)
+        self.build_config()
         self.add_check(self.global_cooldown)
 
         for filename in os.listdir('./cogs'):
@@ -84,6 +86,10 @@ class NeoBot(commands.Bot):
             # self.load_extension('jishaku')
         TOKEN = os.getenv("TOKEN")
         self.run(TOKEN)
+
+    def build_config(self):
+        # noinspection PyAttributeOutsideInit
+        self.CONFIG = DictConverter(dict(build()))
 
     async def ainit(self):
         cn = {"user": os.getenv('DBUSER'), "password": os.getenv('DBPASS'), "database": os.getenv('DB'),

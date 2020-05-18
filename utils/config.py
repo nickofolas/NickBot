@@ -27,8 +27,10 @@ class DictConverter(object):
                 setattr(self, a, DictConverter(b) if isinstance(b, dict) else b)
 
 
-with open('utils/config.yml', 'r') as config:
-    con = yaml.safe_load(config)
+def build():
+    with open('utils/config.yml') as config:
+        return yaml.safe_load(config)
 
-conf = dict(con)
+
+conf = dict(build())
 CONFIG = DictConverter(conf)
