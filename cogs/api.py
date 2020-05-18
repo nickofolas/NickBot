@@ -117,26 +117,19 @@ class Api(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @commands.command()
-    async def rand(self, ctx, sort, subreddit):
-        """Get a random post from a sort on a subreddit"""
-        embeds = await get_sub(self, ctx, sort=sort, subreddit=subreddit, safe=not ctx.channel.nsfw)
-        source = PagedEmbedMenu(embeds)
-        menu = CSMenu(source, delete_message_after=True)
-        await menu.start(ctx)
-
     @flags.add_flag('sub', nargs='?')
     @flags.add_flag('-s', '--sort', choices=['top', 'new', 'rising', 'hot', 'controversial', 'best'], default='hot')
     @flags.add_flag('-a', '--amount', type=int, default=5)
-    @flags.command(name='reddit')
+    @flags.command(name='redditposts', aliases=['rposts'])
     async def _flags_reddit(self, ctx, **flags):
+        """Get posts from a subreddit"""
         embeds = await get_sub(self, ctx, sort=flags['sort'], subreddit=flags['sub'], amount=flags['amount'], safe=not ctx.channel.nsfw)
         source = PagedEmbedMenu(embeds)
         menu = CSMenu(source, delete_message_after=True)
         await menu.start(ctx)
 
-    @commands.command(aliases=['sub'])
-    async def subreddit(self, ctx, *, subreddit):
+    @commands.command(aliases=['subinfo'])
+    async def subredditinfo(self, ctx, *, subreddit):
         """Get some quick info on the named subreddit"""
         async with self.bot.session.get(f'https://reddit.com/r/{subreddit}/about/.json') as resp:
             if resp.status == 404:
