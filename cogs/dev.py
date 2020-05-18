@@ -30,7 +30,7 @@ from typing import Union
 
 import discord
 import import_expression
-from discord.ext import commands
+from discord.ext import commands, flags
 from tabulate import tabulate
 
 import utils
@@ -322,25 +322,20 @@ class Dev(commands.Cog):
             url = (await response.json())['snapshot']
             await ctx.send(embed=discord.Embed(colour=discord.Color.main).set_image(url=url))
 
-    @commands.command(name='extensions', aliases=['ext'])
-    async def _dev_extensions(self, ctx, *, args=None):
+    @flags.add_flag('-m', '--mode', choices=['r', 'l', 'u'])
+    @flags.add_flag('-p', '--pull', action='store_true')
+    @flags.add_flag('extension', nargs='*', default='~')
+    @flags.command(name='extensions', aliases=['ext'])
+    async def _dev_extensions(self, ctx, **flags):
         """
         View or manage extensions
         r, l, u are valid flag options
         """
         mode_mapping = {'r': self.bot.reload_extension, 'l': self.bot.load_extension, 'u': self.bot.unload_extension}
-        if args is None:
-            return await ctx.send(embed=discord.Embed(
-                description='\n'.join([*self.bot.extensions.keys()]), color=discord.Color.main))
-        parser = Arguments(add_help=False, allow_abbrev=False)
-        parser.add_argument('-m', '--mode', choices=['r', 'l', 'u'])
-        parser.add_argument('-p', '--pull', action='store_true')
-        parser.add_argument('extension', nargs='*', default='~')
-        args = parser.parse_args(shlex.split(args))
-        if args.pull:
+        if flags.get('pull'):
             await do_shell('git pull')
-        mode = mode_mapping.get(args.mode) if args.mode else self.bot.reload_extension
-        extensions = [*self.bot.extensions.keys()] if args.extension[0] == '~' else args.extension
+        mode = mode_mapping.get(flags.get('mode')) if flags.get('mode') else self.bot.reload_extension
+        extensions = [*self.bot.extensions.keys()] if flags.get('extension')[0] == '~' else flags.get('extension')
         for ext in extensions:
             mode(ext)
         await ctx.message.add_reaction(ctx.tick(True))
