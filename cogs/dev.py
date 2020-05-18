@@ -234,9 +234,9 @@ class Dev(commands.Cog):
             await m.delete()
         await ctx.message.add_reaction(ctx.tick(True))
 
-    @flags.add_flag('-s', '--status', nargs='?', const='online', dest='status')
+    @flags.add_flag('-s', '--status', default='online', choices=['online', 'offline', 'dnd', 'idle'])
     @flags.add_flag('-p', '--presence', nargs='+', dest='presence')
-    @flags.add_flag('-n', '--nick', nargs='?', const='None', dest='nick')
+    @flags.add_flag('-n', '--nick', nargs='?', const='None')
     @flags.command(name='edit')
     async def args_edit(self, ctx, **flags):
         """Edit the bot"""
@@ -304,7 +304,7 @@ class Dev(commands.Cog):
             url = (await response.json())['snapshot']
             await ctx.send(embed=discord.Embed(colour=discord.Color.main).set_image(url=url))
 
-    @flags.add_flag('-m', '--mode', choices=['r', 'l', 'u'])
+    @flags.add_flag('-m', '--mode', choices=['r', 'l', 'u'], default='r')
     @flags.add_flag('-p', '--pull', action='store_true')
     @flags.add_flag('extension', nargs='*')
     @flags.command(name='extensions', aliases=['ext'])
@@ -313,7 +313,7 @@ class Dev(commands.Cog):
         mode_mapping = {'r': self.bot.reload_extension, 'l': self.bot.load_extension, 'u': self.bot.unload_extension}
         if flags.get('pull'):
             await do_shell('git pull')
-        mode = mode_mapping.get(flags.get('mode')) if flags.get('mode') else self.bot.reload_extension
+        mode = mode_mapping.get(flags.get('mode'))
         extensions = [*self.bot.extensions.keys()] if flags.get('extension')[0] == '~' else flags.get('extension')
         for ext in extensions:
             mode(ext)
