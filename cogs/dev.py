@@ -234,15 +234,12 @@ class Dev(commands.Cog):
             await m.delete()
         await ctx.message.add_reaction(ctx.tick(True))
 
-    @commands.command(name='edit')
-    async def args_edit(self, ctx, *, args: str):
-        """
-        Edit the bot's aspects using a command-line syntax.
-        Available arguments:
-            -p --presence: edits the bot's presence (playing, listening, streaming, watching, none)
-            -n --nick: edits the bot's nickname for the current guild
-            -s --status: edits the bot's status (dnd, idle, online, offline)
-        """
+    @flags.add_flag('-s', '--status', nargs='?', const='online', dest='status')
+    @flags.add_flag('-p', '--presence', nargs='+', dest='presence')
+    @flags.add_flag('-n', '--nick', nargs='?', const='None', dest='nick')
+    @flags.command(name='edit')
+    async def args_edit(self, ctx, **flags):
+        """Edit the bot"""
         status_dict = {
             'online': discord.Status.online,
             'offline': discord.Status.offline,
@@ -256,37 +253,22 @@ class Dev(commands.Cog):
             'watching': 3,
             'none': None
         }
-        updated_list = []
-        parser = Arguments(add_help=False, allow_abbrev=False)
-        parser.add_argument('-s', '--status', nargs='?', const='online', dest='status')
-        parser.add_argument('-p', '--presence', nargs='+', dest='presence')
-        parser.add_argument('-n', '--nick', nargs='?', const='None', dest='nick')
-        args = parser.parse_args(shlex.split(args))
-        if args.presence:
-            if type_dict.get(args.presence[0]) is None:
+        if pres := flags.get('presence'):
+            if type_dict.get(pres[0]) is None:
                 await self.bot.change_presence(status=ctx.me.status)
-            elif type_dict.get(args.presence[0]) == 'streaming':
-                args.presence.pop(0)
+            elif type_dict.get(pres[0]) == 'streaming':
+                pres.pop(0)
                 await self.bot.change_presence(activity=discord.Streaming(
-                    name=' '.join(args.presence), url='https://www.twitch.tv/#'))
+                    name=' '.join(pres), url='https://www.twitch.tv/#'))
             else:
                 await self.bot.change_presence(
                     status=ctx.me.status,
                     activity=discord.Activity(
-                        type=type_dict[args.presence.pop(0)], name=' '.join(args.presence)))
-            updated_list.append(
-                f'Changed presence to {ctx.me.activity.name if ctx.me.activity is not None else "None"}')
-        if args.nick:
-            await ctx.me.edit(nick=args.nick if args.nick != 'None' else None)
-            updated_list.append(f'Changed nickname to {args.nick}')
-        if args.status:
-            await self.bot.change_presence(status=status_dict[args.status.lower()], activity=ctx.me.activity)
-            updated_list.append(f'Changed status to {conf["emoji_dict"][args.status.lower()]}')
-        await ctx.send(
-            embed=discord.Embed(
-                title='Edited bot', description='\n'.join(updated_list), color=discord.Color.main),
-            delete_after=7.5
-        )
+                        type=type_dict[pres.pop(0)], name=' '.join(pres)))
+        if nick := flags.get('nick'):
+            await ctx.me.edit(nick=nick if nick != 'None' else None)
+        if stat := flags.get('status'):
+            await self.bot.change_presence(status=status_dict[stat.lower()], activity=ctx.me.activity)
 
     @commands.group(invoke_without_command=True)
     async def sudo(self, ctx, target: Union[discord.Member, discord.User, None], *, command):
@@ -324,13 +306,10 @@ class Dev(commands.Cog):
 
     @flags.add_flag('-m', '--mode', choices=['r', 'l', 'u'])
     @flags.add_flag('-p', '--pull', action='store_true')
-    @flags.add_flag('extension', nargs='*', default='~')
+    @flags.add_flag('extension', nargs='*')
     @flags.command(name='extensions', aliases=['ext'])
     async def _dev_extensions(self, ctx, **flags):
-        """
-        View or manage extensions
-        r, l, u are valid flag options
-        """
+        """Manage extensions"""
         mode_mapping = {'r': self.bot.reload_extension, 'l': self.bot.load_extension, 'u': self.bot.unload_extension}
         if flags.get('pull'):
             await do_shell('git pull')
