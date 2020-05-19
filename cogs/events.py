@@ -123,9 +123,9 @@ class Events(commands.Cog):
                     alerted = self.bot.get_user(c[0])
                     if m := discord.utils.get(reversed(self.bot.cached_messages),  # Checks the interaction cooldown
                                               channel=message.channel,
-                                              author=alerted) and (
-                                    datetime.utcnow() - m.created_at).total_seconds() < 60:
-                        continue
+                                              author=alerted):
+                        if (datetime.utcnow() - m.created_at).total_seconds() < 60:
+                            continue
                     embed = await build_highlight_embed(match, message)  # Builds the embed that'll be delivered
                     if hl_send_predicates(alerted, message):  # Checks that the predicates for sending are satisfied
                         if len(self.hl_queue) < 40 and [i[0] for i in self.hl_queue].count(alerted) < 5:

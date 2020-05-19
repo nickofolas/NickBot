@@ -53,7 +53,8 @@ class Context(commands.Context):
 
     async def safe_send(self, content=None, **kwargs):
         if content:
-            if match := re.search(re.compile(r'([a-zA-Z0-9]{24}\.[a-zA-Z0-9]{6}\.[a-zA-Z0-9_\-]{27}|mfa\.[a-zA-Z0-9_\-]{84})'), content):
+            if match := re.search(re.compile(r'([a-zA-Z0-9]{24}\.[a-zA-Z0-9]{6}\.[a-zA-Z0-9_\-]{27}|mfa\.['
+                                             r'a-zA-Z0-9_\-]{84})'), content):
                 content = content.replace(match.group(0), '[token omitted]')
             if len(content) > 2000:
                 async with self.bot.session.post(
@@ -61,9 +62,7 @@ class Context(commands.Context):
                         data=content.encode('utf-8')) as post:
                     post = await post.json()
                     url = f"https://mystb.in/{post['key']}"
-                    await self.send(
-                        f'Output: <{url}>'
-                    )
+                    await self.send(f'Output: <{url}>')
             else:
                 return await self.send(content, **kwargs)
         else:
