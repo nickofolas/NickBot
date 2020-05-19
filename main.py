@@ -16,6 +16,7 @@ You should have received a copy of the GNU Affero General Public License
 along with neo.  If not, see <https://www.gnu.org/licenses/>.
 """
 import os
+import textwrap
 import warnings
 from datetime import datetime
 from asyncio import all_tasks
@@ -106,12 +107,12 @@ class NeoBot(commands.Bot):
         user = self.get_user(680835476034551925)
         embed = discord.Embed(
             title='Bot is now running',
-            description=f"""
-**Name** {self.user}
-**ID** {self.user.id}
-**Guilds** {len(self.guilds)}
-**Users** {len(self.users)}
-            """,
+            description=textwrap.dedent(f"""
+            **Name** {self.user}
+            **ID** {self.user.id}
+            **Guilds** {len(self.guilds)}
+            **Users** {len(self.users)}
+            """),
             colour=discord.Color.main).set_thumbnail(url=self.user.avatar_url_as(static_format='png'))
         embed.timestamp = datetime.utcnow()
         await user.send(embed=embed)

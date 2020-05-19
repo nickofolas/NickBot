@@ -180,7 +180,7 @@ class Info(commands.Cog):
             embed.add_field(name='User Bio', value=bio[:1024], inline=False)
         await ctx.send(embed=embed)
 
-    @userinfo.command()
+    @userinfo.command()  # TODO: Remove this?
     async def bio(self, ctx, *, message=None):
         """Set or remove your user bio (appears in userinfo card)
         Pass no arguments to remove your current user bio"""
@@ -213,7 +213,7 @@ class Info(commands.Cog):
         await ctx.send(embed=embed)
 
     @userinfo.command(aliases=['spot'])
-    @commands.guild_only()
+    @commands.guild_only()  # TODO: Clean this up?
     async def spotify(self, ctx, target: discord.Member = None):
         """Get info about someone's Spotify status, if they have one"""
         target = target or ctx.author
@@ -304,7 +304,7 @@ class Info(commands.Cog):
                     filename='test.png'))
 
     @serverinfo.command()
-    @commands.guild_only()
+    @commands.guild_only()  # TODO: Make this not suck
     async def channels(self, ctx, guild: int = None):
         guild = self.bot.get_guild(guild) or ctx.guild
         final = list()

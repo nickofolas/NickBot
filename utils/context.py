@@ -26,17 +26,17 @@ import discord
 import utils.paginator as pages
 from utils.config import CONFIG
 
+_EMOJIS = CONFIG.emoji_suite
 
 class Context(commands.Context):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self._EMOJIS = CONFIG.emoji_suite
 
     async def prompt(self, message):
         emojis = {
-            self._EMOJIS.check_button: True,
-            self._EMOJIS.x_button: False}
+            _EMOJIS.check_button: True,
+            _EMOJIS.x_button: False}
         msg = await self.send(message)
         for e in emojis.keys():
             await msg.add_reaction(e)
@@ -71,11 +71,11 @@ class Context(commands.Context):
 
     def tick(self, opt, label=None):
         lookup = {
-            True: self._EMOJIS.check_button,
-            False: self._EMOJIS.x_button,
-            None: self._EMOJIS.neutral_button,
+            True: _EMOJIS.check_button,
+            False: _EMOJIS.x_button,
+            None: _EMOJIS.neutral_button,
         }
-        emoji = lookup.get(opt, self._EMOJIS.x_button)
+        emoji = lookup.get(opt, _EMOJIS.x_button)
         if label is not None:
             return f'{emoji}: {label}'
         return emoji
@@ -97,10 +97,10 @@ class Context(commands.Context):
 
     @contextlib.asynccontextmanager
     async def loading(self, *, prop=True, tick=True):
-        clear_reacts = self.message.remove_reaction(self._EMOJIS.loading, self.me)
+        clear_reacts = self.message.remove_reaction(_EMOJIS.loading, self.me)
         tasks = [clear_reacts]
         try:
-            yield await self.message.add_reaction(self._EMOJIS.loading)
+            yield await self.message.add_reaction(_EMOJIS.loading)
         except Exception as e:
             tasks.append(self.propagate_to_eh(self.bot, self, e)) if prop else None
             await asyncio.gather(*tasks)
@@ -111,7 +111,7 @@ class Context(commands.Context):
     @staticmethod
     async def propagate_to_eh(bot, ctx, error):
         with suppress(Exception):
-            await ctx.message.add_reaction(bot._EMOJIS.warning_button)
+            await ctx.message.add_reaction(_EMOJIS.warning_button)
             try:
                 reaction, user = await bot.wait_for(
                     'reaction_add',
@@ -119,9 +119,9 @@ class Context(commands.Context):
                     and u.id in [ctx.author.id, 680835476034551925], timeout=30.0
                 )
             except asyncio.TimeoutError:
-                await ctx.message.remove_reaction(bot._EMOJIS.warning_button, ctx.me)
+                await ctx.message.remove_reaction(_EMOJIS.warning_button, ctx.me)
                 return
-            if str(reaction.emoji) == bot._EMOJIS.warning_button:
+            if str(reaction.emoji) == _EMOJIS.warning_button:
                 return await ctx.send(error)
 
     class ExHandler:

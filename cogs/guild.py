@@ -81,7 +81,7 @@ class Guild(commands.Cog):
             await ctx.message.delete()
             await ctx.channel.purge(limit=amount)
 
-    @clear.command(aliases=['-c', 'cu', 'adv'])
+    @clear.command(aliases=['-c', 'cu', 'adv'])  # TODO: Flags parse this?
     @has_permissions(manage_messages=True)
     async def custom(self, ctx, *, args: str):
         """

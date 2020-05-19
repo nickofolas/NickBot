@@ -16,6 +16,7 @@ You should have received a copy of the GNU Affero General Public License
 along with neo.  If not, see <https://www.gnu.org/licenses/>.
 """
 import copy
+import datetime
 import difflib
 import json
 import os
@@ -25,16 +26,11 @@ import time
 import unicodedata
 from inspect import Parameter
 from typing import Union, Optional
-import datetime
-import contextlib
 
 import discord
-import typing
-import unidecode as ud
 from discord.ext import commands
 
 from utils import paginator
-from utils.formatters import pluralize
 
 
 def zulu_time(dt: datetime.datetime):
@@ -48,6 +44,7 @@ class Util(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
+    # TODO: Move snipes into PagedEmbedMenu (or whatever it's called)
     @commands.group(invoke_without_command=True)
     async def snipe(self, ctx, target_channel: Union[discord.TextChannel, int] = None):
         """Retrieve the most recently deleted item from a channel
@@ -94,16 +91,15 @@ class Util(commands.Cog):
         await menu.start(ctx)
 
     @commands.command()
-    @commands.cooldown(1, 15, commands.BucketType.user)
     async def ping(self, ctx):
         """Gets the bot's response time and latency"""
         start = time.perf_counter()
         message = await ctx.send(embed=discord.Embed(
             description=f':electric_plug: **Websocket** {round(self.bot.latency * 1000, 3)}ms',
             color=discord.Color.main))
-        em = copy.copy(message.embeds[0])
         end = time.perf_counter()
         duration = (end - start) * 1000
+        em = copy.copy(message.embeds[0])
         em.description += f'\n:globe_with_meridians: **API** {duration:.3f}ms'
         await message.edit(embed=em)
 
@@ -147,28 +143,6 @@ class Util(commands.Cog):
         embed.set_footer(text=f"Showing avatar for: {target}")
         await ctx.send(embed=embed)
 
-    @commands.command()
-    async def playing(self, ctx, *, game):
-        """Get the number of people playing a game in the server"""
-        total_playing = sum(game in [a.name for a in m.activities] for m in ctx.guild.members)
-        await ctx.send(embed=discord.Embed(
-            title='',
-            description=(
-                f'{total_playing} {pluralize("member", total_playing)} are playing {game}'
-            ),
-            color=discord.Color.main))
-
-    @commands.command()
-    async def statuslist(self, ctx):
-        """Sends all statuses neatly arranged"""
-        mem = '\n'.join(sorted(
-            [
-                f'{ud.unidecode(m.display_name):<40}' + str(m.activity.name)
-                for m in ctx.guild.members if m.activity
-            ]
-        ))
-        await ctx.safe_send('```\n' + mem + '\n```')
-
     @commands.command(aliases=['charinfo'])
     async def unichar(self, ctx, *, characters: str):
         """Get information about inputted unicode characters"""
@@ -194,10 +168,13 @@ class Util(commands.Cog):
         image = image or await ctx.message.attachments[0].read()
         headers = {'Authorization': f"Client-ID {os.getenv('IMGUR_ID')}"}
         data = {'image': image}
-        async with ctx.loading(), self.bot.session.post('https://api.imgur.com/3/image', headers=headers,
-                                                       data=data) as resp:
-            re = await resp.json()
-            await ctx.send('<' + re['data'].get('link') + '>')
+        async with ctx.loading(), self.bot.session.post('https://api.imgur.com/3/image',
+                                                        headers=headers, data=data) as resp:
+            res = await resp.json()
+            if link := res['data'].get('link'):
+                await ctx.send('<' + link + '>')
+            else:
+                raise commands.CommandError('There was a problem uploading that!')
 
     @commands.command(name='shorten')
     async def shorten(self, ctx, *, link):
@@ -206,7 +183,8 @@ class Util(commands.Cog):
                                            headers={'Content-type': 'application/json',
                                                     'apikey': os.getenv('REBRANDLY_KEY')},
                                            data=json.dumps({'destination': link}))
-        await ctx.send(f'Shortened URL: <https://{(await resp.json())["shortUrl"]}>')
+        if url := (await resp.json())["shortUrl"]:
+            await ctx.send(f'Shortened URL: <https://{url}>')
 
     @commands.command()
     async def raw(self, ctx, message_id: str = None):

@@ -30,7 +30,6 @@ from discord.ext import commands
 import utils
 from utils.config import conf
 
-
 checked_perms = ['is_owner', 'guild_only', 'dm_only', 'is_nsfw']
 checked_perms.extend([p[0] for p in discord.Permissions()])
 
@@ -66,6 +65,7 @@ class EmbeddedHelpCommand(commands.HelpCommand):
     async def send_bot_help(self, mapping):
         def key(c):
             return c.cog_name or '\u200bUncategorized'
+
         bot = self.context.bot
         embed = discord.Embed(title=f'{bot.user.name} Help', color=discord.Color.main)
         description = f'Use `{self.clean_prefix}help <command/category>` for more help\n\n'
@@ -161,7 +161,7 @@ class Meta(commands.Cog):
                 **Memory % **{mem}
                 {ascii_bar}
             """)
-            )
+        )
         com_url = self.last_commit_cache['html_url']
         com_id_brief = self.last_commit_cache["sha"][:7]
         links_val = f'[Invite URL]({invite_url})'
