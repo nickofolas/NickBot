@@ -50,6 +50,8 @@ def gen(guild, status_type):
 
 
 def from_tz(str_time):
+    if str_time is None:
+        return None
     return datetime.strptime(str_time, "%Y-%m-%dT%H:%M:%SZ")
 
 
