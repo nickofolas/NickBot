@@ -23,7 +23,8 @@ import re
 import textwrap
 import time
 import traceback
-from contextlib import redirect_stdout, suppress
+from contextlib import redirect_stdout
+from collections import namedtuple
 from typing import Union
 
 import discord
@@ -49,6 +50,8 @@ type_dict = {
     'none': None
 }
 
+ShellOut = namedtuple('ShellOut', 'stdout stderr')
+
 
 async def do_shell(args):
     shell = os.getenv("SHELL") or "/bin/bash"
@@ -57,7 +60,7 @@ async def do_shell(args):
         stdout=asyncio.subprocess.PIPE,
         stderr=asyncio.subprocess.PIPE)
     stdout, stderr = await process.communicate()
-    return stdout, stderr
+    return ShellOut(stdout, stderr)
 
 
 async def copy_ctx(
@@ -88,12 +91,17 @@ def _group(iterable, page_len=50):
     return pages
 
 
-def handle_eval_exc(exception, ctx):
-    fmtd_exc = ''.join(traceback.format_exception(type(exception), exception, exception.__traceback__))
-    formatted = ''.join(re.sub(r'File ".+",', 'File [omitted]', fmtd_exc))
-    pages = _group(formatted, 1500)
-    pages = [ctx.codeblock(page, 'py') for page in pages]
-    ctx.bot.loop.create_task(ctx.quick_menu(pages, 1, delete_message_after=True, timeout=300))
+class HandleTb(Exception):
+    def __init__(self, ctx, error):
+        self.ctx = ctx
+        self.error = error
+        ctx.bot.loop.create_task(ctx.quick_menu(self.format_exception(), 1, delete_message_after=True, timeout=300))
+
+    def format_exception(self):
+        fmtd_exc = ''.join(traceback.format_exception(type(self.error), self.error, self.error.__traceback__))
+        formatted = ''.join(re.sub(r'File ".+",', 'File [omitted]', fmtd_exc))
+        pages = _group(formatted, 1500)
+        return [self.ctx.codeblock(page, 'py') for page in pages]
 
 
 # noinspection PyBroadException
@@ -118,8 +126,7 @@ class Dev(commands.Cog):
             hl_lang = 'diff'
         async with ctx.loading(tick=False):
             stdout, stderr = await do_shell(args)
-            stderr = textwrap.indent(clean_bytes(stderr), '[stderr] ')
-            output = clean_bytes(stdout) + stderr
+            output = clean_bytes(stdout) + textwrap.indent(clean_bytes(stderr), '[stderr] ')
             pages = _group(output, 1500)
             pages = [ctx.codeblock(page, hl_lang) for page in pages]
         await ctx.quick_menu(pages, 1, delete_message_after=True, timeout=300)
@@ -142,16 +149,14 @@ class Dev(commands.Cog):
         try:
             import_expression.exec(to_compile, env)
         except Exception as e:
-            handle_eval_exc(e, ctx)
-            return
+            raise HandleTb(ctx, e)
         evaluated_func = env['func']
         async with ctx.loading():
             try:
                 with redirect_stdout(stdout):
                     result = await evaluated_func() or ''
             except Exception as e:
-                handle_eval_exc(e, ctx)
-                return
+                raise HandleTb(ctx, e)
             else:
                 value = stdout.getvalue() or ''
                 self._last_result = result
