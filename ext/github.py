@@ -16,9 +16,11 @@ You should have received a copy of the GNU Affero General Public License
 along with neo.  If not, see <https://www.gnu.org/licenses/>.
 """
 import textwrap
+from datetime import datetime
 
 import discord
 from discord.ext import commands
+from humanize import naturaltime as nt
 
 from utils.formatters import prettify_text
 
@@ -28,7 +30,6 @@ class GHUser:
         self.data = data
         self.name = data.get('login')
         self.url = data.get('html_url')
-        self.created = data.get('created_at')
         self.bio = data.get('bio')
         self.av_url = data.get('avatar_url', 'https://i.imgur.com/OTc2e9R.png')
         self.location = data.get('location')
@@ -41,6 +42,13 @@ class GHUser:
          ('public_repos', 'public_gists', 'followers', 'following')]
         return points
 
+    @property
+    def created(self):
+        str_time = self.data.get('created_at')
+        return datetime.strptime(str_time, "%Y-%m-%dT%H:%M:%SZ")
+
+
+# noinspection PyMethodParameters,PyUnresolvedReferences
 class Github(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
@@ -54,9 +62,10 @@ class Github(commands.Cog):
             json = await resp.json()
         user = GHUser(json)
         embed = discord.Embed(title=f'{user.name} ({user.user_id})',
-                            description=textwrap.fill(user.bio, width=40), url=user.url, color=discord.Color.main) \
+                              description=textwrap.fill(user.bio, width=40), url=user.url, color=discord.Color.main) \
             .set_thumbnail(url=user.av_url)
         embed.add_field(name='Info', value='\n'.join(f"**{prettify_text(k)}** {v}" for k, v in user.refol.items()))
+        embed.set_footer(text=f'Created {nt(datetime.utcnow() - user.created)}')
         await ctx.send(embed=embed)
 
 
