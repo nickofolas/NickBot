@@ -174,3 +174,9 @@ class Context(commands.Context):
             else:
                 self.res = True
             return True
+
+
+def setup(bot):
+    async def get_context(message, *, cls=Context):
+        return await super().get_context(message, cls=cls)
+    bot.get_context = get_context

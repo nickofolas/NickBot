@@ -115,13 +115,8 @@ class Dev(commands.Cog):
     async def cog_check(self, ctx):
         return await self.bot.is_owner(ctx.author)
 
-    @commands.group(name='dev', invoke_without_command=True)
-    async def dev(self, ctx):
-        """Some dev commands"""
-        await ctx.send("We get it buddy, you're super cool because you can use the dev commands")
-
-    @dev.command(aliases=['sh'])
-    async def dev_shell(self, ctx, *, args: CBStripConverter):
+    @commands.command(aliases=['sh'])
+    async def shell(self, ctx, *, args: CBStripConverter):
         """Invokes the system shell,
         attempting to run the inputted command"""
         hl_lang = 'sh'
@@ -136,7 +131,7 @@ class Dev(commands.Cog):
             pages = [ctx.codeblock(page, hl_lang) for page in pages]
         await ctx.quick_menu(pages, 1, delete_message_after=True, timeout=300)
 
-    @dev.command(name='eval', aliases=['e'])
+    @commands.command(name='eval')
     async def eval_(self, ctx, *, body: CBStripConverter):
         """Runs code that you input to the command"""
         env = {
@@ -172,7 +167,7 @@ class Dev(commands.Cog):
             pages = [ctx.codeblock(page, 'py') for page in pages]
             await ctx.quick_menu(pages, 1, delete_message_after=True, timeout=300)
 
-    @dev.command()
+    @commands.command()
     async def debug(self, ctx, *, command_string):
         """Runs a command, checking for errors and returning exec time"""
         start = time.perf_counter()
@@ -193,7 +188,7 @@ class Dev(commands.Cog):
         end = time.perf_counter()
         await ctx.send(f'Cmd `{command_string}` executed in {end - start:.3f}s')
 
-    @dev.command()
+    @commands.command()
     async def sql(self, ctx, *, query: CBStripConverter):
         """Run SQL statements"""
         is_multistatement = query.count(';') > 1
@@ -213,7 +208,12 @@ class Dev(commands.Cog):
         table = tabulate(list(list(r.values()) for r in results), headers=headers, tablefmt='pretty')
         await ctx.safe_send(f'```\n{table}```\nReturned {rows} {pluralize("row", rows)} in {dt:.2f}ms')
 
-    @dev.command(name='delete', aliases=['del'])
+    @commands.group(name='dev', invoke_without_command=True)
+    async def dev_command_group(self, ctx):
+        """Some dev commands"""
+        await ctx.send("We get it buddy, you're super cool because you can use the dev commands")
+
+    @dev_command_group.command(name='delete', aliases=['del'])
     async def delete_bot_msg(self, ctx, message_ids: commands.Greedy[int]):
         for m_id in message_ids:
             converter = commands.MessageConverter()
@@ -223,7 +223,7 @@ class Dev(commands.Cog):
             await m.delete()
         await ctx.message.add_reaction(ctx.tick(True))
 
-    @dev.command(name='source', aliases=['src'])
+    @dev_command_group.command(name='source', aliases=['src'])
     async def _dev_src(self, ctx, *, obj):
         new_ctx = await copy_ctx(ctx, f'eval return inspect!.getsource({obj})')
         await new_ctx.reinvoke()
@@ -231,7 +231,7 @@ class Dev(commands.Cog):
     @flags.add_flag('-s', '--status', default='online', choices=['online', 'offline', 'dnd', 'idle'])
     @flags.add_flag('-p', '--presence', nargs='+', dest='presence')
     @flags.add_flag('-n', '--nick', nargs='?', const='None')
-    @dev.command(cls=flags.FlagCommand, name='edit')
+    @flags.command(name='edit')
     async def args_edit(self, ctx, **flags):
         """Edit the bot"""
         if pres := flags.get('presence'):
@@ -252,7 +252,7 @@ class Dev(commands.Cog):
             await self.bot.change_presence(status=status_dict[stat.lower()], activity=ctx.me.activity)
         await ctx.message.add_reaction(ctx.tick(True))
 
-    @dev.group(invoke_without_command=True)
+    @commands.group(invoke_without_command=True)
     async def sudo(self, ctx, target: Union[discord.Member, discord.User, None], *, command):
         """Run command as another user"""
         if not isinstance(target, (discord.Member, discord.User)):
@@ -271,14 +271,14 @@ class Dev(commands.Cog):
             ctx, command, channel=channel)
         await self.bot.invoke(new_ctx)
 
-    @dev.command(aliases=['die', 'kys'])
+    @commands.command(aliases=['die', 'kys'])
     async def reboot(self, ctx):
         """Kills all of the bot's processes"""
         response = await ctx.prompt('Are you sure you want to reboot?')
         if response:
             await self.bot.close()
 
-    @dev.command(name='screenshot', aliases=['ss'])
+    @commands.command(name='screenshot', aliases=['ss'])
     async def _website_screenshot(self, ctx, *, site):
         """Take a screenshot of a site"""
         async with ctx.loading(tick=False):
@@ -289,7 +289,7 @@ class Dev(commands.Cog):
     @flags.add_flag('-m', '--mode', choices=['r', 'l', 'u'], default='r')
     @flags.add_flag('-p', '--pull', action='store_true')
     @flags.add_flag('extension', nargs='*')
-    @dev.command(cls=flags.FlagCommand, name='extensions', aliases=['ext'])
+    @flags.command(name='extensions', aliases=['ext'])
     async def _dev_extensions(self, ctx, **flags):
         """Manage extensions"""
         async with ctx.loading():
