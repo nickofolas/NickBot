@@ -55,7 +55,6 @@ class GHRepo:
         self.created = from_tz(data.get('created_at'))
         self.last_push = from_tz(data.get('pushed_at'))
         self.gazers = data.get('stargazers_count')
-        self.watchers = data.get('watchers_count')
         self.license_id = self.license()
         self.forks = data.get('forks')
         self.language = data.get('language')
@@ -80,30 +79,32 @@ class Github(commands.Cog):
             json = await resp.json()
         user = GHUser(json)
         embed = discord.Embed(title=f'{user.name} ({user.user_id})',
-                              description=textwrap.fill(user.bio, width=40), url=user.url, color=discord.Color.main) \
+                              description=textwrap.fill(user.bio, width=40) if user.bio else None, url=user.url, color=discord.Color.main) \
             .set_thumbnail(url=user.av_url)
         embed.add_field(name='Info', value='\n'.join(f"**{prettify_text(k)}** {v}" for k, v in user.refol.items()))
         embed.set_footer(text=f'Created {nt(datetime.utcnow() - user.created)}')
         await ctx.send(embed=embed)
 
     @commands.command(name='repo')
-    async def git_repo(ctx, user_org, *, repo_name):
-        async with ctx.bot.session.get(f'https://api.github.com/repos/{user_org}/{repo_name}') as resp:
+    async def git_repo(ctx, *, repo_path):
+        async with ctx.bot.session.get(f'https://api.github.com/repos/{repo_path}') as resp:
             json = await resp.json()
         repo = GHRepo(json)
         embed = discord.Embed(title=f'{repo.name} ({repo.repo_id})',
-                              description=textwrap.fill(repo.description, width=40),
-                              color=discord.Color.main, url=repo.url)
+                              description=textwrap.fill(repo.description, width=40) if repo.description else None,
+                              color=discord.Color.main, url=repo.url).set_thumbnail(url=repo.owner.av_url)
         fone_txt = str()
         fone_txt += f'**Owner** {repo.owner.name}\n'
         fone_txt += f'**Language** {repo.language}\n'
         fone_txt += f'**Forks** {repo.forks}\n'
         ftwo_txt = str()
-        ftwo_txt += f':scales: {repo.license_id}'
-        ftwo_txt += f':telescope: {repo.watchers}\n'
+        ftwo_txt += f':scales: {repo.license_id}\n'
         ftwo_txt += f':star: {repo.gazers}\n'
         embed.add_field(name='Info', value=fone_txt)
         embed.add_field(name='_ _', value=ftwo_txt)
+        push_delta = (datetime.utcnow() - repo.last_push)
+        create_delta = (datetime.utcnow() - repo.created)
+        embed.set_footer(text=f'Created {nt(create_delta)} | Last push {nt(push_delta)}')
         await ctx.send(embed=embed)
 
 
