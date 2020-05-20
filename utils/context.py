@@ -28,6 +28,7 @@ from utils.config import CONFIG
 
 _EMOJIS = CONFIG.emoji_suite
 
+
 class Context(commands.Context):
 
     def __init__(self, **kwargs):

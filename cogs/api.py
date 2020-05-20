@@ -24,7 +24,6 @@ import time
 from collections import namedtuple
 from typing import List
 
-import aiohttp
 import async_cse as cse
 import discord
 import humanize
@@ -242,43 +241,6 @@ class Api(commands.Cog):
         await self.bot.conn.execute("UPDATE user_data SET default_reddit=$1 WHERE user_id=$2",
                                     reddit_user, ctx.author.id)
         await ctx.message.add_reaction(ctx.tick(True))
-
-    @commands.command()
-    async def covid(self, ctx, *, country='global'):
-        """
-        Get the latest stats on COVID-19 for a country or the world
-        """
-        url = 'https://coronavirus-19-api.herokuapp.com/'
-        if country == 'global':
-            url += 'all'
-        else:
-            url += f'countries/{country}'
-        async with self.bot.session.get(url) as resp:
-            try:
-                js = await resp.json()
-            except aiohttp.ContentTypeError:
-                raise errors.CountryNotFound(f"Country '{country}' not found.")
-        embed = discord.Embed(color=discord.Color.main).set_author(name=f'{country.title()} COVID-19')
-        embed.add_field(
-            name='Cases',
-            value=textwrap.dedent(f"""
-            **Total Cases: **{js['cases']:,}
-            **Total deaths: **{js['deaths']:,}
-            **Recovered Cases: **{js['recovered']:,}
-            """)
-        )
-        if country != 'global':
-            embed.add_field(
-                name='More Stats',
-                value=textwrap.dedent(f"""
-                **Critical Cases: **{js['critical']:,}
-                **Total Tests: **{js['totalTests']:,}
-                **Tests/mil: **{js['testsPerOneMillion']:,}
-                **Cases/mil: **{js['casesPerOneMillion']:,}
-                **Deaths/mil: **{js['deathsPerOneMillion']:,}
-                """)
-            )
-        await ctx.send(embed=embed)
 
     @commands.command()
     @commands.cooldown(1, 5, commands.BucketType.channel)
