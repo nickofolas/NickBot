@@ -23,6 +23,7 @@ from discord.ext import commands
 from humanize import naturaltime as nt
 
 from utils.formatters import prettify_text, from_tz
+from utils.errors import ApiError
 
 
 class GHUser:
@@ -75,7 +76,9 @@ class Github(commands.Cog):
 
     @commands.command(name='user')
     async def git_user(ctx, *, name):
-        async with ctx.bot.session.get(f'https://api.github.com/users/{name}') as resp:
+        async with ctx.loading(tick=False), ctx.bot.session.get(f'https://api.github.com/users/{name}') as resp:
+            if resp.status == 404:
+                raise ApiError('Received 404 - Invalid user')
             json = await resp.json()
         user = GHUser(json)
         embed = discord.Embed(title=f'{user.name} ({user.user_id})',
@@ -87,7 +90,9 @@ class Github(commands.Cog):
 
     @commands.command(name='repo')
     async def git_repo(ctx, *, repo_path):
-        async with ctx.bot.session.get(f'https://api.github.com/repos/{repo_path}') as resp:
+        async with ctx.loading(tick=False), ctx.bot.session.get(f'https://api.github.com/repos/{repo_path}') as resp:
+            if resp.status == 404:
+                raise ApiError('Received 404 - Invalid repo')
             json = await resp.json()
         repo = GHRepo(json)
         embed = discord.Embed(title=f'{repo.name} ({repo.repo_id})',
