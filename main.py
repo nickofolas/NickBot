@@ -31,6 +31,7 @@ import async_cleverbot as ac
 import asyncpg
 
 import utils.context
+from utils.config import conf
 
 load_dotenv()
 
@@ -77,12 +78,9 @@ class NeoBot(commands.Bot):
         self._cd = commands.CooldownMapping.from_cooldown(1.0, 2.5, commands.BucketType.user)
         self.add_check(self.global_cooldown)
 
-        for filename in os.listdir('./cogs'):
-            if filename.endswith('.py'):
-                self.load_extension(
-                    f'cogs.{filename[:-3]}')  # Load all cogs upon starting up
-                self.all_cogs.append(filename[:-3].title())
-            # self.load_extension('jishaku')
+        for ext in conf.get('exts'):
+            self.load_extension(ext)
+
         TOKEN = os.getenv("TOKEN")
         self.run(TOKEN)
 

@@ -1,3 +1,15 @@
+exts:
+  - 'ext.api'
+  - 'ext.data'
+  - 'ext.dev'
+  - 'ext.docs'
+  - 'ext.events'
+  - 'ext.fun'
+  - 'ext.guild'
+  - 'ext.info'
+  - 'ext.meta'
+  - 'ext.util'
+  - 'ext.github'
 emoji_suite:
   'x_button': '<:x_:710365179929559060>'
   'check_button': '<:c_:710365173755543552>'
