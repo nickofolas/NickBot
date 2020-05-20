@@ -95,13 +95,14 @@ class Context(commands.Context):
         await menu.start(self)
 
     @contextlib.asynccontextmanager
-    async def loading(self, *, prop=True, tick=True):
+    async def loading(self, *, prop=True, tick=True, exc_ignore=None):
         clear_reacts = self.message.remove_reaction(_EMOJIS.loading, self.me)
         tasks = [clear_reacts]
         try:
             yield await self.message.add_reaction(_EMOJIS.loading)
         except Exception as e:
-            tasks.append(self.propagate_to_eh(self.bot, self, e)) if prop else None
+            if not isinstance(e, exc_ignore):
+                tasks.append(self.propagate_to_eh(self.bot, self, e)) if prop else None
             await asyncio.gather(*tasks)
         else:
             tasks.append(self.message.add_reaction(self.tick(True))) if tick else None

@@ -64,14 +64,14 @@ async def do_shell(args):
 
 
 async def copy_ctx(
-        self, ctx, command_string, *,
+        ctx, command_string, *,
         channel: discord.TextChannel = None,
         author: Union[discord.Member, discord.User] = None):
     msg = copy.copy(ctx.message)
     msg.channel = channel or ctx.channel
     msg.author = author or ctx.author
     msg.content = ctx.prefix + command_string
-    new_ctx = await self.bot.get_context(msg, cls=utils.context.Context)
+    new_ctx = await ctx.bot.get_context(msg, cls=utils.context.Context)
     return new_ctx
 
 
@@ -145,13 +145,14 @@ class Dev(commands.Cog):
         }
         env.update(globals())
         stdout = io.StringIO()
+        to_return = None
         to_compile = f'async def func():\n{textwrap.indent(body, "  ")}'
         try:
             import_expression.exec(to_compile, env)
         except Exception as e:
             raise HandleTb(ctx, e)
         evaluated_func = env['func']
-        async with ctx.loading():
+        async with ctx.loading(exc_ignore=HandleTb):
             try:
                 with redirect_stdout(stdout):
                     result = await evaluated_func() or ''
@@ -170,7 +171,7 @@ class Dev(commands.Cog):
     async def debug(self, ctx, *, command_string):
         """Runs a command, checking for errors and returning exec time"""
         start = time.perf_counter()
-        new_ctx = await copy_ctx(self, ctx, command_string)
+        new_ctx = await copy_ctx(ctx, command_string)
         stdout = io.StringIO()
         try:
             with redirect_stdout(stdout):
@@ -222,6 +223,11 @@ class Dev(commands.Cog):
             await m.delete()
         await ctx.message.add_reaction(ctx.tick(True))
 
+    @dev_command_group.command(name='source', aliases=['src'])
+    async def _dev_src(self, ctx, *, obj):
+        new_ctx = await copy_ctx(ctx, f'eval return inspect!.getsource({obj})')
+        await new_ctx.reinvoke()
+
     @flags.add_flag('-s', '--status', default='online', choices=['online', 'offline', 'dnd', 'idle'])
     @flags.add_flag('-p', '--presence', nargs='+', dest='presence')
     @flags.add_flag('-n', '--nick', nargs='?', const='None')
@@ -250,7 +256,7 @@ class Dev(commands.Cog):
     async def sudo(self, ctx, target: Union[discord.Member, discord.User, None], *, command):
         """Run command as another user"""
         if not isinstance(target, (discord.Member, discord.User)):
-            new_ctx = await copy_ctx(self, ctx, command, author=ctx.author)
+            new_ctx = await copy_ctx(ctx, command, author=ctx.author)
             await new_ctx.reinvoke()
             return
         new_ctx = await copy_ctx(self, ctx, command, author=target)
@@ -262,7 +268,7 @@ class Dev(commands.Cog):
             channel: discord.TextChannel,
             *, command):
         new_ctx = await copy_ctx(
-            self, ctx, command, channel=channel)
+            ctx, command, channel=channel)
         await self.bot.invoke(new_ctx)
 
     @commands.command(aliases=['die', 'kys'])
