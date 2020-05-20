@@ -22,7 +22,7 @@ import discord
 from discord.ext import commands
 from humanize import naturaltime as nt
 
-from utils.formatters import prettify_text
+from utils.formatters import prettify_text, from_tz
 
 
 class GHUser:
@@ -34,6 +34,7 @@ class GHUser:
         self.av_url = data.get('avatar_url', 'https://i.imgur.com/OTc2e9R.png')
         self.location = data.get('location')
         self.user_id = data.get('id')
+        self.created = from_tz(data.get('created_at'))
 
     @property
     def refol(self):
@@ -42,10 +43,27 @@ class GHUser:
          ('public_repos', 'public_gists', 'followers', 'following')]
         return points
 
-    @property
-    def created(self):
-        str_time = self.data.get('created_at')
-        return datetime.strptime(str_time, "%Y-%m-%dT%H:%M:%SZ")
+
+class GHRepo:
+    def __init__(self, data):
+        self.data = data
+        self.name = data.get('name')
+        self.repo_id = data.get('id')
+        self.owner = GHUser(data.get('owner'))
+        self.url = data.get('html_url')
+        self.description = data.get('description')
+        self.created = from_tz(data.get('created_at'))
+        self.last_push = from_tz(data.get('pushed_at'))
+        self.gazers = data.get('stargazers_count')
+        self.watchers = data.get('watchers_count')
+        self.license_id = self.license()
+        self.forks = data.get('forks')
+        self.language = data.get('language')
+
+    def license(self):
+        if lic := self.data.get('license'):
+            return lic.get('spdx_id')
+        return None
 
 
 # noinspection PyMethodParameters,PyUnresolvedReferences
@@ -66,6 +84,26 @@ class Github(commands.Cog):
             .set_thumbnail(url=user.av_url)
         embed.add_field(name='Info', value='\n'.join(f"**{prettify_text(k)}** {v}" for k, v in user.refol.items()))
         embed.set_footer(text=f'Created {nt(datetime.utcnow() - user.created)}')
+        await ctx.send(embed=embed)
+
+    @commands.command(name='repo')
+    async def git_repo(ctx, user_org, *, repo_name):
+        async with ctx.bot.session.get(f'https://api.github.com/repos/{user_org}/{repo_name}') as resp:
+            json = await resp.json()
+        repo = GHRepo(json)
+        embed = discord.Embed(title=f'{repo.name} ({repo.repo_id})',
+                              description=textwrap.fill(repo.description, width=40),
+                              color=discord.Color.main, url=repo.url)
+        fone_txt = str()
+        fone_txt += f'**Owner** {repo.owner.name}\n'
+        fone_txt += f'**Language** {repo.language}\n'
+        fone_txt += f'**Forks** {repo.forks}\n'
+        ftwo_txt = str()
+        ftwo_txt += f':scales: {repo.license_id}'
+        ftwo_txt += f':telescope: {repo.watchers}\n'
+        ftwo_txt += f':star: {repo.gazers}\n'
+        embed.add_field(name='Info', value=fone_txt)
+        embed.add_field(name='_ _', value=ftwo_txt)
         await ctx.send(embed=embed)
 
 

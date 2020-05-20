@@ -16,6 +16,7 @@ You should have received a copy of the GNU Affero General Public License
 along with neo.  If not, see <https://www.gnu.org/licenses/>.
 """
 import io
+from datetime import datetime
 
 import matplotlib.pyplot as plt
 
@@ -46,6 +47,10 @@ def prettify_text(content):
 
 def gen(guild, status_type):
     return len([m for m in guild.members if str(m.status) == status_type])
+
+
+def from_tz(str_time):
+    return datetime.strptime(str_time, "%Y-%m-%dT%H:%M:%SZ")
 
 
 class StatusChart:
