@@ -29,7 +29,7 @@ from utils.errors import ApiError
 class GHUser:
     def __init__(self, data):
         self.data = data
-        self.name = data.get('login')
+        self.login = data.get('login')
         self.url = data.get('html_url')
         self.bio = data.get('bio')
         self.av_url = data.get('avatar_url', 'https://i.imgur.com/OTc2e9R.png')
@@ -49,6 +49,7 @@ class GHRepo:
     def __init__(self, data):
         self.data = data
         self.name = data.get('name')
+        self.full_name = data.get('full_name')
         self.repo_id = data.get('id')
         self.owner = GHUser(data.get('owner'))
         self.url = data.get('html_url')
@@ -76,12 +77,13 @@ class Github(commands.Cog):
 
     @commands.command(name='user')
     async def git_user(ctx, *, name):
+        """Fetch data on a github user"""
         async with ctx.loading(tick=False), ctx.bot.session.get(f'https://api.github.com/users/{name}') as resp:
             if resp.status == 404:
                 raise ApiError('Received 404 - Invalid user')
             json = await resp.json()
         user = GHUser(json)
-        embed = discord.Embed(title=f'{user.name} ({user.user_id})',
+        embed = discord.Embed(title=f'{user.login} ({user.user_id})',
                               description=textwrap.fill(user.bio, width=40) if user.bio else None, url=user.url, color=discord.Color.main) \
             .set_thumbnail(url=user.av_url)
         embed.add_field(name='Info', value='\n'.join(f"**{prettify_text(k)}** {v}" for k, v in user.refol.items()))
@@ -90,12 +92,13 @@ class Github(commands.Cog):
 
     @commands.command(name='repo')
     async def git_repo(ctx, *, repo_path):
+        """Fetch data on a github repository - MUST be public, path format is {user}/{repo name}"""
         async with ctx.loading(tick=False), ctx.bot.session.get(f'https://api.github.com/repos/{repo_path}') as resp:
             if resp.status == 404:
                 raise ApiError('Received 404 - Invalid repo')
             json = await resp.json()
         repo = GHRepo(json)
-        embed = discord.Embed(title=f'{repo.name} ({repo.repo_id})',
+        embed = discord.Embed(title=f'{repo.full_name} ({repo.repo_id})',
                               description=textwrap.fill(repo.description, width=40) if repo.description else None,
                               color=discord.Color.main, url=repo.url).set_thumbnail(url=repo.owner.av_url)
         fone_txt = str()
