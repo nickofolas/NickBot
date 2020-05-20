@@ -147,12 +147,12 @@ class Dev(commands.Cog):
         stdout = io.StringIO()
         to_return = None
         to_compile = f'async def func():\n{textwrap.indent(body, "  ")}'
-        try:
-            import_expression.exec(to_compile, env)
-        except Exception as e:
-            raise HandleTb(ctx, e)
-        evaluated_func = env['func']
         async with ctx.loading(exc_ignore=HandleTb):
+            try:
+                import_expression.exec(to_compile, env)
+            except Exception as e:
+                raise HandleTb(ctx, e)
+            evaluated_func = env['func']
             try:
                 with redirect_stdout(stdout):
                     result = await evaluated_func() or ''

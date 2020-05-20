@@ -30,7 +30,7 @@ from dotenv import load_dotenv
 import async_cleverbot as ac
 import asyncpg
 
-import ext.context
+import utils.context
 
 load_dotenv()
 
@@ -77,10 +77,10 @@ class NeoBot(commands.Bot):
         self._cd = commands.CooldownMapping.from_cooldown(1.0, 2.5, commands.BucketType.user)
         self.add_check(self.global_cooldown)
 
-        for filename in os.listdir('ext'):
+        for filename in os.listdir('./cogs'):
             if filename.endswith('.py'):
                 self.load_extension(
-                    f'ext.{filename[:-3]}')  # Load all ext upon starting up
+                    f'cogs.{filename[:-3]}')  # Load all cogs upon starting up
                 self.all_cogs.append(filename[:-3].title())
             # self.load_extension('jishaku')
         TOKEN = os.getenv("TOKEN")
@@ -90,6 +90,9 @@ class NeoBot(commands.Bot):
         cn = {"user": os.getenv('DBUSER'), "password": os.getenv('DBPASS'), "database": os.getenv('DB'),
               "host": os.getenv('DBHOST')}
         self.conn = await asyncpg.create_pool(**cn)
+
+    async def get_context(self, message, *, cls=utils.context.Context):
+        return await super().get_context(message, cls=cls)
 
     async def global_cooldown(self, ctx):
         if ctx.invoked_with == self.help_command.command_attrs.get('name', 'help'):
