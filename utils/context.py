@@ -102,7 +102,9 @@ class Context(commands.Context):
         try:
             yield await self.message.add_reaction(_EMOJIS.loading)
         except Exception as e:
-            if not isinstance(e, exc_ignore):
+            if exc_ignore and isinstance(e, exc_ignore):
+                pass
+            else:
                 tasks.append(self.propagate_to_eh(self.bot, self, e)) if prop else None
             await asyncio.gather(*tasks)
         else:

@@ -41,23 +41,26 @@ class GHUser:
          ('public_repos', 'public_gists', 'followers', 'following')]
         return points
 
-
 class Github(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
+    def cog_unload(self):
+        [self.bot.remove_command(command.name) for command in self.get_commands()]
+
     @commands.command(name='user')
-    async def git_user(self, ctx, *, name):
-        async with self.bot.session.get(f'https://api.github.com/users/{name}') as resp:
+    async def git_user(ctx, *, name):
+        async with ctx.bot.session.get(f'https://api.github.com/users/{name}') as resp:
             json = await resp.json()
         user = GHUser(json)
         embed = discord.Embed(title=f'{user.name} ({user.user_id})',
-                              description=textwrap.fill(user.bio, width=40), color=discord.Color.main) \
+                            description=textwrap.fill(user.bio, width=40), url=user.url, color=discord.Color.main) \
             .set_thumbnail(url=user.av_url)
-        embed.add_field(name='Info', value='\n'.join(f"**{prettify_text(k)}** {v}" for k, v in user.refol))
+        embed.add_field(name='Info', value='\n'.join(f"**{prettify_text(k)}** {v}" for k, v in user.refol.items()))
         await ctx.send(embed=embed)
 
 
 def setup(bot):
-    for command in Github(bot).__cog_commands__:
-        bot.get_command('git_group').add_command(command)
+    for command in Github(bot).get_commands():
+        bot.get_command('github').remove_command(command.name)
+        bot.get_command('github').add_command(command)

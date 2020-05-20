@@ -395,7 +395,7 @@ class Api(commands.Cog):
             )
         await ctx.send(embed=embed)
 
-    @commands.group(name='github', aliases='gh', invoke_without_command=True)
+    @commands.group(name='github', aliases=['gh'], invoke_without_command=True)
     async def git_group(self, ctx):
         pass
 
