@@ -53,6 +53,7 @@ activity_type_mapping = {
 
 
 class UserInfo:
+    """Wraps up a discord.Member or discord.User's user info"""
     def __init__(self, user, ctx, flags):
         self.user = user
         self.context = ctx
