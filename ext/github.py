@@ -92,7 +92,8 @@ class Github(commands.Cog):
 
     @commands.command(name='repo')
     async def git_repo(ctx, *, repo_path):
-        """Fetch data on a github repository - MUST be public, path format is {user}/{repo name}"""
+        """Fetch data on a github repository
+        MUST be a public repository, path format is {user}/{repo name}"""
         async with ctx.loading(tick=False), ctx.bot.session.get(f'https://api.github.com/repos/{repo_path}') as resp:
             if resp.status == 404:
                 raise ApiError('Received 404 - Invalid repo')
@@ -102,7 +103,7 @@ class Github(commands.Cog):
                               description=textwrap.fill(repo.description, width=40) if repo.description else None,
                               color=discord.Color.main, url=repo.url).set_thumbnail(url=repo.owner.av_url)
         fone_txt = str()
-        fone_txt += f'**Owner** {repo.owner.name}\n'
+        fone_txt += f'**Owner** {repo.owner.login}\n'
         fone_txt += f'**Language** {repo.language}\n'
         fone_txt += f'**Forks** {repo.forks}\n'
         ftwo_txt = str()

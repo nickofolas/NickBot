@@ -67,6 +67,7 @@ async def get_sub(self, ctx, *, sort, subreddit, safe, amount=5):
     parameters = {'limit': '100'}
     if sort == 'top':
         parameters['t'] = 'all'
+    embeds = list()
     async with ctx.loading(tick=False), self.bot.session.get(
             f'https://www.reddit.com/r/{subreddit.replace("r/", "")}/{sort}.json',
             params=parameters) as r:
@@ -82,7 +83,6 @@ async def get_sub(self, ctx, *, sort, subreddit, safe, amount=5):
             posts = random.sample(list(filter(filter_posts, listing)), k=amount)
         except ValueError:
             raise commands.CommandError('No SFW posts found')
-        embeds = list()
         for post in posts:
             text = textwrap.shorten(post['selftext'], width=1500) if post['selftext'] else ''
             embed = discord.Embed(
@@ -123,6 +123,8 @@ class Api(commands.Cog):
     async def _flags_reddit(self, ctx, **flags):
         """Get posts from a subreddit"""
         embeds = await get_sub(self, ctx, sort=flags['sort'], subreddit=flags['sub'], amount=flags['amount'], safe=not ctx.channel.nsfw)
+        if not embeds:
+            return
         source = PagedEmbedMenu(embeds)
         menu = CSMenu(source, delete_message_after=True)
         await menu.start(ctx)
@@ -300,19 +302,22 @@ class Api(commands.Cog):
         """
         Search Google for the query
         """
+        embeds = list()
         async with ctx.loading(tick=False):
             keys = os.getenv('SEARCH_TOKENS').split(',')
             cli = cse.Search(list(keys))
             res = await cli.search(query)
-            await cli.close()
             results = [GoogleResults(
                 title=result.title,
                 description=result.description,
                 result_url=result.url,
                 image_url=result.image_url) for result in res]
             embeds = build_google_embeds(results)
-            source = PagedEmbedMenu(embeds)
-            menu = CSMenu(source, delete_message_after=True)
+        await cli.close()
+        if not embeds:
+            return
+        source = PagedEmbedMenu(embeds)
+        menu = CSMenu(source, delete_message_after=True)
         await menu.start(ctx)
 
     @google.command(aliases=['img'])
@@ -320,19 +325,22 @@ class Api(commands.Cog):
         """
         Search Google Images for the query
         """
+        embeds = list()
         async with ctx.loading(tick=False):
             keys = os.getenv('IMAGE_TOKENS').split(',')
             cli = cse.Search(list(keys))
             res = await cli.search(query, image_search=True)
-            await cli.close()
             results = [GoogleResults(
                 title=result.title,
                 description=result.description,
                 result_url=result.url,
                 image_url=result.image_url) for result in res]
             embeds = build_google_embeds(results)
-            source = PagedEmbedMenu(embeds)
-            menu = CSMenu(source, delete_message_after=True)
+        await cli.close()
+        if not embeds:
+            return
+        source = PagedEmbedMenu(embeds)
+        menu = CSMenu(source, delete_message_after=True)
         await menu.start(ctx)
 
     @commands.group(aliases=['fn'], invoke_without_command=True)
