@@ -149,9 +149,9 @@ class Meta(commands.Cog):
         mem = psutil.virtual_memory()[2]
         vi = sys.version_info
         ascii_bar = utils.formatters.bar_make(round(mem / 10), 10, fill='▰', empty='▱')
-        embed = discord.Embed(color=discord.Color.main)
+        embed = discord.Embed(color=discord.Color.main).set_thumbnail(url=self.bot.user.avatar_url_as(static_format='png'))
         embed.set_footer(text=f'Python {vi.major}.{vi.minor}.{vi.micro} | discord.py {discord.__version__}')
-        embed.set_author(name=f'Owner: {appinfo.owner}')
+        embed.set_author(name=f'Owner: {appinfo.owner}', icon_url=appinfo.owner.avatar_url_as(static_format='png'))
         embed.add_field(
             name='**Bot Info**',
             value=textwrap.dedent(f"""
