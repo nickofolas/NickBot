@@ -16,6 +16,7 @@ You should have received a copy of the GNU Affero General Public License
 along with neo.  If not, see <https://www.gnu.org/licenses/>.
 """
 import textwrap
+from contextlib import suppress
 from datetime import datetime
 
 import discord
@@ -60,7 +61,7 @@ class GHRepo:
         self.license_id = self.license()
         self.forks = data.get('forks')
         self.language = data.get('language')
-        self.watchers = data.get('subscribers')
+        self.watchers = data.get('subscribers_count')
 
     def license(self):
         if lic := self.data.get('license'):
@@ -83,13 +84,16 @@ class Github(commands.Cog):
             if resp.status != 200:
                 raise ApiError(f'Received {resp.status}')
             json = await resp.json()
-        user = GHUser(json)
-        embed = discord.Embed(title=f'{user.login} ({user.user_id})',
-                              description=textwrap.fill(user.bio, width=40) if user.bio else None, url=user.url, color=discord.Color.main) \
-            .set_thumbnail(url=user.av_url)
-        embed.add_field(name='Info', value='\n'.join(f"**{prettify_text(k)}** {v}" for k, v in user.refol.items()))
-        embed.set_footer(text=f'Created {nt(datetime.utcnow() - user.created)}')
-        await ctx.send(embed=embed)
+        with suppress(UnboundLocalError):
+            user = GHUser(json)
+            embed = discord.Embed(title=f'{user.login} ({user.user_id})',
+                                  description=textwrap.fill(user.bio, width=40) if user.bio else None, url=user.url, color=discord.Color.main) \
+                .set_thumbnail(url=user.av_url)
+            ftext = '\n'.join(f"**{prettify_text(k)}** {v}" for k, v in user.refol.items())
+            ftext += f'\n**Location** {user.location}'
+            embed.add_field(name='Info', value=ftext)
+            embed.set_footer(text=f'Created {nt(datetime.utcnow() - user.created)}')
+            await ctx.send(embed=embed)
 
     @commands.command(name='repo')
     async def git_repo(ctx, *, repo_path):
@@ -99,24 +103,25 @@ class Github(commands.Cog):
             if resp.status != 200:
                 raise ApiError(f'Received {resp.status}')
             json = await resp.json()
-        repo = GHRepo(json)
-        embed = discord.Embed(title=f'{repo.full_name} ({repo.repo_id})',
-                              description=textwrap.fill(repo.description, width=40) if repo.description else None,
-                              color=discord.Color.main, url=repo.url).set_thumbnail(url=repo.owner.av_url)
-        fone_txt = str()
-        fone_txt += f'**Owner** {repo.owner.login}\n'
-        fone_txt += f'**Language** {repo.language}\n'
-        fone_txt += f'**Forks** {repo.forks}\n'
-        ftwo_txt = str()
-        ftwo_txt += f':scales: {repo.license_id}\n'
-        ftwo_txt += f':star: {repo.gazers}\n'
-        ftwo_txt += f':telescope: {repo.watchers}'
-        embed.add_field(name='Info', value=fone_txt)
-        embed.add_field(name='_ _', value=ftwo_txt)
-        push_delta = (datetime.utcnow() - repo.last_push)
-        create_delta = (datetime.utcnow() - repo.created)
-        embed.set_footer(text=f'Created {nt(create_delta)} | Last push {nt(push_delta)}')
-        await ctx.send(embed=embed)
+        with suppress(UnboundLocalError):
+            repo = GHRepo(json)
+            embed = discord.Embed(title=f'{repo.full_name} ({repo.repo_id})',
+                                  description=textwrap.fill(repo.description, width=40) if repo.description else None,
+                                  color=discord.Color.main, url=repo.url).set_thumbnail(url=repo.owner.av_url)
+            fone_txt = str()
+            fone_txt += f'**Owner** {repo.owner.login}\n'
+            fone_txt += f'**Language** {repo.language}\n'
+            fone_txt += f'**Forks** {repo.forks}\n'
+            ftwo_txt = str()
+            ftwo_txt += f':scales: {repo.license_id}\n'
+            ftwo_txt += f':star: {repo.gazers}\n'
+            ftwo_txt += f':telescope: {repo.watchers}'
+            embed.add_field(name='Info', value=fone_txt)
+            embed.add_field(name='_ _', value=ftwo_txt)
+            push_delta = (datetime.utcnow() - repo.last_push)
+            create_delta = (datetime.utcnow() - repo.created)
+            embed.set_footer(text=f'Created {nt(create_delta)} | Last push {nt(push_delta)}')
+            await ctx.send(embed=embed)
 
 
 def setup(bot):
