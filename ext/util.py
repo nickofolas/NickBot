@@ -225,6 +225,16 @@ class Util(commands.Cog):
             js = await resp.json()
         await ctx.send(f"Here's your poll: <https://strawpoll.com/{js.get('content_id')}>")
 
+    @commands.command(name='ocr')
+    @commands.max_concurrency(1, commands.BucketType.channel)
+    async def _ocr_command(self, ctx, *, image_url: str = None):
+        if image_url is None and not ctx.message.attachments:
+            raise commands.MissingRequiredArgument(Parameter(name='image', kind=Parameter.KEYWORD_ONLY))
+        image = image_url or await ctx.message.attachments[0].url
+        async with self.bot.session.get('https://api.tsu.sh/google/ocr', params={'q': image}) as resp:
+            output = await resp.json()
+        await ctx.send(discord.Embed(description=output.get('text'), color=discord.Color.main))
+
 
 def setup(bot):
     bot.add_cog(Util(bot))

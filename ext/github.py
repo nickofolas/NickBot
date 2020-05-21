@@ -79,8 +79,8 @@ class Github(commands.Cog):
     async def git_user(ctx, *, name):
         """Fetch data on a github user"""
         async with ctx.loading(tick=False), ctx.bot.session.get(f'https://api.github.com/users/{name}') as resp:
-            if resp.status == 404:
-                raise ApiError('Received 404 - Invalid user')
+            if resp.status != 200:
+                raise ApiError(f'Received {resp.status}')
             json = await resp.json()
         user = GHUser(json)
         embed = discord.Embed(title=f'{user.login} ({user.user_id})',
@@ -95,8 +95,8 @@ class Github(commands.Cog):
         """Fetch data on a github repository
         MUST be a public repository, path format is {user}/{repo name}"""
         async with ctx.loading(tick=False), ctx.bot.session.get(f'https://api.github.com/repos/{repo_path}') as resp:
-            if resp.status == 404:
-                raise ApiError('Received 404 - Invalid repo')
+            if resp.status != 200:
+                raise ApiError(f'Received {resp.status}')
             json = await resp.json()
         repo = GHRepo(json)
         embed = discord.Embed(title=f'{repo.full_name} ({repo.repo_id})',

@@ -117,8 +117,7 @@ class Dev(commands.Cog):
 
     @commands.command(aliases=['sh'])
     async def shell(self, ctx, *, args: CBStripConverter):
-        """Invokes the system shell,
-        attempting to run the inputted command"""
+        """Invokes the system shell, attempting to run the inputted command"""
         hl_lang = 'sh'
         if 'cat' in args:
             hl_lang = return_lang_hl(args)
@@ -126,7 +125,7 @@ class Dev(commands.Cog):
             hl_lang = 'diff'
         async with ctx.loading(tick=False):
             stdout, stderr = await do_shell(args)
-            output = clean_bytes(stdout) + textwrap.indent(clean_bytes(stderr), '[stderr] ')
+            output = clean_bytes(stdout) + '\n' + textwrap.indent(clean_bytes(stderr), '[stderr] ')
             pages = _group(output, 1500)
             pages = [ctx.codeblock(page, hl_lang) for page in pages]
         await ctx.quick_menu(pages, 1, delete_message_after=True, timeout=300)
