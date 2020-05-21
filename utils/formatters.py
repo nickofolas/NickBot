@@ -26,6 +26,14 @@ from utils.config import conf
 LANGUAGES = conf['hl_langs']
 
 
+def group(iterable, page_len=50):
+    pages = []
+    while iterable:
+        pages.append(iterable[:page_len])
+        iterable = iterable[page_len:]
+    return pages
+
+
 def return_lang_hl(input_string) -> str:
     for possible_suffix in LANGUAGES:
         if input_string.endswith(possible_suffix):

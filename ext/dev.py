@@ -33,7 +33,7 @@ from discord.ext import commands, flags
 from tabulate import tabulate
 
 import utils
-from utils.formatters import return_lang_hl, pluralize
+from utils.formatters import return_lang_hl, pluralize, group
 from utils.converters import CBStripConverter
 
 status_dict = {
@@ -83,14 +83,6 @@ def clean_bytes(line):
     return re.sub(r'\x1b[^m]*m', '', text).replace("``", "`\u200b`").strip('\n')
 
 
-def _group(iterable, page_len=50):
-    pages = []
-    while iterable:
-        pages.append(iterable[:page_len])
-        iterable = iterable[page_len:]
-    return pages
-
-
 class HandleTb(Exception):
     def __init__(self, ctx, error):
         self.ctx = ctx
@@ -100,7 +92,7 @@ class HandleTb(Exception):
     def format_exception(self):
         fmtd_exc = ''.join(traceback.format_exception(type(self.error), self.error, self.error.__traceback__))
         formatted = ''.join(re.sub(r'File ".+",', 'File [omitted]', fmtd_exc))
-        pages = _group(formatted, 1500)
+        pages = group(formatted, 1500)
         return [self.ctx.codeblock(page, 'py') for page in pages]
 
 
@@ -126,7 +118,7 @@ class Dev(commands.Cog):
         async with ctx.loading(tick=False):
             stdout, stderr = await do_shell(args)
             output = clean_bytes(stdout) + '\n' + textwrap.indent(clean_bytes(stderr), '[stderr] ')
-            pages = _group(output, 1500)
+            pages = group(output, 1500)
             pages = [ctx.codeblock(page, hl_lang) for page in pages]
         await ctx.quick_menu(pages, 1, delete_message_after=True, timeout=300)
 
@@ -162,7 +154,7 @@ class Dev(commands.Cog):
                 self._last_result = result
                 to_return = f'{value}{result}'
         if to_return:
-            pages = _group(to_return, 1500)
+            pages = group(to_return, 1500)
             pages = [ctx.codeblock(page, 'py') for page in pages]
             await ctx.quick_menu(pages, 1, delete_message_after=True, timeout=300)
 

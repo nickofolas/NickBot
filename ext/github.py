@@ -20,17 +20,20 @@ from contextlib import suppress
 from datetime import datetime
 
 import discord
-from discord.ext import commands
+from discord.ext import commands, flags
 from humanize import naturaltime as nt
 
-from utils.formatters import prettify_text, from_tz
+from utils.formatters import prettify_text, from_tz, group
 from utils.errors import ApiError
+from utils.paginator import PagedEmbedMenu, CSMenu
+
+path_mapping = {'repos': 'repositories', 'users': 'users'}
 
 
 class GHUser:
     def __init__(self, data):
         self.data = data
-        self.login = data.get('login')
+        self.name = data.get('login')
         self.url = data.get('html_url')
         self.bio = data.get('bio')
         self.av_url = data.get('avatar_url', 'https://i.imgur.com/OTc2e9R.png')
@@ -69,6 +72,24 @@ class GHRepo:
         return None
 
 
+type_mapping = {'repositories': GHRepo, 'users': GHUser}
+
+
+class GHListing:
+    def __init__(self, data, search_type):
+        self.data = data
+        self.search_type = search_type
+        self.total = data.get('total_count')
+        self.items = data.get('items')
+
+    def __iter__(self):
+        for item in self.build_object_listing():
+            yield item
+
+    def build_object_listing(self):
+        return [type_mapping[self.search_type](item) for item in self.items]
+
+
 # noinspection PyMethodParameters,PyUnresolvedReferences
 class Github(commands.Cog):
     def __init__(self, bot):
@@ -76,6 +97,13 @@ class Github(commands.Cog):
 
     def cog_unload(self):
         [self.bot.remove_command(command.name) for command in self.get_commands()]
+
+    @staticmethod
+    def gen_listing_embeds(listing: GHListing):
+        for item in group(listing, 5):
+            embed = discord.Embed(color=discord.Color.main)
+            embed.description = '\n'.join(f'[{obj.name}]({obj.url})' for obj in item)
+            yield embed
 
     @commands.command(name='user')
     async def git_user(ctx, *, name):
@@ -86,7 +114,7 @@ class Github(commands.Cog):
             json = await resp.json()
         with suppress(UnboundLocalError):
             user = GHUser(json)
-            embed = discord.Embed(title=f'{user.login} ({user.user_id})',
+            embed = discord.Embed(title=f'{user.name} ({user.user_id})',
                                   description=textwrap.fill(user.bio, width=40) if user.bio else None, url=user.url, color=discord.Color.main) \
                 .set_thumbnail(url=user.av_url)
             ftext = '\n'.join(f"**{prettify_text(k)}** {v}" for k, v in user.refol.items())
@@ -122,6 +150,21 @@ class Github(commands.Cog):
             create_delta = (datetime.utcnow() - repo.created)
             embed.set_footer(text=f'Created {nt(create_delta)} | Last push {nt(push_delta)}')
             await ctx.send(embed=embed)
+
+    @flags.add_flag('query', nargs='*')
+    @flags.add_flag('-p', '--path', choices=['repos', 'users'], default='repos')
+    @flags.command(name='search')
+    async def git_search(ctx, **flags):
+        async with ctx.loading(tick=False), ctx.bot.session.get(
+                f'https://api.github.com/search/{path_mapping[flags.get("path")]}', params={'q': flags.get('query')}):
+            if resp.status != 200:
+                raise ApiError(f'Received {resp.status}')
+            json = await resp.json()
+        with suppress(UnboundLocalError):
+            listing = GHListing(json, path_mapping[flags.get("path")])
+            source = PagedEmbedMenu([*self.gen_listing_embeds(listing)])
+            menu = CSMenu(source, delete_message_after=True)
+            await menu.start(ctx)
 
 
 def setup(bot):
