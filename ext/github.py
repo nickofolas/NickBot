@@ -60,6 +60,7 @@ class GHRepo:
         self.license_id = self.license()
         self.forks = data.get('forks')
         self.language = data.get('language')
+        self.watchers = data.get('subscribers')
 
     def license(self):
         if lic := self.data.get('license'):
@@ -109,6 +110,7 @@ class Github(commands.Cog):
         ftwo_txt = str()
         ftwo_txt += f':scales: {repo.license_id}\n'
         ftwo_txt += f':star: {repo.gazers}\n'
+        ftwo_txt += f':telescope: {repo.watchers}'
         embed.add_field(name='Info', value=fone_txt)
         embed.add_field(name='_ _', value=ftwo_txt)
         push_delta = (datetime.utcnow() - repo.last_push)
