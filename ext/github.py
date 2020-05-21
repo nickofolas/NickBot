@@ -90,7 +90,7 @@ class Github(commands.Cog):
                                   description=textwrap.fill(user.bio, width=40) if user.bio else None, url=user.url, color=discord.Color.main) \
                 .set_thumbnail(url=user.av_url)
             ftext = '\n'.join(f"**{prettify_text(k)}** {v}" for k, v in user.refol.items())
-            ftext += f'\n**Location** {user.location}'
+            ftext += f'\n<:locationmarker:713024424240218162> {user.location}' if user.location else ''
             embed.add_field(name='Info', value=ftext)
             embed.set_footer(text=f'Created {nt(datetime.utcnow() - user.created)}')
             await ctx.send(embed=embed)
