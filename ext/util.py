@@ -228,12 +228,13 @@ class Util(commands.Cog):
     @commands.command(name='ocr')
     @commands.max_concurrency(1, commands.BucketType.channel)
     async def _ocr_command(self, ctx, *, image_url: str = None):
+        """Run an image through Optical Character Recognition (OCR) and return any detected text"""
         if image_url is None and not ctx.message.attachments:
             raise commands.MissingRequiredArgument(Parameter(name='image', kind=Parameter.KEYWORD_ONLY))
-        image = image_url or await ctx.message.attachments[0].url
-        async with self.bot.session.get('https://api.tsu.sh/google/ocr', params={'q': image}) as resp:
+        image = image_url or ctx.message.attachments[0].url
+        async with ctx.loading(tick=False), self.bot.session.get('https://api.tsu.sh/google/ocr', params={'q': image}) as resp:
             output = await resp.json()
-        await ctx.send(discord.Embed(description=output.get('text'), color=discord.Color.main))
+        await ctx.send(embed=discord.Embed(description=output.get('text'), color=discord.Color.main))
 
 
 def setup(bot):
