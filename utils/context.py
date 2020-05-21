@@ -104,6 +104,9 @@ class Context(commands.Context):
         except Exception as e:
             if exc_ignore and isinstance(e, exc_ignore):
                 pass
+            elif isinstance(e, (discord.Forbidden, discord.HTTPException)):
+                yield False
+                return
             else:
                 tasks.append(self.propagate_to_eh(self.bot, self, e)) if prop else None
             await asyncio.gather(*tasks)

@@ -250,7 +250,7 @@ class Dev(commands.Cog):
             new_ctx = await copy_ctx(ctx, command, author=ctx.author)
             await new_ctx.reinvoke()
             return
-        new_ctx = await copy_ctx(self, ctx, command, author=target)
+        new_ctx = await copy_ctx(ctx, command, author=target)
         await self.bot.invoke(new_ctx)
 
     @sudo.command(name='in')
