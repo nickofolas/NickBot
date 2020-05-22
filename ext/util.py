@@ -16,6 +16,7 @@ You should have received a copy of the GNU Affero General Public License
 along with neo.  If not, see <https://www.gnu.org/licenses/>.
 """
 import copy
+import asyncio
 import datetime
 import difflib
 import json
@@ -102,6 +103,7 @@ class Util(commands.Cog):
         duration = (end - start) * 1000
         em = copy.copy(message.embeds[0])
         em.description += f'\n:globe_with_meridians: **API** {duration:.3f}ms'
+        await asyncio.sleep(0.25)
         await message.edit(embed=em)
 
     @commands.command(aliases=['inv'])
