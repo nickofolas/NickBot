@@ -15,15 +15,12 @@ GNU Affero General Public License for more details.
 You should have received a copy of the GNU Affero General Public License
 along with neo.  If not, see <https://www.gnu.org/licenses/>.
 """
-import copy
-import random
 import re
 import string
 
 import discord
 from discord.ext import commands
 
-from utils.paginator import BareBonesMenu, CSMenu
 from utils.checks import check_member_in_guild
 
 
@@ -232,9 +229,11 @@ class Data(commands.Cog):
             todo_list.append(f'`{count}` {value}')
         if not todo_list:
             todo_list.append('No todos')
-        source = BareBonesMenu(todo_list, per_page=10)
-        menu = CSMenu(source, delete_message_after=True)
-        await menu.start(ctx)
+        await ctx.quick_menu(todo_list, 10,
+                             template=discord.Embed(
+                                 color=discord.Color.main).set_author(
+                                 name=f"{ctx.author}'s todos", icon_url=ctx.author.avatar_url_as(static_format='png')),
+                             delete_message_after=True)
 
     @todo_rw.command(name='add')
     async def create_todo(self, ctx, *, content: str):

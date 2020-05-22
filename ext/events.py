@@ -56,6 +56,12 @@ async def build_highlight_embed(match, message):
     return embed
 
 
+def check_last_send(bot, message, user):
+    if not (msg := discord.utils.get(bot.cached_messages, channel=message.channel, author=user)):
+        return True
+    return (message.created_at - msg.created_at).total_seconds() > 60
+
+
 def hl_send_predicates(alerted, message):
     preds = [alerted in message.guild.members,
              alerted.id != message.author.id,
@@ -113,19 +119,14 @@ class Events(commands.Cog):
     @commands.Cog.listener()
     async def on_message(self, message):
         await self.bot.wait_until_ready()
-        if not hasattr(self, 'hl_cache'):  # Gotta make sure we have the cache before starting anything
-            return
         for c in self.hl_cache:
             with suppress(AttributeError, UnboundLocalError):
                 if match := re.search(c[1], message.content):  # Makes sure there's actually a match
                     if not hl_checks_one(c, message):
                         continue
                     alerted = self.bot.get_user(c[0])
-                    if m := discord.utils.get(reversed(self.bot.cached_messages),  # Checks the interaction cooldown
-                                              channel=message.channel,
-                                              author=alerted):
-                        if (datetime.utcnow() - m.created_at).total_seconds() < 60:
-                            continue
+                    if not check_last_send(self.bot, message, alerted):
+                        continue
                     embed = await build_highlight_embed(match, message)  # Builds the embed that'll be delivered
                     if hl_send_predicates(alerted, message):  # Checks that the predicates for sending are satisfied
                         if len(self.hl_queue) < 40 and [i[0] for i in self.hl_queue].count(alerted) < 5:
