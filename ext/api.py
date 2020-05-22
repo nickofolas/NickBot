@@ -116,6 +116,10 @@ class Api(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
+    @commands.group(name='reddit', invoke_without_command=True)
+    async def reddit_group(self, ctx):
+        pass
+
     @flags.add_flag('sub', nargs='?')
     @flags.add_flag('-s', '--sort', choices=['top', 'new', 'rising', 'hot', 'controversial', 'best'], default='hot')
     @flags.add_flag('-a', '--amount', type=int, default=5)

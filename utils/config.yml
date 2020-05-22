@@ -10,6 +10,7 @@ exts:
   - 'ext.meta'
   - 'ext.util'
   - 'ext.github'
+  - 'ext.reddit'
 emoji_suite:
   'x_button': '<:x_:710365179929559060>'
   'check_button': '<:c_:710365173755543552>'
