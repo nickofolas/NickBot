@@ -31,7 +31,7 @@ path_mapping = {'repos': 'repositories', 'users': 'users'}
 
 
 class GHUser:
-    __slots__ = ('data', 'name', 'url', 'bio', 'av_url', 'location', 'user_id', 'created')
+    __slots__ = ('data', 'name', 'url', 'bio', 'av_url', 'location', 'user_id', 'created', 'updated')
 
     def __init__(self, data):
         self.data = data
@@ -42,6 +42,7 @@ class GHUser:
         self.location = data.get('location')
         self.user_id = data.get('id')
         self.created = from_tz(data.get('created_at'))
+        self.updated = from_tz((data.get('updated_at')))
 
     @property
     def refol(self):
@@ -129,7 +130,8 @@ class Github(commands.Cog):
             ftext = '\n'.join(f"**{prettify_text(k)}** {v}" for k, v in user.refol.items())
             ftext += f'\n<:locationmarker:713024424240218162> {user.location}' if user.location else ''
             embed.add_field(name='Info', value=ftext)
-            embed.set_footer(text=f'Created {nt(datetime.utcnow() - user.created)}')
+            embed.set_footer(text=f'Created {nt(datetime.utcnow() - user.created)} | '
+                                  f'Updated {nt(datetime.utcnow() - user.updated)}')
             await ctx.send(embed=embed)
 
     @commands.command(name='repo')
