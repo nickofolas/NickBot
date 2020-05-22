@@ -64,6 +64,8 @@ def from_tz(str_time):
 
 
 class StatusChart:
+    __slots__ = ('guild', 'labels', 'sizes', 'colors')
+
     # Pie chart, where the slices will be ordered and plotted counter-clockwise:
     def __init__(self, guild, labels: list, sizes: list, colors: list):
         self.guild = guild

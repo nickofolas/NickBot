@@ -311,7 +311,7 @@ class Api(commands.Cog):
                 title=result.title,
                 description=result.description,
                 result_url=result.url,
-                image_url=result.image_url) for result in res]
+                image_url=None) for result in res]
             embeds = build_google_embeds(results)
         await cli.close()
         if not embeds:

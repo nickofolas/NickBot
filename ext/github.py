@@ -31,6 +31,8 @@ path_mapping = {'repos': 'repositories', 'users': 'users'}
 
 
 class GHUser:
+    __slots__ = ('data', 'name', 'url', 'bio', 'av_url', 'location', 'user_id', 'created')
+
     def __init__(self, data):
         self.data = data
         self.name = data.get('login')
@@ -50,6 +52,9 @@ class GHUser:
 
 
 class GHRepo:
+    __slots__ = ('data', 'name', 'full_name', 'repo_id', 'owner', 'url', 'description', 'created',
+                 'last_push', 'gazers', 'license_id', 'forks', 'language', 'watchers')
+
     def __init__(self, data):
         self.data = data
         self.name = data.get('name')
@@ -76,6 +81,8 @@ type_mapping = {'repositories': GHRepo, 'users': GHUser}
 
 
 class GHListing:
+    __slots__ = ('data', 'search_type', 'total', 'items')
+
     def __init__(self, data, search_type):
         self.data = data
         self.search_type = search_type
@@ -88,6 +95,7 @@ class GHListing:
 
     def build_object_listing(self):
         return [type_mapping[self.search_type](item) for item in self.items]
+
 
 def gen_listing_embeds(listing: GHListing, search):
     for item in group(listing, 5):
@@ -115,7 +123,8 @@ class Github(commands.Cog):
         with suppress(UnboundLocalError):
             user = GHUser(json)
             embed = discord.Embed(title=f'{user.name} ({user.user_id})',
-                                  description=textwrap.fill(user.bio, width=40) if user.bio else None, url=user.url, color=discord.Color.main) \
+                                  description=textwrap.fill(user.bio, width=40) if user.bio else None, url=user.url,
+                                  color=discord.Color.main) \
                 .set_thumbnail(url=user.av_url)
             ftext = '\n'.join(f"**{prettify_text(k)}** {v}" for k, v in user.refol.items())
             ftext += f'\n<:locationmarker:713024424240218162> {user.location}' if user.location else ''

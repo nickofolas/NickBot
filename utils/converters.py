@@ -29,8 +29,8 @@ m_conv = commands.MemberConverter()
 
 class BoolConverter(commands.Converter):
     async def convert(self, ctx, argument):
-        true_values = ['on', 'yes', 'true', 'y']
-        false_values = ['off', 'no', 'false', 'n']
+        true_values = ['on', 'yes', 'true', 'y', '1']
+        false_values = ['off', 'no', 'false', 'n', '0']
         if argument.lower() in true_values:
             return True
         elif argument.lower() in false_values:

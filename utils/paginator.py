@@ -60,7 +60,9 @@ class CSMenu(menus.MenuPages):
         elif isinstance(value, str):
             return {'content': f'{value}\nPage {self.current_page + 1}/{self._source.get_max_pages()}', 'embed': None}
         elif isinstance(value, discord.Embed):
-            return {'embed': value.set_footer(text=f'Page {self.current_page + 1}/{self._source.get_max_pages()}'),
+            return {'embed': value.set_footer(
+                text=f'Page {self.current_page + 1}/{self._source.get_max_pages()}' if
+                self._source.get_max_pages() > 1 else ''),
                     'content': None}
 
     @menus.button(
