@@ -31,6 +31,7 @@ import discord
 from discord.ext import commands
 
 from utils import paginator
+from utils.formatters import group
 
 
 def zulu_time(dt: datetime.datetime):
@@ -233,8 +234,8 @@ class Util(commands.Cog):
             raise commands.MissingRequiredArgument(Parameter(name='image', kind=Parameter.KEYWORD_ONLY))
         image = image_url or ctx.message.attachments[0].url
         async with ctx.loading(tick=False), self.bot.session.get('https://api.tsu.sh/google/ocr', params={'q': image}) as resp:
-            output = await resp.json()
-        await ctx.send(embed=discord.Embed(description=output.get('text'), color=discord.Color.main))
+            output = (await resp.json()).get('text', 'No result')
+        await ctx.quick_menu(group(output, 1000), 1, delete_message_after=True)
 
 
 def setup(bot):
