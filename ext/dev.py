@@ -197,7 +197,11 @@ class Dev(commands.Cog):
             return await ctx.send(f'`{dt:.2f}ms: {results}`')
         headers = list(results[0].keys())
         table = tabulate(list(list(r.values()) for r in results), headers=headers, tablefmt='pretty')
-        await ctx.safe_send(f'```\n{table}```\nReturned {rows} {pluralize("row", rows)} in {dt:.2f}ms')
+        pages = [ctx.codeblock(page) for page in group(table, 1500)]
+        await ctx.quick_menu(pages, 1, delete_message_after=True, timeout=300,
+                             template=discord.Embed(
+                                 color=discord.Color.main)
+                             .set_author(name=f'Returned {rows} {pluralize("row", rows)} in {dt:.2f}ms'))
 
     @commands.group(name='dev', invoke_without_command=True)
     async def dev_command_group(self, ctx):
