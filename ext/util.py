@@ -102,7 +102,7 @@ class Util(commands.Cog):
         end = time.perf_counter()
         duration = (end - start) * 1000
         em = copy.copy(message.embeds[0])
-        em.description += f'\n:globe_with_meridians: **API** {duration:.3f}ms'
+        em.description += f'\n<:discord:713266471945371650> **API** {duration:.3f}ms'
         await asyncio.sleep(0.25)
         await message.edit(embed=em)
 

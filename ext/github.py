@@ -25,9 +25,8 @@ from humanize import naturaltime as nt
 
 from utils.formatters import prettify_text, from_tz, group
 from utils.errors import ApiError
-from utils.paginator import PagedEmbedMenu, CSMenu
 
-path_mapping = {'repos': 'repositories', 'users': 'users'}
+path_mapping = {'repos': 'repositories'}
 
 
 class GHUser:
@@ -76,34 +75,6 @@ class GHRepo:
         if lic := self.data.get('license'):
             return lic.get('spdx_id')
         return None
-
-
-type_mapping = {'repositories': GHRepo, 'users': GHUser}
-
-
-class GHListing:
-    __slots__ = ('data', 'search_type', 'total', 'items')
-
-    def __init__(self, data, search_type):
-        self.data = data
-        self.search_type = search_type
-        self.total = data.get('total_count')
-        self.items = data.get('items')
-
-    def __iter__(self):
-        for item in self.build_object_listing():
-            yield item
-
-    def build_object_listing(self):
-        return [type_mapping[self.search_type](item) for item in self.items]
-
-
-def gen_listing_embeds(listing: GHListing, search):
-    for item in group(listing, 5):
-        embed = discord.Embed(color=discord.Color.main).set_author(
-            name=search.split('github.com')[1], icon_url="https://i.imgur.com/CpKHIaF.png")
-        embed.description = '\n'.join(f'[{obj.name}]({obj.url}) - {obj.data.get("id")}' for obj in item)
-        yield embed
 
 
 # noinspection PyMethodParameters,PyUnresolvedReferences
@@ -161,27 +132,6 @@ class Github(commands.Cog):
             create_delta = (datetime.utcnow() - repo.created)
             embed.set_footer(text=f'Created {nt(create_delta)} | Last push {nt(push_delta)}')
             await ctx.send(embed=embed)
-
-    @flags.add_flag('query', nargs='*')
-    @flags.add_flag('-p', '--path', choices=['repos', 'users'], default='repos')
-    @commands.cooldown(1, 5, commands.BucketType.user)
-    @flags.command(name='search')
-    async def git_search(ctx, **flags):
-        """Make a GitHub search
-        Valid paths are 'repos', 'users'"""
-        async with ctx.loading(tick=False), ctx.bot.session.get(
-                f'https://api.github.com/search/{path_mapping[flags.get("path")]}', params={'q': flags.get('query')[0]}) as resp:
-            if resp.status != 200:
-                raise ApiError(f'Received {resp.status}')
-            json = await resp.json()
-        with suppress(UnboundLocalError):
-            try:
-                listing = GHListing(json, path_mapping[flags.get("path")])
-                source = PagedEmbedMenu([*gen_listing_embeds([*listing], str(resp.url))])
-                menu = CSMenu(source, delete_message_after=True)
-                await menu.start(ctx)
-            except IndexError:
-                return await ctx.send('No results')
 
 
 def setup(bot):
