@@ -37,7 +37,7 @@ class GHUser:
         self.name = data.get('login')
         self.url = data.get('html_url')
         self.bio = data.get('bio')
-        self.av_url = data.get('avatar_url', 'https://i.imgur.com/OTc2e9R.png')
+        self.av_url = data.get('avatar_url', 'https://i.imgur.com/OTc2e9R.png').split('?')[0]
         self.location = data.get('location')
         self.user_id = data.get('id')
         self.created = from_tz(data.get('created_at'))

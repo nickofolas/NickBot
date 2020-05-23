@@ -36,7 +36,7 @@ PollChoice = namedtuple('PollChoice', ['text', 'votes'])
 class Poll:
     def __init__(self, poll_data):
         self.data = poll_data
-        self.deadline = datetime.fromtimestamp(poll_data.get("voting_end_timestamp")/1000)
+        self.deadline = datetime.fromtimestamp(poll_data.get("voting_end_timestamp") / 1000)
         self.total_votes = poll_data.get("total_vote_count")
 
     def __iter__(self):
@@ -63,7 +63,7 @@ class Submission:
         self.author_url = f"https://www.reddit.com/user/{self.author}"
         self.created = data.get('created_utc')
         self.creation_delta = datetime.utcnow() - datetime.utcfromtimestamp(self.created)
-        if p:=data.get('poll_data'):
+        if p := data.get('poll_data'):
             self.poll = Poll(p)
         else:
             self.poll = None
@@ -141,7 +141,7 @@ class Redditor:
 def gen_listing_embeds(listing):
     for post in listing.posts:
         desc = post.text
-        if p:=post.poll:
+        if p := post.poll:
             pending = p.deadline > datetime.utcnow()
             desc = '\n'.join(f"➣ {opt.votes} votes: {opt.text}" for opt in p)
             if pending:
@@ -149,11 +149,12 @@ def gen_listing_embeds(listing):
             desc += f'\n**{p.total_votes} total votes**'
         embed = discord.Embed(
             title=post.title,
-            description=f"<:upvote:698744205710852167> {post.upvotes:,} | :speech_balloon: {post.comments:,} | 🕙 {nt(post.creation_delta)}\n{desc}",
+            description=f"<:upvote:698744205710852167> {post.upvotes:,} | :speech_balloon: {post.comments:,} "
+                        f"| 🕙 {nt(post.creation_delta)}\n{desc}",
             url=post.full_url,
             color=discord.Color.main
         ).set_image(url=post.img_url).set_author(name=post.author,
-                                                   url=f"https://www.reddit.com/user/{post.author}")
+                                                 url=f"https://www.reddit.com/user/{post.author}")
         yield embed
 
 

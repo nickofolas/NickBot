@@ -63,40 +63,6 @@ async def do_translation(ctx, content, dest='en'):
     await ctx.send(embed=embed)
 
 
-async def get_sub(self, ctx, *, sort, subreddit, safe, amount=5):
-    parameters = {'limit': '100'}
-    if sort == 'top':
-        parameters['t'] = 'all'
-    embeds = list()
-    async with ctx.loading(tick=False), self.bot.session.get(
-            f'https://www.reddit.com/r/{subreddit.replace("r/", "")}/{sort}.json',
-            params=parameters) as r:
-        if r.status == 404:
-            raise errors.SubredditNotFound(f"'{subreddit}' was not found")
-        if r.status == 403:
-            raise errors.ApiError(f"Received 403 Forbidden - 'r/{subreddit}' is likely set to private")
-        res = await r.json()
-        listing = [p['data'] for p in res['data']['children']]
-        if safe is True:
-            listing = list(filter(lambda p: p.get('over_18') is False, listing))
-        try:
-            posts = random.sample(list(filter(filter_posts, listing)), k=amount)
-        except ValueError:
-            raise commands.CommandError('No SFW posts found')
-        for post in posts:
-            text = textwrap.shorten(post['selftext'], width=1500) if post['selftext'] else ''
-            embed = discord.Embed(
-                title=textwrap.shorten(post['title'], width=252),
-                description=f"**<:upvote:698744205710852167> {post['ups']} | {post['num_comments']} "
-                            f":speech_balloon:**\n {text}",
-                url="https://www.reddit.com" + post['permalink'],
-                color=discord.Color.main)
-            embed.set_image(url=post['url'])
-            embed.set_author(name=post['author'], url=f"https://www.reddit.com/user/{post['author']}")
-            embeds.append(embed)
-    return embeds
-
-
 def build_google_embeds(results: List[GoogleResults]):
     embeds = list()
     for r in results:
@@ -119,19 +85,6 @@ class Api(commands.Cog):
     @commands.group(name='reddit', invoke_without_command=True)
     async def reddit_group(self, ctx):
         pass
-
-    @flags.add_flag('sub', nargs='?')
-    @flags.add_flag('-s', '--sort', choices=['top', 'new', 'rising', 'hot', 'controversial', 'best'], default='hot')
-    @flags.add_flag('-a', '--amount', type=int, default=5)
-    @flags.command(name='redditposts', aliases=['rposts'], enabled=False)
-    async def _flags_reddit(self, ctx, **flags):
-        """Get posts from a subreddit"""
-        embeds = await get_sub(self, ctx, sort=flags['sort'], subreddit=flags['sub'], amount=flags['amount'], safe=not ctx.channel.nsfw)
-        if not embeds:
-            return
-        source = PagedEmbedMenu(embeds)
-        menu = CSMenu(source, delete_message_after=True)
-        await menu.start(ctx)
 
     @commands.command(aliases=['subinfo'], enabled=False)
     async def subredditinfo(self, ctx, *, subreddit):
