@@ -31,7 +31,10 @@ from utils.converters import RedditConverter
 
 
 class Submission:
+    __slots__ = ('data', 'title', 'nsfw', 'text', 'upvotes', 'comments',
+                 'full_url', 'img_url', 'author', 'author_url', 'thumbnail')
     """Wraps up a Submission"""
+
     def __init__(self, data):
         self.data = data
         self.title = textwrap.shorten(data.get('title'), width=252)
@@ -41,6 +44,7 @@ class Submission:
         self.comments = data.get('num_comments')
         self.full_url = "https://www.reddit.com" + data.get('permalink')
         self.img_url = data.get('url')
+        self.thumbnail = data.get('thumbnail')
         self.author = data.get('author')
         self.author_url = f"https://www.reddit.com/user/{self.author}"
 
@@ -53,14 +57,16 @@ class Submission:
 
 
 class SubListing:
+    __slots__ = ('data', 'allow_nsfw')
     """Generates a listing of posts from a Subreddit"""
+
     def __init__(self, data, *, allow_nsfw=False):
         self.data = data
         self.allow_nsfw = allow_nsfw
 
     def do_predicates(self, submission):
         predicates = [submission.is_gif is False]
-        if self.allow_nsfw:
+        if not self.allow_nsfw:
             predicates.append(submission.nsfw is False)
         return all(predicates)
 
@@ -74,7 +80,9 @@ class SubListing:
 
 
 class Subreddit:
+    __slots__ = ('data', 'title', 'icon_img', 'prefixed', 'subscribers', 'pub_desc', 'full_url')
     """Wraps up a Subreddit's JSON"""
+
     def __init__(self, data):
         self.data = data
         self.title = data.get('title')
@@ -87,7 +95,9 @@ class Subreddit:
 
 
 class Redditor:
+    __slots__ = ('tdata', 'adata', 'subreddit', 'is_gold', 'icon_url', 'link_karma', 'comment_karma', 'name', 'created')
     """Wraps up a Redditor's JSON"""
+
     def __init__(self, *, about_data, trophy_data=None):
         about_data = about_data.get('data')
         self.tdata = trophy_data.get('data') if trophy_data else None
@@ -115,8 +125,8 @@ def gen_listing_embeds(listing):
             description=f"<:upvote:698744205710852167> {post.upvotes} :speech_balloon: {post.comments}\n{post.text}",
             url=post.full_url,
             color=discord.Color.main
-        ).set_image(url=post.img_url).set_author(name=post.author,
-                                                 url=f"https://www.reddit.com/user/{post.author}")
+        ).set_image(url=post.thumbnail).set_author(name=post.author,
+                                                   url=f"https://www.reddit.com/user/{post.author}")
         yield embed
 
 
@@ -147,7 +157,9 @@ class Reddit(commands.Cog):
     @commands.command(name='user')
     async def reddit_user(ctx, *, user: RedditConverter):
         """Get user info on a redditor"""
-        async with ctx.loading(tick=False), ctx.bot.session.get(f"https://reddit.com/user/{user}/about.json") as r1, ctx.bot.session.get(f"https://reddit.com/user/{user}/trophies.json") as r2:
+        async with ctx.loading(tick=False), \
+                   ctx.bot.session.get(f"https://reddit.com/user/{user}/about.json") as r1, \
+                ctx.bot.session.get(f"https://reddit.com/user/{user}/trophies.json") as r2:
             about, trophies = (await r1.json(), await r2.json())
         user = Redditor(about_data=about, trophy_data=trophies)
         tstring = textwrap.fill(' '.join([conf['trophy_emojis'].get(t, '') for t in set(user.trophies)]), 225)

@@ -33,6 +33,7 @@ from discord.ext import commands, flags
 from tabulate import tabulate
 
 import utils
+from utils.config import conf
 from utils.formatters import return_lang_hl, pluralize, group
 from utils.converters import CBStripConverter
 
@@ -299,7 +300,7 @@ class Dev(commands.Cog):
             if flags.get('pull'):
                 await do_shell('git pull')
             mode = mode_mapping.get(flags['mode'])
-            extensions = [*self.bot.extensions.keys()] if flags['extension'][0] == '~' else flags['extension']
+            extensions = [conf.get('exts')] if flags['extension'][0] == '~' else flags['extension']
             for ext in extensions:
                 mode(ext)
 
