@@ -156,12 +156,8 @@ class Util(commands.Cog):
             return f'`\\U{digit:>08}`: ' \
                    f'[{name}](http://www.fileformat.info/info/unicode/char/' \
                    f'{digit}) - `{c}`'
-
-        embed = discord.Embed(
-            title='',
-            description='\n'.join(map(to_string, characters)),
-            color=discord.Color.main)
-        await ctx.send(embed=embed)
+        chars = [*map(to_string, characters)]
+        await ctx.quick_menu(chars, 10, delete_message_after=True)
 
     @commands.command(name='imgur')
     async def imgur(self, ctx, *, image=None):

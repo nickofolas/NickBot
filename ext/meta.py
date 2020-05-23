@@ -27,7 +27,6 @@ import humanize
 import psutil
 from discord.ext import commands
 
-import utils
 from utils.config import conf
 
 checked_perms = ['is_owner', 'guild_only', 'dm_only', 'is_nsfw']
@@ -138,6 +137,7 @@ class Meta(commands.Cog):
         headers = {'Authorization': f'token  {os.getenv("GITHUB_TOKEN")}'}
         url = 'https://api.github.com/repos/nickofolas/neo/commits'
         async with self.bot.session.get(f'{url}/master', headers=headers) as resp1:
+            # noinspection PyAttributeOutsideInit
             self.last_commit_cache = await resp1.json()
 
     @commands.command(aliases=['ab', 'info'])
@@ -148,8 +148,8 @@ class Meta(commands.Cog):
         invite_url = discord.utils.oauth_url(self.bot.user.id, permissions)
         mem = psutil.virtual_memory()[2]
         vi = sys.version_info
-        ascii_bar = utils.formatters.bar_make(round(mem / 10), 10, fill='▰', empty='▱')
-        embed = discord.Embed(color=discord.Color.main).set_thumbnail(url=self.bot.user.avatar_url_as(static_format='png'))
+        embed = discord.Embed(color=discord.Color.main).set_thumbnail(url=self.bot.user.avatar_url_as(
+            static_format='png'))
         embed.set_footer(text=f'Python {vi.major}.{vi.minor}.{vi.micro} | discord.py {discord.__version__}')
         embed.set_author(name=f'Owner: {appinfo.owner}', icon_url=appinfo.owner.avatar_url_as(static_format='png'))
         embed.add_field(
@@ -158,8 +158,7 @@ class Meta(commands.Cog):
                 **Current Uptime **{humanize.naturaldelta(self.bot.loop.time())}
                 **Total Guilds **{len(self.bot.guilds):,}
                 **Visible Users **{len(self.bot.users):,}
-                **Memory % **{mem}
-                {ascii_bar}
+                **Memory {mem}%**
             """)
         )
         com_url = self.last_commit_cache['html_url']
