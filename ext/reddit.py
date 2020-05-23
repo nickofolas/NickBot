@@ -19,6 +19,7 @@ import textwrap
 from collections import namedtuple
 import random
 import time
+from datetime import datetime
 
 import discord
 from discord.ext import commands, flags
@@ -32,9 +33,20 @@ from utils.converters import RedditConverter
 PollChoice = namedtuple('PollChoice', ['text', 'votes'])
 
 
+class Poll:
+    def __init__(self, poll_data):
+        self.data = poll_data
+        self.deadline = datetime.fromtimestamp(poll_data.get("voting_end_timestamp")/1000)
+        self.total_votes = poll_data.get("total_vote_count")
+
+    def __iter__(self):
+        for option in self.data['options']:
+            yield PollChoice(text=option['text'], votes=option.get('vote_count', ''))
+
+
 class Submission:
     __slots__ = ('data', 'title', 'nsfw', 'text', 'upvotes', 'comments',
-                 'full_url', 'img_url', 'author', 'author_url', 'thumbnail', 'poll_data')
+                 'full_url', 'img_url', 'author', 'author_url', 'thumbnail', 'poll', 'created', 'creation_delta')
     """Wraps up a Submission"""
 
     def __init__(self, data):
@@ -49,15 +61,12 @@ class Submission:
         self.thumbnail = data.get('thumbnail')
         self.author = data.get('author')
         self.author_url = f"https://www.reddit.com/user/{self.author}"
-        self.poll_data = data.get('poll_data')
-
-    @property
-    def poll(self):
-        if not self.poll_data:
-            return None
-        for choice in self.poll_data.get('options'):
-            yield PollChoice(text=choice.get('text'), votes=choice.get('vote_count'))
-
+        self.created = data.get('created_utc')
+        self.creation_delta = datetime.utcnow() - datetime.utcfromtimestamp(self.created)
+        if p:=data.get('poll_data'):
+            self.poll = Poll(p)
+        else:
+            self.poll = None
 
     @property
     def is_gif(self):
@@ -132,15 +141,18 @@ class Redditor:
 def gen_listing_embeds(listing):
     for post in listing.posts:
         desc = post.text
-        if p := post.poll:
-            desc = '\n'.join(f"{opt.votes} votes - {opt.text}" for opt in p)
-            desc += f'\n\n{post.poll_data.get("total_vote_count")}'
+        if p:=post.poll:
+            pending = p.deadline > datetime.utcnow()
+            desc = '\n'.join(f"➣ {opt.votes} votes: {opt.text}" for opt in p)
+            if pending:
+                desc = "**Poll pending**\n" + '\n'.join(f"➣ {opt.text}" for opt in p)
+            desc += f'\n**{p.total_votes} total votes**'
         embed = discord.Embed(
             title=post.title,
-            description=f"<:upvote:698744205710852167> {post.upvotes} :speech_balloon: {post.comments}\n{desc}",
+            description=f"<:upvote:698744205710852167> {post.upvotes:,} | :speech_balloon: {post.comments:,} | 🕙 {nt(post.creation_delta)}\n{desc}",
             url=post.full_url,
             color=discord.Color.main
-        ).set_image(url=post.thumbnail).set_author(name=post.author,
+        ).set_image(url=post.img_url).set_author(name=post.author,
                                                    url=f"https://www.reddit.com/user/{post.author}")
         yield embed
 
