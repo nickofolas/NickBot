@@ -16,7 +16,7 @@ You should have received a copy of the GNU Affero General Public License
 along with neo.  If not, see <https://www.gnu.org/licenses/>.
 """
 import textwrap
-from datetime import datetime
+from collections import namedtuple
 import random
 import time
 
@@ -29,10 +29,12 @@ from utils.paginator import CSMenu, PagedEmbedMenu
 from utils.config import conf
 from utils.converters import RedditConverter
 
+PollChoice = namedtuple('PollChoice', ['text', 'votes'])
+
 
 class Submission:
     __slots__ = ('data', 'title', 'nsfw', 'text', 'upvotes', 'comments',
-                 'full_url', 'img_url', 'author', 'author_url', 'thumbnail')
+                 'full_url', 'img_url', 'author', 'author_url', 'thumbnail', 'poll_data')
     """Wraps up a Submission"""
 
     def __init__(self, data):
@@ -47,6 +49,15 @@ class Submission:
         self.thumbnail = data.get('thumbnail')
         self.author = data.get('author')
         self.author_url = f"https://www.reddit.com/user/{self.author}"
+        self.poll_data = data.get('poll_data')
+
+    @property
+    def poll(self):
+        if not self.poll_data:
+            return None
+        for choice in self.poll_data.get('options'):
+            yield PollChoice(text=choice.get('text'), votes=choice.get('vote_count'))
+
 
     @property
     def is_gif(self):
@@ -120,9 +131,13 @@ class Redditor:
 
 def gen_listing_embeds(listing):
     for post in listing.posts:
+        desc = post.text
+        if p := post.poll:
+            desc = '\n'.join(f"{opt.votes} votes - {opt.text}" for opt in p)
+            desc += f'\n\n{post.poll_data.get("total_vote_count")}'
         embed = discord.Embed(
             title=post.title,
-            description=f"<:upvote:698744205710852167> {post.upvotes} :speech_balloon: {post.comments}\n{post.text}",
+            description=f"<:upvote:698744205710852167> {post.upvotes} :speech_balloon: {post.comments}\n{desc}",
             url=post.full_url,
             color=discord.Color.main
         ).set_image(url=post.thumbnail).set_author(name=post.author,

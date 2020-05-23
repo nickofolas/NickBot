@@ -300,7 +300,7 @@ class Dev(commands.Cog):
             if flags.get('pull'):
                 await do_shell('git pull')
             mode = mode_mapping.get(flags['mode'])
-            extensions = [conf.get('exts')] if flags['extension'][0] == '~' else flags['extension']
+            extensions = conf.get('exts') if flags['extension'][0] == '~' else flags['extension']
             for ext in extensions:
                 mode(ext)
 
