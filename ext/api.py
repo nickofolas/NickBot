@@ -123,7 +123,7 @@ class Api(commands.Cog):
     @flags.add_flag('sub', nargs='?')
     @flags.add_flag('-s', '--sort', choices=['top', 'new', 'rising', 'hot', 'controversial', 'best'], default='hot')
     @flags.add_flag('-a', '--amount', type=int, default=5)
-    @flags.command(name='redditposts', aliases=['rposts'])
+    @flags.command(name='redditposts', aliases=['rposts'], enabled=False)
     async def _flags_reddit(self, ctx, **flags):
         """Get posts from a subreddit"""
         embeds = await get_sub(self, ctx, sort=flags['sort'], subreddit=flags['sub'], amount=flags['amount'], safe=not ctx.channel.nsfw)
@@ -133,7 +133,7 @@ class Api(commands.Cog):
         menu = CSMenu(source, delete_message_after=True)
         await menu.start(ctx)
 
-    @commands.command(aliases=['subinfo'])
+    @commands.command(aliases=['subinfo'], enabled=False)
     async def subredditinfo(self, ctx, *, subreddit):
         """Get some quick info on the named subreddit"""
         async with self.bot.session.get(f'https://reddit.com/r/{subreddit}/about/.json') as resp:
@@ -155,7 +155,7 @@ class Api(commands.Cog):
             embed.set_thumbnail(url='')
         await ctx.send(embed=embed)
 
-    @commands.group(invoke_without_command=True, aliases=['r'])
+    @commands.group(invoke_without_command=True, aliases=['r'], enabled=False)
     async def redditor(self, ctx, *, user=None):
         """Overview of a reddit user"""
         if user is None:
@@ -202,7 +202,7 @@ class Api(commands.Cog):
         )
         await ctx.send(embed=embed)
 
-    @redditor.command(aliases=['mod'])
+    @redditor.command(aliases=['mod'], enabled=False)
     async def modstats(self, ctx, user=None):
         """View moderator stats for a redditor"""
         if user is None:
@@ -240,7 +240,7 @@ class Api(commands.Cog):
             embed.add_field(name='_ _', value='This user does not mod any subs')
         await ctx.send(embed=embed)
 
-    @redditor.command(aliases=['def'])
+    @redditor.command(aliases=['def'], enabled=False)
     async def default(self, ctx, *, reddit_user):
         """Set a shortcut to your reddit user for reddit commands
         This will allow you to access your reddit acc info without passing an argument"""

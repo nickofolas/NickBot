@@ -17,6 +17,7 @@ along with neo.  If not, see <https://www.gnu.org/licenses/>.
 """
 from collections import namedtuple
 from contextlib import suppress
+import re
 
 # noinspection PyPackageRequirements
 from discord.ext import commands
@@ -25,6 +26,8 @@ import discord
 BetterUser = namedtuple('BetterUser', ['obj', 'http_dict'])
 u_conv = commands.UserConverter()
 m_conv = commands.MemberConverter()
+
+reddit_url = re.compile(r"^((https://)?(www\.|old\.|new\.)?reddit.com)?/?(?P<type>user|u|r)?/?(?P<name>[\w\-]*)/?")
 
 
 class BoolConverter(commands.Converter):
@@ -63,3 +66,12 @@ class CBStripConverter(commands.Converter):
 
             # remove `foo`
         return argument.strip('` \n')
+
+
+class RedditConverter(commands.Converter):
+    async def convert(self, ctx, argument):
+        if match := re.match(reddit_url, argument):
+            return match.groupdict().get('name')
+        raise commands.CommandError(f"Invalid argument '{argument}'")
+
+        
