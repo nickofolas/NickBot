@@ -24,6 +24,7 @@ from discord.ext import commands
 
 from utils.checks import check_member_in_guild
 from utils.formatters import prettify_text
+from utils.converters import BoolConverter
 
 
 def check_hl_regex(highlight_kw):
@@ -65,6 +66,12 @@ class User(commands.Cog):
                 readable_settings.append(f'**{discord.utils.escape_markdown(prettify_text(k))}** `{v}`')
         embed.description = '\n'.join(readable_settings)
         await ctx.send(embed=embed.set_thumbnail(url=ctx.author.avatar_url_as(static_format='png')))
+
+    @user_settings.command(name='repr')
+    async def settings_repr_errors(self, ctx, choice: BoolConverter):
+        async with ctx.loading():
+            await self.bot.conn.execute("UPDATE user_data SET repr_errors=$1 WHERE user_id=$2", choice, ctx.author.id)
+        await self.bot.build_user_cache()
 
     # END USER SETTINGS ~
     # BEGIN HIGHLIGHTS GROUP ~

@@ -119,6 +119,9 @@ class NeoBot(commands.Bot):
         self.logging_channels = {
             'guild_io': self.get_channel(710331034922647613)
         }
+        await self.build_user_cache()
+
+    async def build_user_cache(self):
         for record in await self.conn.fetch("SELECT * FROM user_data"):
             user = dict(record)
             self.user_cache[user.pop('user_id')] = user
