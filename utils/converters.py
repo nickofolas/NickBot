@@ -71,11 +71,11 @@ class CBStripConverter(commands.Converter):
 
 class RedditConverter(commands.Converter):
     async def convert(self, ctx, argument):
-        if match := re.match(reddit_url, argument):
+        if match := re.match(reddit_url, argument.strip('<>')):
             return match.groupdict().get('name')
         raise commands.CommandError(f"Invalid argument '{argument}'")
 
 
 class GitHubConverter(commands.Converter):
     async def convert(self, ctx, argument):
-        return github_pattern.search(argument).groupdict()
+        return github_pattern.search(argument.strip('<>')).groupdict()

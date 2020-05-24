@@ -209,7 +209,8 @@ class Guild(commands.Cog):
             else:
                 readable_settings.append(f'**{discord.utils.escape_markdown(prettify_text(k))}** `{v}`')
         await ctx.send(embed=discord.Embed(
-            title='Current Guild Settings', description='\n'.join(readable_settings[1:]), color=discord.Color.main))
+            title='Current Guild Settings', description='\n'.join(readable_settings[1:]),
+            color=discord.Color.main)).set_thumbnail(url=ctx.guild.icon_url_as(static_format='png'))
 
     @guild_config.command(aliases=['pfx'])
     @is_owner_or_administrator()
