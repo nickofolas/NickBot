@@ -1,6 +1,6 @@
 exts:
   - 'ext.api'
-  - 'ext.data'
+  - 'ext.user'
   - 'ext.dev'
   - 'ext.docs'
   - 'ext.events'

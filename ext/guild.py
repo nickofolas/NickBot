@@ -195,7 +195,7 @@ class Guild(commands.Cog):
         await ctx.send(f'{member} was kicked - **{reason}**')
         await ctx.message.delete()
 
-    @commands.group(name='config', aliases=['settings', 'cfg'], invoke_without_command=True)
+    @commands.group(name='config', aliases=['cfg'], invoke_without_command=True)
     @is_owner_or_administrator()
     async def guild_config(self, ctx):
         """

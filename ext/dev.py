@@ -197,12 +197,12 @@ class Dev(commands.Cog):
         if is_multistatement or rows == 0:
             return await ctx.send(f'`{dt:.2f}ms: {results}`')
         rkeys = [*results[0].keys()]
-        headers = [textwrap.shorten(col, width=45//len(rkeys)) for col in rkeys]
+        headers = [textwrap.shorten(col, width=40//len(rkeys)) for col in rkeys]
         r2 = [list(r.values()) for r in results]
         r = []
         for item in r2:
             for i in item:
-                r.append(textwrap.shorten(str(i), width=45//len(rkeys), placeholder=''))
+                r.append(textwrap.shorten(str(i), width=40//len(rkeys), placeholder=''))
         r = group(r, len(rkeys))
         table = tabulate(r, headers=headers, tablefmt='pretty')
         pages = [ctx.codeblock(page) for page in group(table, 1500)]

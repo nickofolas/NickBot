@@ -77,6 +77,7 @@ class NeoBot(commands.Bot):
         self.loop.create_task(self.ainit())
         self._cd = commands.CooldownMapping.from_cooldown(1.0, 2.5, commands.BucketType.user)
         self.add_check(self.global_cooldown)
+        self.user_cache = dict()
 
         for ext in conf.get('exts'):
             self.load_extension(ext)
@@ -101,6 +102,7 @@ class NeoBot(commands.Bot):
             raise commands.CommandOnCooldown(bucket, retry_after)
         return True
 
+    # noinspection PyAttributeOutsideInit
     async def on_ready(self):
         user = self.get_user(680835476034551925)
         embed = discord.Embed(
@@ -117,6 +119,9 @@ class NeoBot(commands.Bot):
         self.logging_channels = {
             'guild_io': self.get_channel(710331034922647613)
         }
+        for record in await self.conn.fetch("SELECT * FROM user_data"):
+            user = dict(record)
+            self.user_cache[user.pop('user_id')] = user
 
     async def close(self):
         [task.cancel() for task in all_tasks(loop=self.loop)]

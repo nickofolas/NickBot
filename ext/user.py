@@ -23,6 +23,7 @@ import discord
 from discord.ext import commands
 
 from utils.checks import check_member_in_guild
+from utils.formatters import prettify_text
 
 
 def check_hl_regex(highlight_kw):
@@ -46,11 +47,26 @@ def index_check(command_input):
         return True
 
 
-class Data(commands.Cog):
+class User(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.max_highlights = 10
 
+    # START USER SETTINGS ~
+    @commands.group(name='settings', invoke_without_command=True)
+    async def user_settings(self, ctx):
+        cur = dict((await self.bot.conn.fetch("SELECT * FROM user_data WHERE user_id=$1", ctx.author.id))[0])
+        embed = discord.Embed(title=f"""{self.bot.get_user(cur.pop("user_id"))}'s Settings""", color=discord.Color.main)
+        readable_settings = list()
+        for k, v in cur.items():
+            if isinstance(v, bool):
+                readable_settings.append(f'**{discord.utils.escape_markdown(prettify_text(k))}** {ctx.tick(v)}')
+            else:
+                readable_settings.append(f'**{discord.utils.escape_markdown(prettify_text(k))}** `{v}`')
+        embed.description = '\n'.join(readable_settings)
+        await ctx.send(embed=embed.set_thumbnail(url=ctx.author.avatar_url_as(static_format='png')))
+
+    # END USER SETTINGS ~
     # BEGIN HIGHLIGHTS GROUP ~
 
     @commands.group(aliases=['hl'], invoke_without_command=True)
@@ -271,4 +287,4 @@ class Data(commands.Cog):
 
 
 def setup(bot):
-    bot.add_cog(Data(bot))
+    bot.add_cog(User(bot))
