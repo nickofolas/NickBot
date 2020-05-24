@@ -18,6 +18,7 @@ along with neo.  If not, see <https://www.gnu.org/licenses/>.
 import re
 import string
 import pprint
+from typing import Union
 
 import discord
 from discord.ext import commands
@@ -54,30 +55,26 @@ class User(commands.Cog):
         self.max_highlights = 10
 
     # START USER SETTINGS ~
-    @commands.group(name='settings', invoke_without_command=True)
-    async def user_settings(self, ctx):
+    @commands.command(name='settings')
+    async def user_settings(self, ctx, setting_name=None, *, new_setting: Union[BoolConverter, str] = None):
+        if setting_name is not None and new_setting is not None:
+            keys = self.bot.user_cache.get(ctx.author.id).keys()
+            if setting_name not in keys:
+                raise commands.CommandError(f"New setting must be one of {', '.join(keys)}")
+            async with ctx.loading():
+                await self.bot.conn.execute(f"UPDATE user_data SET {setting_name}=$1 WHERE user_id=$2", new_setting, ctx.author.id)
+            await self.bot.build_user_cache()
+            return
         cur = dict((await self.bot.conn.fetch("SELECT * FROM user_data WHERE user_id=$1", ctx.author.id))[0])
         embed = discord.Embed(title=f"""{self.bot.get_user(cur.pop("user_id"))}'s Settings""", color=discord.Color.main)
         readable_settings = list()
         for k, v in cur.items():
             if isinstance(v, bool):
-                readable_settings.append(f'**{discord.utils.escape_markdown(prettify_text(k))}** {ctx.tick(v)}')
+                readable_settings.append(f'**{discord.utils.escape_markdown(k)}** {ctx.tick(v)}')
             else:
-                readable_settings.append(f'**{discord.utils.escape_markdown(prettify_text(k))}** `{v}`')
+                readable_settings.append(f'**{discord.utils.escape_markdown(k)}** `{v}`')
         embed.description = '\n'.join(readable_settings)
         await ctx.send(embed=embed.set_thumbnail(url=ctx.author.avatar_url_as(static_format='png')))
-
-    @user_settings.command(name='repr')
-    async def settings_repr_errors(self, ctx, choice: BoolConverter):
-        async with ctx.loading():
-            await self.bot.conn.execute("UPDATE user_data SET repr_errors=$1 WHERE user_id=$2", choice, ctx.author.id)
-        await self.bot.build_user_cache()
-
-    @user_settings.command(name='erroremojis', aliases=['ee'])
-    async def settings_emoji_errors(self, ctx, choice: BoolConverter):
-        async with ctx.loading():
-            await self.bot.conn.execute("UPDATE user_data SET error_emojis=$1 WHERE user_id=$2", choice, ctx.author.id)
-        await self.bot.build_user_cache()
 
     # END USER SETTINGS ~
     # BEGIN HIGHLIGHTS GROUP ~
