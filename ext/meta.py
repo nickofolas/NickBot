@@ -158,7 +158,7 @@ class Meta(commands.Cog):
                 **Current Uptime **{humanize.naturaldelta(self.bot.loop.time())}
                 **Total Guilds **{len(self.bot.guilds):,}
                 **Visible Users **{len(self.bot.users):,}
-                **Memory {mem}%**
+                **Memory **{mem}%
             """)
         )
         com_url = self.last_commit_cache['html_url']

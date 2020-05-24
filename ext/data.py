@@ -17,6 +17,7 @@ along with neo.  If not, see <https://www.gnu.org/licenses/>.
 """
 import re
 import string
+import pprint
 
 import discord
 from discord.ext import commands
@@ -201,12 +202,12 @@ class Data(commands.Cog):
     @hl_dev.command(name='queue')
     @commands.is_owner()
     async def view_hl_queue(self, ctx):
-        await ctx.safe_send(str(self.bot.get_cog('Events').hl_queue))
+        await ctx.safe_send(pprint.pformat(self.bot.get_cog('Events').hl_queue))
 
     @hl_dev.command(name='cache')
     @commands.is_owner()
     async def view_hl_cache(self, ctx):
-        await ctx.safe_send(str(self.bot.get_cog('Events').hl_cache))
+        await ctx.safe_send(pprint.pformat(self.bot.get_cog('Events').hl_cache))
 
     @hl_dev.command(name='build')
     @commands.is_owner()

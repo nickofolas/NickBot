@@ -10,6 +10,6 @@ Want to add it to your own server?
 permissions calculator and apply a different integer to the `permissions` parameter.
 
 # Support
-If you have problems with the bot, feel free to reach out to nickofolas#0066, or join the [support server](https://discord.gg/tjq68yq)
+If you have problems with the bot, feel free to reach out to nickofolas#0706, or join the [support server](https://discord.gg/tjq68yq)
 
 This bot uses the [discord.py library](https://github.com/Rapptz/discord.py)

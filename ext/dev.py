@@ -92,7 +92,8 @@ class HandleTb(Exception):
 
     def format_exception(self):
         fmtd_exc = ''.join(traceback.format_exception(type(self.error), self.error, self.error.__traceback__))
-        pages = group(fmtd_exc, 1500)
+        formatted = ''.join(re.sub(r'File ".+",', 'File "<eval>"', fmtd_exc))
+        pages = group(formatted, 1500)
         return [self.ctx.codeblock(page, 'py') for page in pages]
 
 
@@ -140,7 +141,7 @@ class Dev(commands.Cog):
         to_compile = f'async def func():\n{textwrap.indent(body, "  ")}'
         async with ctx.loading(exc_ignore=HandleTb):
             try:
-                import_expression.exec(compile(to_compile, '<eval>', 'exec'), env)
+                import_expression.exec(to_compile, env)
             except Exception as e:
                 raise HandleTb(ctx, e)
             evaluated_func = env['func']
