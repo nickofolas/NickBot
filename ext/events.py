@@ -131,10 +131,13 @@ class Events(commands.Cog):
             return  # Ignores CommandNotFound and NotOwner because they're unnecessary
         elif isinstance(error, commands.CommandOnCooldown):
             return await ctx.message.add_reaction(conf['emoji_suite']['alarm'])  # Handles Cooldowns uniquely
+        do_emojis = True
         if settings := self.bot.user_cache.get(ctx.author.id):
             if settings.get('repr_errors'):
                 error = repr(error)
-        await ctx.propagate_to_eh(self.bot, ctx, error)  # Anything else is propagated to the reaction handler
+            do_emojis = settings.get('error_emojis', True)
+        await ctx.propagate_to_eh(self.bot, ctx, error, do_emojis=do_emojis)  # Anything else is propagated to the
+        # reaction handler
 
     @commands.Cog.listener()
     async def on_command(self, ctx):

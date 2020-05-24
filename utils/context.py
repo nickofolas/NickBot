@@ -108,14 +108,21 @@ class Context(commands.Context):
                 yield False
                 return
             else:
-                tasks.append(self.propagate_to_eh(self.bot, self, e)) if prop else None
+                do_emojis = True
+                if settings := self.bot.user_cache.get(self.author.id):
+                    if settings.get('repr_errors'):
+                        e = repr(e)
+                    do_emojis = settings.get('error_emojis', True)
+                tasks.append(self.propagate_to_eh(self.bot, self, e, do_emojis=do_emojis)) if prop else None
             await asyncio.gather(*tasks)
         else:
             tasks.append(self.message.add_reaction(self.tick(True))) if tick else None
             await asyncio.gather(*tasks)
 
     @staticmethod
-    async def propagate_to_eh(bot, ctx, error):
+    async def propagate_to_eh(bot, ctx, error, do_emojis=True):
+        if do_emojis is False:
+            return await ctx.send(error)
         with suppress(Exception):
             await ctx.message.add_reaction(_EMOJIS.warning_button)
             try:

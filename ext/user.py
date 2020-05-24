@@ -73,6 +73,12 @@ class User(commands.Cog):
             await self.bot.conn.execute("UPDATE user_data SET repr_errors=$1 WHERE user_id=$2", choice, ctx.author.id)
         await self.bot.build_user_cache()
 
+    @user_settings.command(name='erroremojis', aliases=['ee'])
+    async def settings_emoji_errors(self, ctx, choice: BoolConverter):
+        async with ctx.loading():
+            await self.bot.conn.execute("UPDATE user_data SET error_emojis=$1 WHERE user_id=$2", choice, ctx.author.id)
+        await self.bot.build_user_cache()
+
     # END USER SETTINGS ~
     # BEGIN HIGHLIGHTS GROUP ~
 
