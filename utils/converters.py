@@ -28,6 +28,7 @@ u_conv = commands.UserConverter()
 m_conv = commands.MemberConverter()
 
 reddit_url = re.compile(r"^((https://)?(www\.|old\.|new\.)?reddit.com)?/?(?P<type>user|u|r)?/?(?P<name>[\w\-]*)/?")
+github_pattern = re.compile(r"^((https://)?(www\.)?github.com)?/?(?P<user>\w*)/?(?P<repo>[\w\-]*)?/?")
 
 
 class BoolConverter(commands.Converter):
@@ -74,4 +75,7 @@ class RedditConverter(commands.Converter):
             return match.groupdict().get('name')
         raise commands.CommandError(f"Invalid argument '{argument}'")
 
-        
+
+class GitHubConverter(commands.Converter):
+    async def convert(self, ctx, argument):
+        return github_pattern.search(argument).groupdict()

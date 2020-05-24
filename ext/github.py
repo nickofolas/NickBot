@@ -23,7 +23,8 @@ import discord
 from discord.ext import commands, flags
 from humanize import naturaltime as nt
 
-from utils.formatters import prettify_text, from_tz, group
+from utils.formatters import prettify_text, from_tz
+from utils.converters import GitHubConverter
 from utils.errors import ApiError
 
 path_mapping = {'repos': 'repositories'}
@@ -86,9 +87,10 @@ class Github(commands.Cog):
         [self.bot.remove_command(command.name) for command in self.get_commands()] 
 
     @commands.command(name='user')
-    async def git_user(ctx, *, name):
+    async def git_user(ctx, *, name: GitHubConverter):
         """Fetch data on a github user"""
-        async with ctx.loading(tick=False), ctx.bot.session.get(f'https://api.github.com/users/{name}') as resp:
+        async with ctx.loading(tick=False), ctx.bot.session.get(f'https://api.github.com/users/'
+                                                                f'{name.get("user")}') as resp:
             if resp.status != 200:
                 raise ApiError(f'Received {resp.status}')
             json = await resp.json()
@@ -106,10 +108,11 @@ class Github(commands.Cog):
             await ctx.send(embed=embed)
 
     @commands.command(name='repo')
-    async def git_repo(ctx, *, repo_path):
+    async def git_repo(ctx, *, repo: GitHubConverter):
         """Fetch data on a github repository
-        MUST be a public repository, path format is {user}/{repo name}"""
-        async with ctx.loading(tick=False), ctx.bot.session.get(f'https://api.github.com/repos/{repo_path}') as resp:
+        MUST be a public repository"""
+        async with ctx.loading(tick=False), ctx.bot.session.get(f'https://api.github.com/repos/'
+                                                                f'{repo.get("user")}/{repo.get("repo")}') as resp:
             if resp.status != 200:
                 raise ApiError(f'Received {resp.status}')
             json = await resp.json()
