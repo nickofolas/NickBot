@@ -78,6 +78,7 @@ class NeoBot(commands.Bot):
         self._cd = commands.CooldownMapping.from_cooldown(1.0, 2.5, commands.BucketType.user)
         self.add_check(self.global_cooldown)
         self.user_cache = dict()
+        self.before_invoke(self.before)
 
         for ext in conf.get('exts'):
             self.load_extension(ext)
@@ -102,6 +103,14 @@ class NeoBot(commands.Bot):
             raise commands.CommandOnCooldown(bucket, retry_after)
         return True
 
+    async def before(self, ctx):
+        if not self.user_cache.get(ctx.author.id):
+            with suppress(asyncpg.exceptions.UniqueViolationError):
+                await self.conn.execute('INSERT INTO user_data (user_id) VALUES ($1)', ctx.author.id)
+                # Adds people to the user_data table whenever they execute their first command
+                await self.build_user_cache() # And then updates the user cache
+
+
     # noinspection PyAttributeOutsideInit
     async def on_ready(self):
         user = self.get_user(680835476034551925)
@@ -122,6 +131,7 @@ class NeoBot(commands.Bot):
         await self.build_user_cache()
 
     async def build_user_cache(self):
+        self.user_cache = dict()
         for record in await self.conn.fetch("SELECT * FROM user_data"):
             user = dict(record)
             self.user_cache[user.pop('user_id')] = user

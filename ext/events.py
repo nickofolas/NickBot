@@ -140,13 +140,6 @@ class Events(commands.Cog):
         # reaction handler
 
     @commands.Cog.listener()
-    async def on_command(self, ctx):
-        with suppress(asyncpg.exceptions.UniqueViolationError):
-            await self.bot.conn.execute('INSERT INTO user_data (user_id) VALUES ($1)', ctx.author.id)
-            # Adds people to the user_data table whenever they execute their first command
-            await self.bot.build_user_cache() # And then updates the user cache
-
-    @commands.Cog.listener()
     async def on_message_edit(self, before, after):
         if after.content == before.content:
             return
