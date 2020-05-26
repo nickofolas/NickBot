@@ -21,32 +21,29 @@ import pprint
 from typing import Union
 
 import discord
-from discord.ext import commands
+from discord.ext import commands, flags
 
 from utils.checks import check_member_in_guild
 from utils.formatters import prettify_text
 from utils.converters import BoolConverter
 
+regex_check = re.compile(r"(?P<charmatching>(\.|\\w|\\S|\\D)[\*\+]|\[(a-z)?(A-­Z)?(0-9)?(_)?])|(?P<or>(\|.*){5})")
+
 
 def check_hl_regex(highlight_kw):
-    check_re = re.compile(fr'{highlight_kw}', re.I)
     if len(highlight_kw) < 3:
         raise commands.CommandError(
             'Highlights must be more than 2 characters long')
-    if '|' in highlight_kw:
-        raise commands.CommandError('This trigger uses a blocked character')
-    for i in ('afssafasfa', '12421', '\n', ' ', string.ascii_letters, string.digits):
-        if re.search(check_re, i):
-            raise commands.CommandError('This trigger is too general')
-
+    if s:=regex_check.search(highlight_kw):
+        d = s.groupdict()
+        raise commands.CommandError(f"Disallowed regex character(s) {set(i for i in d.values() if i)}")
 
 def index_check(command_input):
     try:
         int(command_input[0])
     except ValueError:
         return False
-    else:
-        return True
+    return True
 
 
 class User(commands.Cog):
@@ -94,15 +91,21 @@ class User(commands.Cog):
             description='\n'.join(hl_list), color=discord.Color.main).set_footer(
             text=f'{len(fetched)}/{self.max_highlights} slots used'))
 
-    @highlight.command()
-    async def add(self, ctx, *, highlight_words):
+    @flags.add_flag('highlight', nargs='+')
+    @flags.add_flag('-re', '--regex', action='store_true')
+    @highlight.command(cls=flags.FlagCommand)
+    async def add(self, ctx, **flags):
         """
         Add a new highlight! When a highlighted word is used, you'll get notified!
         If desired, the highlight can be made quite granular, as regex patterns are
         supported.
         NOTE: It may take up to a minute for a new highlight to take effect
         """
-        check_hl_regex(highlight_words)
+        highlight_words = ' '.join(flags['highlight'])
+        if flags['regex']:
+            check_hl_regex(highlight_words)
+        else:
+            highlight_words = re.escape(highlight_words)
         active = await self.bot.conn.fetch('SELECT kw FROM highlights WHERE user_id=$1', ctx.author.id)
         if len(active) >= self.max_highlights:
             raise commands.CommandError(f'You may only have {self.max_highlights} highlights at a time')

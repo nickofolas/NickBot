@@ -110,10 +110,11 @@ class Context(commands.Context):
             else:
                 if prop:
                     self.bot.dispatch('command_error', self, e)
-            await asyncio.gather(*tasks)
         else:
             tasks.append(self.message.add_reaction(self.tick(True))) if tick else None
-            await asyncio.gather(*tasks)
+        finally:
+            with suppress(discord.NotFound):
+                await asyncio.gather(*tasks)
 
     @staticmethod
     async def propagate_to_eh(bot, ctx, error, do_emojis=True):

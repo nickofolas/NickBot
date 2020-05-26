@@ -30,6 +30,7 @@ from typing import Union, Optional
 
 import discord
 from discord.ext import commands
+from async_timeout import timeout
 
 from utils import paginator
 from utils.formatters import group
@@ -231,7 +232,7 @@ class Util(commands.Cog):
         if image_url is None and not ctx.message.attachments:
             raise commands.MissingRequiredArgument(Parameter(name='image', kind=Parameter.KEYWORD_ONLY))
         image = image_url or ctx.message.attachments[0].url
-        async with ctx.loading(tick=False), self.bot.session.get('https://api.tsu.sh/google/ocr', params={'q': image}) as resp:
+        async with timeout(30), ctx.loading(tick=False), self.bot.session.get('https://api.tsu.sh/google/ocr', params={'q': image}) as resp:
             output = (await resp.json()).get('text', 'No result')
         await ctx.quick_menu(group(output, 1000), 1, delete_message_after=True)
 
