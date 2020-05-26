@@ -145,12 +145,24 @@ class User(commands.Cog):
                                     guild_id, ctx.author.id, iterable_hls[highlight_index - 1][0])
         await ctx.message.add_reaction(ctx.tick(True))
 
-    @highlight.command(name='block')
-    async def hl_block(self, ctx, *, person: Union[discord.Member, discord.User, int]):
-        person = person.id if not isinstance(person, int) else person
+    @flags.add_flag('-a', '--add', nargs='*')
+    @flags.add_flag('-r', '--remove', nargs='*')
+    @highlight.command(name='block', aliases=['blocks'], cls=flags.FlagCommand)
+    async def hl_block(self, ctx, **flags):
+        """Add or remove a user from your list of people who won't highlight you, or just view the list
+        Use the --add flag to add a user, and use --remove to do the opposite"""
+        if not flags.get('add') and not flags.get('remove'):
+            if b := self.bot.user_cache[ctx.author.id]['hl_blocks']:
+                blocked = [self.bot.get_user(i).__str__() for i in b]
+            else:
+                blocked = ["No blocked users"]
+            await ctx.quick_menu(blocked, 10, delete_message_after=True)
+            return
+        strategy = 'array_append' if flags.get('add') else 'array_remove'
+        person = await commands.UserConverter().convert(ctx, (flags.get('add') or flags.get('remove'))[0])
         async with ctx.loading():
-            await self.bot.conn.execute("UPDATE user_data SET hl_blocks = array_append(hl_blocks, $1) WHERE "
-                                        "user_id=$1", person, ctx.author.id)
+            await self.bot.conn.execute(f"UPDATE user_data SET hl_blocks = {strategy}(hl_blocks, $1) WHERE "
+                                        "user_id=$2", person.id, ctx.author.id)
             await self.bot.build_user_cache()
 
     @highlight.command(name='info')
