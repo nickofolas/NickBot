@@ -34,9 +34,10 @@ def check_hl_regex(highlight_kw):
     if len(highlight_kw) < 3:
         raise commands.CommandError(
             'Highlights must be more than 2 characters long')
-    if s:=regex_check.search(highlight_kw):
+    if s := regex_check.search(highlight_kw):
         d = s.groupdict()
         raise commands.CommandError(f"Disallowed regex character(s) {set(i for i in d.values() if i)}")
+
 
 def index_check(command_input):
     try:
@@ -59,15 +60,17 @@ class User(commands.Cog):
             if setting_name not in keys:
                 raise commands.CommandError(f"New setting must be one of {', '.join(keys)}")
             async with ctx.loading():
-                await self.bot.conn.execute(f"UPDATE user_data SET {setting_name}=$1 WHERE user_id=$2", new_setting, ctx.author.id)
+                await self.bot.conn.execute(f"UPDATE user_data SET {setting_name}=$1 WHERE user_id=$2", new_setting,
+                                            ctx.author.id)
             await self.bot.build_user_cache()
             return
-        cur = dict((await self.bot.conn.fetch("SELECT * FROM user_data WHERE user_id=$1", ctx.author.id))[0])
-        embed = discord.Embed(title=f"""{self.bot.get_user(cur.pop("user_id"))}'s Settings""", color=discord.Color.main)
+        embed = discord.Embed(title=f"""{ctx.author}'s Settings""", color=discord.Color.main)
         readable_settings = list()
-        for k, v in cur.items():
+        for k, v in self.bot.user_cache[ctx.author.id].items():
             if isinstance(v, bool):
                 readable_settings.append(f'**{discord.utils.escape_markdown(k)}** {ctx.tick(v)}')
+            elif isinstance(v, list):
+                readable_settings.append(f'**{discord.utils.escape_markdown(k)}** `{len(v)}` total')
             else:
                 readable_settings.append(f'**{discord.utils.escape_markdown(k)}** `{v}`')
         embed.description = '\n'.join(readable_settings)
@@ -136,15 +139,19 @@ class User(commands.Cog):
                         await self.bot.conn.fetch(
                             'SELECT kw, exclude_guild FROM highlights WHERE user_id=$1', ctx.author.id)]
         current = iterable_hls[highlight_index - 1][1]
-        if current and guild_id in current:
-            await self.bot.conn.execute('UPDATE highlights SET exclude_guild = array_remove(exclude_guild, $1) WHERE '
-                                        'user_id=$2 AND kw=$3',
-                                        guild_id, ctx.author.id, iterable_hls[highlight_index - 1][0])
-        else:
-            await self.bot.conn.execute('UPDATE highlights SET exclude_guild = array_append(exclude_guild, $1) WHERE '
-                                        'user_id=$2 AND kw=$3',
-                                        guild_id, ctx.author.id, iterable_hls[highlight_index - 1][0])
+        strategy = "array_remove" if current and guild_id in current else "array_append"
+        await self.bot.conn.execute(f'UPDATE highlights SET exclude_guild = {strategy}(exclude_guild, $1) WHERE '
+                                    'user_id=$2 AND kw=$3',
+                                    guild_id, ctx.author.id, iterable_hls[highlight_index - 1][0])
         await ctx.message.add_reaction(ctx.tick(True))
+
+    @highlight.command(name='block')
+    async def hl_block(self, ctx, *, person: Union[discord.Member, discord.User, int]):
+        person = person.id if not isinstance(person, int) else person
+        async with ctx.loading():
+            await self.bot.conn.execute("UPDATE user_data SET hl_blocks = array_append(hl_blocks, $1) WHERE "
+                                        "user_id=$1", person, ctx.author.id)
+            await self.bot.build_user_cache()
 
     @highlight.command(name='info')
     async def view_highlight_info(self, ctx, highlight_index):

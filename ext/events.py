@@ -30,12 +30,14 @@ from utils.config import conf
 ignored_cmds = re.compile(r'\.+')
 
 
-def hl_checks_one(c, message):
+def hl_checks_one(c, message, bot):
     predicates = []
     if c[2]:
         predicates.append(message.guild.id not in c[2])
     predicates.append(not re.search(re.compile(r'([a-zA-Z0-9]{24}\.[a-zA-Z0-9]{6}\.[a-zA-Z0-9_\-]{27}|mfa\.['
                                                r'a-zA-Z0-9_\-]{84})'), message.content))
+    if bot.user_cache[c[0]]['hl_blocks']:
+        predicates.append(message.author.id not in bot.user_cache[c[0]]['hl_blocks'])
     return all(predicates)
 
 
@@ -116,7 +118,7 @@ class Events(commands.Cog):
         for c in self.hl_cache:
             with suppress(AttributeError, UnboundLocalError):
                 if match := re.search(c[1], message.content):  # Makes sure there's actually a match
-                    if not hl_checks_one(c, message):
+                    if not hl_checks_one(c, message, self.bot):
                         continue
                     alerted = self.bot.get_user(c[0])
                     embed = await build_highlight_embed(match, message)  # Builds the embed that'll be delivered
