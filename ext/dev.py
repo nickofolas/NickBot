@@ -142,7 +142,13 @@ class Dev(commands.Cog):
             env.update(self.scope)
         stdout = io.StringIO()
         to_return = None
-        to_compile = f'async def func(scope, should_retain=True):\n{textwrap.indent(body, "  ")}\n  if not should_retain:\n    return\n  scope.update(locals())'
+        to_compile = f'async def func(scope, should_retain=True):' \
+                     f'\n  try:' \
+                     f'\n{textwrap.indent(body, "    ")}' \
+                     f'\n  finally:' \
+                     f'\n    if not should_retain:' \
+                     f'\n      return' \
+                     f'\n    scope.update(locals())'
         async with ctx.loading(exc_ignore=HandleTb):
             try:
                 import_expression.exec(to_compile, env)
