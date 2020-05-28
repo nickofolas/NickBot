@@ -272,10 +272,10 @@ class User(commands.Cog):
         Base todo command, run with no arguments to see a list of all your active todos
         """
         todo_list = []
-        fetched = [rec['content'] for rec in
-                   await self.bot.conn.fetch("SELECT content from todo WHERE user_id=$1", ctx.author.id)]
+        fetched = [(rec['content'], rec['jump_url']) for rec in
+                   await self.bot.conn.fetch("SELECT content, jump_url from todo WHERE user_id=$1", ctx.author.id)]
         for count, value in enumerate(fetched, 1):
-            todo_list.append(f'`{count}` {value}')
+            todo_list.append(f'[`{count}`]({value[1]}) {value[0]}')
         if not todo_list:
             todo_list.append('No todos')
         await ctx.quick_menu(todo_list, 10,
@@ -289,7 +289,7 @@ class User(commands.Cog):
         """
         Add an item to your todo list
         """
-        await self.bot.conn.execute('INSERT INTO todo VALUES ($1, $2)', ctx.author.id, content)
+        await self.bot.conn.execute('INSERT INTO todo VALUES ($1, $2, $3)', ctx.author.id, content, ctx.message.jump_url)
         await ctx.message.add_reaction(ctx.tick(True))
 
     @todo_rw.command(name='remove', aliases=['rm', 'delete', 'del', 'yeet'])

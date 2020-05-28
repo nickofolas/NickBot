@@ -35,7 +35,7 @@ from tabulate import tabulate
 import utils
 from utils.config import conf
 from utils.formatters import return_lang_hl, pluralize, group
-from utils.converters import CBStripConverter
+from utils.converters import CBStripConverter, BoolConverter
 
 status_dict = {
     'online': discord.Status.online,
@@ -103,6 +103,8 @@ class Dev(commands.Cog):
 
     def __init__(self, bot):
         self.bot = bot
+        self.scope = {}
+        self.retain = True
         self._last_result = None
 
     async def cog_check(self, ctx):
@@ -136,9 +138,11 @@ class Dev(commands.Cog):
             '_': self._last_result
         }
         env.update(globals())
+        if self.retain:
+            env.update(self.scope)
         stdout = io.StringIO()
         to_return = None
-        to_compile = f'async def func():\n{textwrap.indent(body, "  ")}'
+        to_compile = f'async def func(scope, should_retain=True):\n{textwrap.indent(body, "  ")}\n  if not should_retain:\n    return\n  scope.update(locals())'
         async with ctx.loading(exc_ignore=HandleTb):
             try:
                 import_expression.exec(to_compile, env)
@@ -147,7 +151,7 @@ class Dev(commands.Cog):
             evaluated_func = env['func']
             try:
                 with redirect_stdout(stdout):
-                    result = await evaluated_func() or ''
+                    result = await evaluated_func(self.scope, self.retain) or ''
             except Exception as e:
                 raise HandleTb(ctx, e)
             else:
@@ -230,6 +234,25 @@ class Dev(commands.Cog):
     async def _dev_src(self, ctx, *, obj):
         new_ctx = await copy_ctx(ctx, f'eval return inspect!.getsource({obj})')
         await new_ctx.reinvoke()
+
+    @dev_command_group.group(name='scope', invoke_without_command=True)
+    async def _dev_scope(self, ctx, toggle: BoolConverter = None):
+        if toggle is None:
+            pages = group(str(self.scope), 1500)
+            pages = [ctx.codeblock(page, 'py') for page in pages]
+            await ctx.quick_menu(pages, 1,
+                template=discord.Embed(
+                    title=f'Retain: {self.retain}',
+                    color=discord.Color.main),
+                delete_message_after=True, timeout=300)
+            return
+        async with ctx.loading():
+            self.retain = toggle
+
+    @_dev_scope.command(name='flush')
+    async def _clear_scope(self, ctx):
+        async with ctx.loading():
+            self.scope = {}
 
     @flags.add_flag('-s', '--status', default='online', choices=['online', 'offline', 'dnd', 'idle'])
     @flags.add_flag('-p', '--presence', nargs='+', dest='presence')
