@@ -148,16 +148,20 @@ class Events(commands.Cog):
         if not self.bot.snipes.get(after.channel.id):  # Creates the snipes cache
             self.bot.snipes[after.channel.id] = {'deleted': collections.deque(list(), 100),
                                                  'edited': collections.deque(list(), 100)}
-        if after.content and not after.author.bot:  # Updates the snipes edit cache
-            self.bot.snipes[after.channel.id]['edited'].append((before, after, datetime.utcnow()))
+        if usr := self.bot.user_cache.get(after.author.id):
+            if usr['can_snipe']:
+                if after.content and not after.author.bot:  # Updates the snipes edit cache
+                    self.bot.snipes[after.channel.id]['edited'].append((before, after, datetime.utcnow()))
 
     @commands.Cog.listener()
     async def on_message_delete(self, message):
         if not self.bot.snipes.get(message.channel.id):  # Creates the snipes cache
             self.bot.snipes[message.channel.id] = {'deleted': collections.deque(list(), 100),
                                                    'edited': collections.deque(list(), 100)}
-        if message.content and not message.author.bot:  # Updates the snipes deleted cache
-            self.bot.snipes[message.channel.id]['deleted'].append((message, datetime.utcnow()))
+        if usr := self.bot.user_cache.get(message.author.id):
+            if usr['can_snipe']:
+                if message.content and not message.author.bot:  # Updates the snipes deleted cache
+                    self.bot.snipes[message.channel.id]['deleted'].append((message, datetime.utcnow()))
 
     @commands.Cog.listener()
     async def on_guild_join(self, guild):

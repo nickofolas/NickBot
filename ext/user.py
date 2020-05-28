@@ -70,7 +70,7 @@ class User(commands.Cog):
             if isinstance(v, bool):
                 readable_settings.append(f'**{discord.utils.escape_markdown(k)}** {ctx.tick(v)}')
             elif isinstance(v, list):
-                readable_settings.append(f'**{discord.utils.escape_markdown(k)}** `{len(v)}` total')
+                continue
             else:
                 readable_settings.append(f'**{discord.utils.escape_markdown(k)}** `{v}`')
         embed.description = '\n'.join(readable_settings)
