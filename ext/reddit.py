@@ -17,7 +17,6 @@ along with neo.  If not, see <https://www.gnu.org/licenses/>.
 """
 import textwrap
 from collections import namedtuple
-import random
 import time
 from datetime import datetime
 
@@ -178,7 +177,9 @@ class Reddit(commands.Cog):
                 raise ApiError(f'Recieved {resp.status}')
             data = await resp.json()
         embeds = [*gen_listing_embeds(SubListing(data, allow_nsfw=ctx.channel.is_nsfw()))]
-        source = PagedEmbedMenu(random.sample(embeds, k=flags['amount']))
+        if not embeds:
+            raise ApiError("Couldn't find any posts that matched the contextual criteria")
+        source = PagedEmbedMenu(embeds[:flags['amount']])
         menu = CSMenu(source, delete_message_after=True)
         await menu.start(ctx)
 
@@ -186,7 +187,7 @@ class Reddit(commands.Cog):
     async def reddit_user(ctx, *, user: RedditConverter):
         """Get user info on a redditor"""
         async with ctx.loading(tick=False), \
-                   ctx.bot.session.get(f"https://reddit.com/user/{user}/about.json") as r1, \
+                ctx.bot.session.get(f"https://reddit.com/user/{user}/about.json") as r1, \
                 ctx.bot.session.get(f"https://reddit.com/user/{user}/trophies.json") as r2:
             about, trophies = (await r1.json(), await r2.json())
         user = Redditor(about_data=about, trophy_data=trophies)

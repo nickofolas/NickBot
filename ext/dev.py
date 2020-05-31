@@ -167,7 +167,7 @@ class Dev(commands.Cog):
         if to_return:
             pages = group(to_return, 1500)
             pages = [ctx.codeblock(page, 'py') for page in pages]
-            await ctx.quick_menu(pages, 1, delete_message_after=True, timeout=300)
+            await ctx.quick_menu(pages, 1, delete_message_after=True, timeout=1800)
 
     @commands.command()
     async def debug(self, ctx, *, command_string):

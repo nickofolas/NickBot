@@ -83,9 +83,6 @@ class Github(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    def cog_unload(self):
-        [self.bot.remove_command(command.name) for command in self.get_commands()] 
-
     @commands.command(name='user')
     async def git_user(ctx, *, name: GitHubConverter):
         """Fetch data on a github user"""
