@@ -43,17 +43,8 @@ class Highlight:
         attrs = ' '.join(f"{k}={v}" for k, v in self.__dict__.items())
         return f"<{self.__class__.__name__} {attrs}>"
 
-    def check_regex(self):
-        if len(self.kw) < 3:
-            raise commands.CommandError(
-                'Highlights must be more than 2 characters long')
-        if s := regex_check.search(self.kw):
-            d = s.groupdict()
-            raise commands.CommandError(f"Disallowed regex character(s) {set(i for i in d.values() if i)}")
-
     def check_can_send(self, message, bot):
         predicates = []
-        alerted = bot.get_user(self.user_id)
         if self.user_id not in [m.id for m in message.guild.members]:
             return False
         if self.exc_guilds:
@@ -63,7 +54,8 @@ class Highlight:
         if blocks := bot.user_cache[self.user_id]['hl_blocks']:
             predicates.append(message.author.id not in blocks)
         predicates.extend([self.user_id != message.author.id,
-                           message.channel.permissions_for(message.guild.get_member(self.user_id)).read_messages is not False,
+                           message.channel.permissions_for(
+                               message.guild.get_member(self.user_id)).read_messages is not False,
                            not message.author.bot])
         return all(predicates)
 
@@ -120,6 +112,7 @@ class HlMon(commands.Cog):
     async def wait_for_ready(self):
         await self.bot.wait_until_ready()
 
+
 def index_check(command_input):
     try:
         int(command_input[0])
@@ -128,7 +121,16 @@ def index_check(command_input):
     return True
 
 
-# noinspection PyUnresolvedReferences,PyMethodParameters
+def check_regex(kw):
+    if len(kw) < 3:
+        raise commands.CommandError(
+            'Highlights must be more than 2 characters long')
+    if s := regex_check.search(kw):
+        d = s.groupdict()
+        raise commands.CommandError(f"Disallowed regex character(s) {set(i for i in d.values() if i)}")
+
+
+# noinspection PyMethodParameters
 class HighlightCommands(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
@@ -144,7 +146,7 @@ class HighlightCommands(commands.Cog):
         subbed = re.sub(fr"{ctx.prefix}h(igh)?l(ight)? add", '', ctx.message.content)
         highlight_words = re.sub(r"--?re(gex)?", '', subbed).strip()
         if flags['regex']:
-            check_hl_regex(highlight_words)
+            check_regex(highlight_words)
         else:
             highlight_words = re.escape(highlight_words)
         active = await ctx.bot.conn.fetch('SELECT kw FROM highlights WHERE user_id=$1', ctx.author.id)
@@ -167,15 +169,12 @@ class HighlightCommands(commands.Cog):
             raise commands.CommandError('Specify a highlight by its index (found in your list of highlights)')
         highlight_index = int(highlight_index)
         guild_id = guild_id or ctx.guild.id
-        iterable_hls = [(rec['kw'], rec['exclude_guild'])
-                        for rec in
-                        await ctx.bot.conn.fetch(
-                            'SELECT kw, exclude_guild FROM highlights WHERE user_id=$1', ctx.author.id)]
-        current = iterable_hls[highlight_index - 1][1]
+        user_hl = [hl for hl in ctx.bot.get_cog("HlMon").cache if hl.user_id == ctx.author.id]
+        current = user_hl[highlight_index - 1].exc_guilds
         strategy = "array_remove" if current and guild_id in current else "array_append"
         await ctx.bot.conn.execute(f'UPDATE highlights SET exclude_guild = {strategy}(exclude_guild, $1) WHERE '
                                    'user_id=$2 AND kw=$3',
-                                   guild_id, ctx.author.id, iterable_hls[highlight_index - 1][0])
+                                   guild_id, ctx.author.id, user_hl[highlight_index - 1].kw)
         ctx.bot.dispatch('hl_update')
         await ctx.message.add_reaction(ctx.tick(True))
 
@@ -205,7 +204,7 @@ class HighlightCommands(commands.Cog):
         if not index_check(highlight_index):
             raise commands.CommandError('Specify a highlight by its index (found in your list of highlights)')
         hl_index = int(highlight_index)
-        hl_data = [hl for hl in ctx.bot.get_cog("HlMon").cache if hl.user_id == ctx.author.id][hl_index-1]
+        hl_data = [hl for hl in ctx.bot.get_cog("HlMon").cache if hl.user_id == ctx.author.id][hl_index - 1]
         ex_guild_display = f"**Ignored Guilds** {', '.join([ctx.bot.get_guild(i).name for i in hl_data.exc_guilds])}" if \
             hl_data.exc_guilds else ''
         embed = discord.Embed(
@@ -260,7 +259,7 @@ class HighlightCommands(commands.Cog):
         added = 0
         for new_hl in imported_highlights:
             try:
-                check_hl_regex(new_hl)
+                check_regex(new_hl)
             except commands.CommandError:
                 continue
             active = await ctx.bot.conn.fetch('SELECT kw FROM highlights WHERE user_id=$1', ctx.author.id)
