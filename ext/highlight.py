@@ -17,9 +17,10 @@ along with neo.  If not, see <https://www.gnu.org/licenses/>.
 """
 import re
 from collections import namedtuple
+from contextlib import suppress
 
 import discord
-from discord.ext import commands, flags
+from discord.ext import commands, flags, tasks
 
 from utils.checks import check_member_in_guild
 from utils.config import conf
@@ -53,15 +54,16 @@ class Highlight:
     def check_can_send(self, message, bot):
         predicates = []
         alerted = bot.get_user(self.user_id)
+        if self.user_id not in [m.id for m in message.guild.members]:
+            return False
         if self.exc_guilds:
             predicates.append(message.guild.id not in self.exc_guilds)
         predicates.append(not re.search(re.compile(r'([a-zA-Z0-9]{24}\.[a-zA-Z0-9]{6}\.[a-zA-Z0-9_\-]{27}|mfa\.['
                                                    r'a-zA-Z0-9_\-]{84})'), message.content))
         if blocks := bot.user_cache[self.user_id]['hl_blocks']:
             predicates.append(message.author.id not in blocks)
-        predicates.extend([alerted in message.guild.members,
-                           alerted.id != message.author.id,
-                           message.channel.permissions_for(message.guild.get_member(alerted.id)).read_messages,
+        predicates.extend([self.user_id != message.author.id,
+                           message.channel.permissions_for(message.guild.get_member(self.user_id)).read_messages is not False,
                            not message.author.bot])
         return all(predicates)
 
@@ -84,34 +86,52 @@ class Highlight:
         return embed
 
 
-class HighlightMonitors(commands.Cog):
+class HlMon(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.cache = []
         self.queue = []
+        self.do_highlights.start()
 
-    @commands.Cog.listener()
-    async def on_message(self, msg):
+    def cog_unload(self):
+        self.do_highlights.cancel()
+
+    @commands.Cog.listener(name='on_message')
+    async def watch_highlights(self, msg):
         for hl in self.cache:
             if match := hl.compiled.search(msg.content):
-                if not hl.check_can_send(msg, self.bot):
+                if hl.check_can_send(msg, self.bot) is False:
                     continue
-                if len(self.queue) < 40 and [h.user_id for h in self.queue].count(hl.user_id) < 5:
-                    self.queue.append(PendingHighlight(self.bot.get_user(hl.user_id), await hl.to_embed(match, msg)))
+                if len(self.queue) < 40 and self.queue.count(hl.user_id) < 5:
+                    self.queue.append(PendingHighlight(self.bot.get_user(hl.user_id), (await hl.to_embed(match, msg))))
+
+    @commands.Cog.listener(name='on_hl_update')
+    async def update_highlight_cache(self):
+        self.cache = [Highlight(**dict(record)) for record in await self.bot.conn.fetch("SELECT * FROM highlights")]
+
+    @tasks.loop(seconds=10)
+    async def do_highlights(self):
+        for pending in self.queue:
+            with suppress():
+                pass
+        self.queue = []
+
+    @do_highlights.before_loop
+    async def wait_for_ready(self):
+        await self.bot.wait_until_ready()
+
+def index_check(command_input):
+    try:
+        int(command_input[0])
+    except ValueError:
+        return False
+    return True
 
 
 # noinspection PyUnresolvedReferences,PyMethodParameters
 class HighlightCommands(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-
-    @staticmethod
-    def index_check(command_input):
-        try:
-            int(command_input[0])
-        except ValueError:
-            return False
-        return True
 
     @flags.add_flag('highlight', nargs='+')
     @flags.add_flag('-re', '--regex', action='store_true')
@@ -120,7 +140,6 @@ class HighlightCommands(commands.Cog):
         """
         Add a new highlight! When a highlighted word is used, you'll get notified!
         If the --regex flag is passed, the highlight will be compiled as a regex
-        NOTE: It may take up to a minute for a new highlight to take effect
         """
         subbed = re.sub(fr"{ctx.prefix}h(igh)?l(ight)? add", '', ctx.message.content)
         highlight_words = re.sub(r"--?re(gex)?", '', subbed).strip()
@@ -136,20 +155,15 @@ class HighlightCommands(commands.Cog):
         await ctx.bot.conn.execute(
             'INSERT INTO highlights(user_id, kw) VALUES ( $1, $2 )',
             ctx.author.id, fr"{highlight_words}")
+        ctx.bot.dispatch('hl_update')
         await ctx.message.add_reaction(ctx.tick(True))
 
     @commands.command(name='exclude', aliases=['mute', 'ignore', 'exc'])
     async def exclude_guild(ctx, highlight_index, guild_id: int = None):
         """Add and remove guilds to be ignored from highlight notifications.
-        Specify which highlight to ignore via its index
-            - To ignore from the current guild, pass no further arguments
-            - To ignore from another guild, pass that guild's id
-        If the specified guild is not being ignored, then it will be added to the list
-        of ignored guilds
-            - If the specified guild is already being ignored, running the command,
-            and passing that guild a second time will remove it from the list
-        NOTE: It may take up to a minute for this to take effect"""
-        if not self.index_check(highlight_index):
+        Currently ignored guilds will be un-ignored if passed a second time
+        """
+        if not index_check(highlight_index):
             raise commands.CommandError('Specify a highlight by its index (found in your list of highlights)')
         highlight_index = int(highlight_index)
         guild_id = guild_id or ctx.guild.id
@@ -162,6 +176,7 @@ class HighlightCommands(commands.Cog):
         await ctx.bot.conn.execute(f'UPDATE highlights SET exclude_guild = {strategy}(exclude_guild, $1) WHERE '
                                    'user_id=$2 AND kw=$3',
                                    guild_id, ctx.author.id, iterable_hls[highlight_index - 1][0])
+        ctx.bot.dispatch('hl_update')
         await ctx.message.add_reaction(ctx.tick(True))
 
     @flags.add_flag('-a', '--add', nargs='*')
@@ -187,16 +202,14 @@ class HighlightCommands(commands.Cog):
     @commands.command(name='info')
     async def view_highlight_info(ctx, highlight_index):
         """Display info on what triggers a specific highlight, or what guilds are muted from it"""
-        if not self.index_check(highlight_index):
+        if not index_check(highlight_index):
             raise commands.CommandError('Specify a highlight by its index (found in your list of highlights)')
-        highlight_index = int(highlight_index)
-        hl_data = tuple(
-            (await ctx.bot.conn.fetch('SELECT * FROM highlights WHERE user_id=$1', ctx.author.id))[
-                highlight_index - 1])
-        ex_guild_display = f"**Ignored Guilds** {', '.join([ctx.bot.get_guild(i).name for i in hl_data[2]])}" if \
-            hl_data[2] else ''
+        hl_index = int(highlight_index)
+        hl_data = [hl for hl in ctx.bot.get_cog("HlMon").cache if hl.user_id == ctx.author.id][hl_index-1]
+        ex_guild_display = f"**Ignored Guilds** {', '.join([ctx.bot.get_guild(i).name for i in hl_data.exc_guilds])}" if \
+            hl_data.exc_guilds else ''
         embed = discord.Embed(
-            description=f'**Triggered by** "{hl_data[1]}"\n{ex_guild_display}',
+            description=f'**Triggered by** "{hl_data.kw}"\n{ex_guild_display}',
             color=discord.Color.main)
         await ctx.send(embed=embed)
 
@@ -204,7 +217,6 @@ class HighlightCommands(commands.Cog):
     async def remove_highlight(ctx, highlight_index: commands.Greedy[int]):
         """
         Remove one, or multiple highlights by index
-        NOTE: It may take up to a minute for this to take effect
         """
         if not highlight_index:
             raise commands.CommandError('Use the index of a highlight (found in your list of highlights) to remove it')
@@ -213,17 +225,18 @@ class HighlightCommands(commands.Cog):
         for num in highlight_index:
             await ctx.bot.conn.execute('DELETE FROM highlights WHERE user_id=$1 AND kw=$2',
                                        ctx.author.id, fetched[num - 1])
+        ctx.bot.dispatch('hl_update')
         await ctx.message.add_reaction(ctx.tick(True))
 
     @commands.command(name='clear', aliases=['yeetall'])
     async def clear_highlights(ctx):
         """
         Completely wipe your list of highlights
-        NOTE: It may take up to a minute for this to take effect
         """
         conf = await ctx.prompt('Are you sure you want to clear all highlights?')
         if conf:
             await ctx.bot.conn.execute('DELETE FROM highlights WHERE user_id=$1', ctx.author.id)
+            ctx.bot.dispatch('hl_update')
 
     @commands.command(name='import')
     @check_member_in_guild(292212176494657536)
@@ -259,6 +272,7 @@ class HighlightCommands(commands.Cog):
                 'INSERT INTO highlights(user_id, kw) VALUES ( $1, $2 )',
                 ctx.author.id, fr"{new_hl}")
             added += 1
+        ctx.bot.dispatch('hl_update')
         await ctx.send(f'Imported {added} highlights')
 
 
@@ -266,4 +280,5 @@ def setup(bot):
     for command in HighlightCommands(bot).get_commands():
         bot.get_command('highlight').remove_command(command.name)
         bot.get_command('highlight').add_command(command)
-    bot.add_cog(HighlightMonitors(bot))
+    bot.add_cog(HlMon(bot))
+    bot.dispatch('hl_update')

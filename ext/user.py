@@ -65,15 +65,11 @@ class User(commands.Cog):
         """
         Base command for keyword highlights. Run with no arguments to list your active highlights.
         """
-        hl_list = []
-        fetched = [rec['kw'] for rec in
-                   await self.bot.conn.fetch('SELECT kw FROM highlights WHERE user_id=$1', ctx.author.id)]
-        for i in range(self.max_highlights):
-            to_append = f"`{(i + 1)}` {fetched[i]}" if i < len(fetched) else ''
-            hl_list.append(to_append)
+        hl_list = [f"`{c}` {h.kw}" for c, h in enumerate([
+            h for h in self.bot.get_cog("HlMon").cache if h.user_id==ctx.author.id], 1)]
         await ctx.send(embed=discord.Embed(
             description='\n'.join(hl_list), color=discord.Color.main).set_footer(
-            text=f'{len(fetched)}/{self.max_highlights} slots used'))
+            text=f'{len(hl_list)}/10 slots used'))
     # END HIGHLIGHTS GROUP ~
     # BEGIN TODOS GROUP ~
 
