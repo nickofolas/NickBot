@@ -99,13 +99,8 @@ class UserInfo:
                 activity = 'Listening to **Spotify**'
             elif isinstance(a, discord.CustomActivity):
                 emoji = ''
-                try:
-                    if a.emoji:
-                        emoji = await commands.EmojiConverter().convert(
-                            self.context,
-                            a.emoji.id) if a.emoji.is_custom_emoji() else a.emoji
-                except commands.errors.BadArgument:
-                    emoji = ':question:'
+                if a.emoji:
+                    emoji = ':question:' if a.emoji.is_custom_emoji() else a.emoji
                 activity = f'{emoji} {a.name or ""}'
             elif isinstance(a, discord.Game):
                 activity = f'Playing **{a.name}**'
