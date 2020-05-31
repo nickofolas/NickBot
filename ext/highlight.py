@@ -33,6 +33,8 @@ regex_check = re.compile(r"(?P<charmatching>(\.|\\w|\\S|\\D)[\*\+]|\[(a-z)?(A-­
 
 
 class Highlight:
+    __slots__ = ('user_id', 'kw', 'exc_guilds', 'compiled')
+
     def __init__(self, user_id, kw, exclude_guild: list = None):
         self.user_id = user_id
         self.kw = kw

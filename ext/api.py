@@ -86,28 +86,6 @@ class Api(commands.Cog):
     async def reddit_group(self, ctx):
         pass
 
-    @commands.command(aliases=['subinfo'], enabled=False)
-    async def subredditinfo(self, ctx, *, subreddit):
-        """Get some quick info on the named subreddit"""
-        async with self.bot.session.get(f'https://reddit.com/r/{subreddit}/about/.json') as resp:
-            if resp.status == 404:
-                raise errors.SubredditNotFound(f"'{subreddit}' was not found")
-            js = (await resp.json())['data']
-        embed = discord.Embed(
-            title=js['display_name_prefixed'],
-            url=f"https://reddit.com{js['url']}",
-            color=discord.Color.main).set_thumbnail(
-            url=js['icon_img'])
-        embed.description = textwrap.dedent(f"""
-        **Title** {js['title']}
-        **Created** {humanize.naturaltime(time.time() - js['created_utc'])}
-        **Subscribers** {js['subscribers']:,}
-        """)
-        if js['over18'] is True:
-            embed.description += '**Content Warning** NSFW'
-            embed.set_thumbnail(url='')
-        await ctx.send(embed=embed)
-
     @commands.command()
     @commands.cooldown(1, 5, commands.BucketType.channel)
     async def pypi(self, ctx, *, package_name):

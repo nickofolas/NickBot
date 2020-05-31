@@ -169,6 +169,7 @@ class Guild(commands.Cog):
             if args._not:
                 return not r
             return r
+
         args.search = max(0, min(2000, args.search))  # clamp from 0-2000
         if not args.nohide:
             await ctx.message.delete()
@@ -201,7 +202,8 @@ class Guild(commands.Cog):
         """
         View or modify the configuration for the current guild.
         """
-        current_settings = dict((await self.bot.conn.fetch('SELECT * FROM guild_prefs WHERE guild_id=$1', ctx.guild.id))[0])
+        current_settings = dict(
+            (await self.bot.conn.fetch('SELECT * FROM guild_prefs WHERE guild_id=$1', ctx.guild.id))[0])
         readable_settings = list()
         for k, v in current_settings.items():
             if isinstance(v, bool):

@@ -20,12 +20,12 @@ from contextlib import suppress
 from datetime import datetime
 
 import discord
-from discord.ext import commands, flags
+from discord.ext import commands
 from humanize import naturaltime as nt
 
-from utils.formatters import prettify_text, from_tz
 from utils.converters import GitHubConverter
 from utils.errors import ApiError
+from utils.formatters import prettify_text, from_tz
 
 path_mapping = {'repos': 'repositories'}
 

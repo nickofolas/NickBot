@@ -123,7 +123,7 @@ class Dev(commands.Cog):
             output = clean_bytes(stdout) + '\n' + textwrap.indent(clean_bytes(stderr), '[stderr] ')
             pages = group(output, 1500)
             pages = [ctx.codeblock(page, hl_lang) for page in pages]
-        await ctx.quick_menu(pages, 1, delete_message_after=True, timeout=300)
+        await ctx.quick_menu(pages, 1, delete_message_after=True, timeout=1800)
 
     @commands.command(name='eval')
     async def eval_(self, ctx, *, body: CBStripConverter):

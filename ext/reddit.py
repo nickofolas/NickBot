@@ -99,7 +99,7 @@ class SubListing:
 
 
 class Subreddit:
-    __slots__ = ('data', 'title', 'icon_img', 'prefixed', 'subscribers', 'pub_desc', 'full_url')
+    __slots__ = ('data', 'title', 'icon_img', 'prefixed', 'subscribers', 'pub_desc', 'full_url', 'created', 'nsfw')
     """Wraps up a Subreddit's JSON"""
 
     def __init__(self, data):
@@ -110,7 +110,8 @@ class Subreddit:
         self.subscribers = data.get('subscribers')
         self.pub_desc = data.get('public_description')
         self.full_url = "https://reddit.com" + data.get('url')
-        # self.created = data.get('created_utc')
+        self.created = data.get('created_utc')
+        self.nsfw = data.get('over18', False)
 
 
 class Redditor:
@@ -205,6 +206,24 @@ class Reddit(commands.Cog):
                 **{user.link_karma:,}** post
                 """))
         embed.set_footer(text=f"Created {nt(time.time() - user.created)}")
+        await ctx.send(embed=embed)
+
+    @commands.command(name='subreddit', aliases=['sub'])
+    async def reddit_subreddit(ctx, *, subreddit: RedditConverter):
+        """Returns brief information on a subreddit"""
+        async with ctx.bot.session.get(f"https://reddit.com/r/{subreddit}/about.json") as resp:
+            if resp.status != 200:
+                raise ApiError(f'Recieved {resp.status}')
+            data = (await resp.json())['data']
+        sub = Subreddit(data)
+        embed = discord.Embed(title=sub.prefixed, url=sub.full_url, color=discord.Color.main)
+        if sub.nsfw:
+            embed.title += ' 🔞'
+        else:
+            embed.set_thumbnail(url=sub.icon_img)
+        embed.description = f"**Title** {sub.title}"
+        embed.description += f"\nSubs** {sub.subscribers:,}"
+        embed.description += f"\nCreated** {nt(time.time() - sub.created)}"
         await ctx.send(embed=embed)
 
 
