@@ -16,39 +16,102 @@ You should have received a copy of the GNU Affero General Public License
 along with neo.  If not, see <https://www.gnu.org/licenses/>.
 """
 import re
+from collections import namedtuple
 
 import discord
 from discord.ext import commands, flags
 
 from utils.checks import check_member_in_guild
+from utils.config import conf
 
 # Constants
 MAX_HIGHLIGHTS = 10
+PendingHighlight = namedtuple('PendingHighlight', ['user', 'embed'])
 
 regex_check = re.compile(r"(?P<charmatching>(\.|\\w|\\S|\\D)[\*\+]|\[(a-z)?(A-­Z)?(0-9)?(_)?])|(?P<or>(\|.*){5})")
 
 
-def check_hl_regex(highlight_kw):
-    if len(highlight_kw) < 3:
-        raise commands.CommandError(
-            'Highlights must be more than 2 characters long')
-    if s := regex_check.search(highlight_kw):
-        d = s.groupdict()
-        raise commands.CommandError(f"Disallowed regex character(s) {set(i for i in d.values() if i)}")
+class Highlight:
+    def __init__(self, user_id, kw, exclude_guild: list = None):
+        self.user_id = user_id
+        self.kw = kw
+        self.exc_guilds = exclude_guild
+        self.compiled = re.compile(kw, re.I)
+
+    def __repr__(self):
+        attrs = ' '.join(f"{k}={v}" for k, v in self.__dict__.items())
+        return f"<{self.__class__.__name__} {attrs}>"
+
+    def check_regex(self):
+        if len(self.kw) < 3:
+            raise commands.CommandError(
+                'Highlights must be more than 2 characters long')
+        if s := regex_check.search(self.kw):
+            d = s.groupdict()
+            raise commands.CommandError(f"Disallowed regex character(s) {set(i for i in d.values() if i)}")
+
+    def check_can_send(self, message, bot):
+        predicates = []
+        alerted = bot.get_user(self.user_id)
+        if self.exc_guilds:
+            predicates.append(message.guild.id not in self.exc_guilds)
+        predicates.append(not re.search(re.compile(r'([a-zA-Z0-9]{24}\.[a-zA-Z0-9]{6}\.[a-zA-Z0-9_\-]{27}|mfa\.['
+                                                   r'a-zA-Z0-9_\-]{84})'), message.content))
+        if blocks := bot.user_cache[self.user_id]['hl_blocks']:
+            predicates.append(message.author.id not in blocks)
+        predicates.extend([alerted in message.guild.members,
+                           alerted.id != message.author.id,
+                           message.channel.permissions_for(message.guild.get_member(alerted.id)).read_messages,
+                           not message.author.bot])
+        return all(predicates)
+
+    @staticmethod
+    async def to_embed(match, message):
+        context_list = []
+        async for m in message.channel.history(limit=5):
+            avatar_index = m.author.default_avatar.value
+            hl_underline = m.content.replace(match.group(0), f'**__{match.group(0)}__**')
+            repl = r'<a?:\w*:\d*>'
+            context_list.append(
+                f"{conf['default_discord_users'][avatar_index]} **{m.author.name}:** "
+                f"{re.sub(repl, ':question:', hl_underline)}")
+        context_list = reversed(context_list)
+        embed = discord.Embed(
+            title=f'A word has been highlighted!',
+            description='\n'.join(context_list) + f'\n[Jump URL]({message.jump_url})',
+            color=discord.Color.main)
+        embed.timestamp = message.created_at
+        return embed
 
 
-def index_check(command_input):
-    try:
-        int(command_input[0])
-    except ValueError:
-        return False
-    return True
+class HighlightMonitors(commands.Cog):
+    def __init__(self, bot):
+        self.bot = bot
+        self.cache = []
+        self.queue = []
+
+    @commands.Cog.listener()
+    async def on_message(self, msg):
+        for hl in self.cache:
+            if match := hl.compiled.search(msg.content):
+                if not hl.check_can_send(msg, self.bot):
+                    continue
+                if len(self.queue) < 40 and [h.user_id for h in self.queue].count(hl.user_id) < 5:
+                    self.queue.append(PendingHighlight(self.bot.get_user(hl.user_id), await hl.to_embed(match, msg)))
 
 
 # noinspection PyUnresolvedReferences,PyMethodParameters
-class Highlight(commands.Cog):
+class HighlightCommands(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
+
+    @staticmethod
+    def index_check(command_input):
+        try:
+            int(command_input[0])
+        except ValueError:
+            return False
+        return True
 
     @flags.add_flag('highlight', nargs='+')
     @flags.add_flag('-re', '--regex', action='store_true')
@@ -86,7 +149,7 @@ class Highlight(commands.Cog):
             - If the specified guild is already being ignored, running the command,
             and passing that guild a second time will remove it from the list
         NOTE: It may take up to a minute for this to take effect"""
-        if not index_check(highlight_index):
+        if not self.index_check(highlight_index):
             raise commands.CommandError('Specify a highlight by its index (found in your list of highlights)')
         highlight_index = int(highlight_index)
         guild_id = guild_id or ctx.guild.id
@@ -124,7 +187,7 @@ class Highlight(commands.Cog):
     @commands.command(name='info')
     async def view_highlight_info(ctx, highlight_index):
         """Display info on what triggers a specific highlight, or what guilds are muted from it"""
-        if not index_check(highlight_index):
+        if not self.index_check(highlight_index):
             raise commands.CommandError('Specify a highlight by its index (found in your list of highlights)')
         highlight_index = int(highlight_index)
         hl_data = tuple(
@@ -200,6 +263,7 @@ class Highlight(commands.Cog):
 
 
 def setup(bot):
-    for command in Highlight(bot).get_commands():
+    for command in HighlightCommands(bot).get_commands():
         bot.get_command('highlight').remove_command(command.name)
         bot.get_command('highlight').add_command(command)
+    bot.add_cog(HighlightMonitors(bot))
