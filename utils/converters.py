@@ -23,7 +23,7 @@ import re
 from discord.ext import commands
 import discord
 
-BetterUser = namedtuple('BetterUser', ['obj', 'http_dict'])
+BetterUser = namedtuple('BetterUser', 'obj')
 u_conv = commands.UserConverter()
 m_conv = commands.MemberConverter()
 
@@ -56,8 +56,7 @@ class BetterUserConverter(commands.Converter):
                 out = await ctx.bot.fetch_user(argument)
             except discord.HTTPException:
                 raise commands.CommandError("Invalid user provided")
-        http_dict = await ctx.bot.http.get_user(out.id)
-        return BetterUser(obj=out, http_dict=http_dict)
+        return BetterUser(obj=out)
 
 
 class CBStripConverter(commands.Converter):

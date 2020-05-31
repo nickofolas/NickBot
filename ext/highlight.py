@@ -45,6 +45,8 @@ class Highlight:
 
     def check_can_send(self, message, bot):
         predicates = []
+        if not message.guild:
+            return False
         if self.user_id not in [m.id for m in message.guild.members]:
             return False
         if self.exc_guilds:
@@ -84,6 +86,7 @@ class HlMon(commands.Cog):
         self.cache = []
         self.queue = []
         self.do_highlights.start()
+        bot.loop.create_task(self.update_highlight_cache())
 
     def cog_unload(self):
         self.do_highlights.cancel()
@@ -99,6 +102,7 @@ class HlMon(commands.Cog):
 
     @commands.Cog.listener(name='on_hl_update')
     async def update_highlight_cache(self):
+        await self.bot.wait_until_ready()
         self.cache = [Highlight(**dict(record)) for record in await self.bot.conn.fetch("SELECT * FROM highlights")]
 
     @tasks.loop(seconds=10)
@@ -280,4 +284,3 @@ def setup(bot):
         bot.get_command('highlight').remove_command(command.name)
         bot.get_command('highlight').add_command(command)
     bot.add_cog(HlMon(bot))
-    bot.dispatch('hl_update')

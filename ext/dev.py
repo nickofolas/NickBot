@@ -314,7 +314,7 @@ class Dev(commands.Cog):
     async def _website_screenshot(self, ctx, *, site):
         """Take a screenshot of a site"""
         async with ctx.loading(tick=False):
-            response = await self.bot.session.get('https://magmachain.herokuapp.com/api/v1', headers={'website': site})
+            response = await self.bot.session.get('https://magmafuck.herokuapp.com/api/v1', headers={'website': site})
             url = (await response.json())['snapshot']
             await ctx.send(embed=discord.Embed(colour=discord.Color.main).set_image(url=url))
 

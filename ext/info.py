@@ -28,19 +28,18 @@ from discord.ext import commands
 
 import utils.formatters
 from utils.config import conf
-from utils.flags import Flags
 from utils.converters import BetterUserConverter
 
 badges = {
-    'discord_employee': '<:staff:699986149288181780>',
-    'discord_partner': '<:partner:699986175020105888>',
-    'hs_events': '<:events:699986130761941042>',
-    'hs_balance': '<:balance:699986054022824058>',
-    'hs_bravery': '<:bravery:699986078307844168>',
-    'hs_brilliance': '<:brilliance:699986064164782142>',
-    'bug_hunter_lvl1': '<:bug1:699986089053651196>',
-    'bug_hunter_lvl2': '<:bug2:699986097694048327>',
-    'verified_dev': '<:dev:699988960180568135>',
+    'staff': '<:staff:699986149288181780>',
+    'partner': '<:partner:699986175020105888>',
+    'hypesquad': '<:events:699986130761941042>',
+    'hypesquad_balance': '<:balance:699986054022824058>',
+    'hypesquad_bravery': '<:bravery:699986078307844168>',
+    'hypesquad_brilliance': '<:brilliance:699986064164782142>',
+    'bug_hunter': '<:bug1:699986089053651196>',
+    'bug_hunter_level_2': '<:bug2:699986097694048327>',
+    'verified_bot_developer': '<:dev:699988960180568135>',
     'early_supporter': '<:early:699986111975391302>'
 }
 
@@ -79,7 +78,7 @@ class UserInfo:
     @property
     def user_status(self):
         if not isinstance(self.user, discord.Member):
-            return None
+            return ''
         status_icon = conf['emoji_dict'][str(self.user.status)]
         multi_status = [
             e[0] for e in [
@@ -145,18 +144,13 @@ class Info(commands.Cog):
         """Get information about the targeted user"""
         target = await BetterUserConverter().convert(ctx, target)
         user = target.obj
-        flags = Flags(target.http_dict['public_flags']).flags
+        flags = [flag for flag, value in dict(user.public_flags).items() if value is True]
         user_info = UserInfo(user, ctx, flags)
         badge_list = list()
-        try:
-            bio = (await self.bot.conn.fetch('SELECT user_bio FROM user_data WHERE user_id=$1', user.id))[0][
-                'user_bio']
-        except IndexError:
-            bio = None
         for i in badges.keys():
             if i in flags:
                 badge_list.append(badges[i])
-        badge_list = ' '.join(badge_list)
+        badge_list = ' '.join(badge_list) or ''
         guild_level_stats = f"**Joined Guild **" \
                             f"{humanize.naturaltime(datetime.utcnow() - user.joined_at)}" \
                             f"\n**Join Position **{user_info.join_pos}" \
@@ -164,10 +158,10 @@ class Info(commands.Cog):
         embed = discord.Embed(
             title=user_info.tagline,
             colour=discord.Color.main).set_thumbnail(url=user.avatar_url_as(static_format='png').__str__())
-        status_display = user_info.user_status or ''
+        status_display = user_info.user_status
         embed.description = textwrap.dedent(f"""
         {status_display}
-        {badge_list or ''}{' <:nitro:707724974248427642>' if user_info.is_nitro else ''}
+        {badge_list}{' <:nitro:707724974248427642>' if user_info.is_nitro else ''}
         """)
         stats_disp = str()
         stats_disp += f'**Registered **{humanize.naturaltime(datetime.utcnow() - user.created_at)}'
@@ -179,19 +173,7 @@ class Info(commands.Cog):
                 value='\n'.join(acts),
                 inline=False
             )
-        if bio:
-            embed.add_field(name='User Bio', value=bio[:1024], inline=False)
         await ctx.send(embed=embed)
-
-    @userinfo.command()  # TODO: Remove this?
-    async def bio(self, ctx, *, message=None):
-        """Set or remove your user bio (appears in userinfo card)
-        Pass no arguments to remove your current user bio"""
-        if message:
-            message = re.sub(re.compile(r'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*(),]|(?:%['
-                                        r'0-9a-fA-F][0-9a-fA-F]))+'), 'omitted', message)
-        await self.bot.conn.execute('UPDATE user_data SET user_bio=$1 WHERE user_id=$2', message, ctx.author.id)
-        await ctx.message.add_reaction(ctx.tick(True))
 
     @userinfo.command()
     @commands.guild_only()
