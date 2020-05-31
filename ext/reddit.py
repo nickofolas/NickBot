@@ -19,6 +19,7 @@ import textwrap
 from collections import namedtuple
 import time
 from datetime import datetime
+from contextlib import suppress
 
 import discord
 from discord.ext import commands, flags
@@ -171,12 +172,12 @@ class Reddit(commands.Cog):
     async def reddit_posts(ctx, **flags):
         """Get posts from a subreddit"""
         sub = await RedditConverter().convert(ctx, flags['sub'])
-        async with ctx.loading(tick=False), ctx.bot.session.get(
+        async with ctx.loading(tick=False, exc_ignore=KeyError), ctx.bot.session.get(
                 f'https://www.reddit.com/r/{sub}/{flags["sort"]}.json',
                 params={'limit': '100', 't': flags['time']}) as resp:
-            if resp.status != 200:
-                raise ApiError(f'Recieved {resp.status}')
             data = await resp.json()
+        if resp.status != 200:
+            raise ApiError(f'Recieved {resp.status}')
         embeds = [*gen_listing_embeds(SubListing(data, allow_nsfw=ctx.channel.is_nsfw()))]
         if not embeds:
             raise ApiError("Couldn't find any posts that matched the contextual criteria")
@@ -191,6 +192,8 @@ class Reddit(commands.Cog):
                 ctx.bot.session.get(f"https://reddit.com/user/{user}/about.json") as r1, \
                 ctx.bot.session.get(f"https://reddit.com/user/{user}/trophies.json") as r2:
             about, trophies = (await r1.json(), await r2.json())
+        if r1.status != 200 or r2.status != 200:
+            raise ApiError(f"Recieved {r1.status}, {r2.status}")
         user = Redditor(about_data=about, trophy_data=trophies)
         tstring = textwrap.fill(' '.join([conf['trophy_emojis'].get(t, '') for t in set(user.trophies)]), 225)
         embed = discord.Embed(
@@ -211,19 +214,16 @@ class Reddit(commands.Cog):
     @commands.command(name='subreddit', aliases=['sub'])
     async def reddit_subreddit(ctx, *, subreddit: RedditConverter):
         """Returns brief information on a subreddit"""
-        async with ctx.bot.session.get(f"https://reddit.com/r/{subreddit}/about.json") as resp:
-            if resp.status != 200:
-                raise ApiError(f'Recieved {resp.status}')
+        async with ctx.loading(exc_ignore=KeyError, tick=False), ctx.bot.session.get(f"https://reddit.com/r/{subreddit}/about.json") as resp:
             data = (await resp.json())['data']
+        if resp.status != 200:
+            raise ApiError(f'Recieved {resp.status}')
         sub = Subreddit(data)
         embed = discord.Embed(title=sub.prefixed, url=sub.full_url, color=discord.Color.main)
-        if sub.nsfw:
-            embed.title += ' 🔞'
-        else:
-            embed.set_thumbnail(url=sub.icon_img)
+        embed.set_thumbnail(url='https://i.imgur.com/gKzmGxt.png' if sub.nsfw and not ctx.channel.is_nsfw() else sub.icon_img)
         embed.description = f"**Title** {sub.title}"
-        embed.description += f"\nSubs** {sub.subscribers:,}"
-        embed.description += f"\nCreated** {nt(time.time() - sub.created)}"
+        embed.description += f"\n**Subs** {sub.subscribers:,}"
+        embed.description += f"\n**Created** {nt(time.time() - sub.created)}"
         await ctx.send(embed=embed)
 
 
