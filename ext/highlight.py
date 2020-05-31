@@ -105,7 +105,7 @@ class HlMon(commands.Cog):
     async def do_highlights(self):
         for pending in self.queue:
             with suppress():
-                pass
+                await pending.user.send(embed=pending.embed)
         self.queue = []
 
     @do_highlights.before_loop
@@ -232,8 +232,8 @@ class HighlightCommands(commands.Cog):
         """
         Completely wipe your list of highlights
         """
-        conf = await ctx.prompt('Are you sure you want to clear all highlights?')
-        if conf:
+        confirm = await ctx.prompt('Are you sure you want to clear all highlights?')
+        if confirm:
             await ctx.bot.conn.execute('DELETE FROM highlights WHERE user_id=$1', ctx.author.id)
             ctx.bot.dispatch('hl_update')
 
