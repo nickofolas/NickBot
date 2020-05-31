@@ -22,6 +22,7 @@ from datetime import datetime
 from contextlib import suppress
 
 import discord
+import aiohttp
 from discord.ext import commands, flags
 from humanize import naturaltime as nt
 
@@ -172,9 +173,9 @@ class Reddit(commands.Cog):
     async def reddit_posts(ctx, **flags):
         """Get posts from a subreddit"""
         sub = await RedditConverter().convert(ctx, flags['sub'])
-        async with ctx.loading(tick=False, exc_ignore=KeyError), ctx.bot.session.get(
+        async with ctx.loading(tick=False, exc_ignore=(KeyError, aiohttp.ContentTypeError)), ctx.bot.session.get(
                 f'https://www.reddit.com/r/{sub}/{flags["sort"]}.json',
-                params={'limit': '100', 't': flags['time']}) as resp:
+                params={'limit': '100', 't': flags['time']}, allow_redirects=False) as resp:
             data = await resp.json()
         if resp.status != 200:
             raise ApiError(f'Recieved {resp.status}')
@@ -214,7 +215,7 @@ class Reddit(commands.Cog):
     @commands.command(name='subreddit', aliases=['sub'])
     async def reddit_subreddit(ctx, *, subreddit: RedditConverter):
         """Returns brief information on a subreddit"""
-        async with ctx.loading(exc_ignore=KeyError, tick=False), ctx.bot.session.get(f"https://reddit.com/r/{subreddit}/about.json") as resp:
+        async with ctx.loading(exc_ignore=(KeyError, aiohttp.ContentTypeError), tick=False), ctx.bot.session.get(f"https://www.reddit.com/r/{subreddit}/about.json", allow_redirects=False) as resp:
             data = (await resp.json())['data']
         if resp.status != 200:
             raise ApiError(f'Recieved {resp.status}')
