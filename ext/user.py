@@ -100,11 +100,11 @@ class User(commands.Cog):
     async def add(self, ctx, **flags):
         """
         Add a new highlight! When a highlighted word is used, you'll get notified!
-        If desired, the highlight can be made quite granular, as regex patterns are
-        supported.
+        If the --regex flag is passed, the highlight will be compiled as a regex
         NOTE: It may take up to a minute for a new highlight to take effect
         """
-        highlight_words = ' '.join(flags['highlight'])
+        subbed = re.sub(fr"{ctx.prefix}h(igh)?l(ight)? add", '', ctx.message.content)
+        highlight_words = re.sub(r"--?re(gex)?", '', subbed).strip()
         if flags['regex']:
             check_hl_regex(highlight_words)
         else:
