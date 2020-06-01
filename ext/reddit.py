@@ -165,10 +165,10 @@ class Reddit(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @flags.add_flag('sub', nargs='?')
+    @flags.add_flag('-t', '--time', choices=['hour', 'day', 'week', 'month', 'year', 'all'], default='all')
     @flags.add_flag('-s', '--sort', choices=['top', 'new', 'rising', 'hot', 'controversial', 'best'], default='hot')
     @flags.add_flag('-a', '--amount', type=int, default=5)
-    @flags.add_flag('-t', '--time', choices=['hour', 'day', 'week', 'month', 'year', 'all'], default='all')
+    @flags.add_flag('sub', nargs='?')
     @flags.command(name='redditposts', aliases=['posts'])
     async def reddit_posts(ctx, **flags):
         """Get posts from a subreddit"""
@@ -178,7 +178,7 @@ class Reddit(commands.Cog):
                 params={'limit': '100', 't': flags['time']}, allow_redirects=False) as resp:
             data = await resp.json()
         if resp.status != 200:
-            raise ApiError(f'Recieved {resp.status}')
+            raise ApiError(f'Unable to get listing (received {resp.status})')
         embeds = [*gen_listing_embeds(SubListing(data, allow_nsfw=ctx.channel.is_nsfw()))]
         if not embeds:
             raise ApiError("Couldn't find any posts that matched the contextual criteria")
@@ -194,7 +194,7 @@ class Reddit(commands.Cog):
                 ctx.bot.session.get(f"https://reddit.com/user/{user}/trophies.json") as r2:
             about, trophies = (await r1.json(), await r2.json())
         if r1.status != 200 or r2.status != 200:
-            raise ApiError(f"Recieved {r1.status}, {r2.status}")
+            raise ApiError(f"Unable to get user (received {r1.status}, {r2.status})")
         user = Redditor(about_data=about, trophy_data=trophies)
         tstring = textwrap.fill(' '.join([conf['trophy_emojis'].get(t, '') for t in set(user.trophies)]), 225)
         embed = discord.Embed(
@@ -215,13 +215,18 @@ class Reddit(commands.Cog):
     @commands.command(name='subreddit', aliases=['sub'])
     async def reddit_subreddit(ctx, *, subreddit: RedditConverter):
         """Returns brief information on a subreddit"""
-        async with ctx.loading(exc_ignore=(KeyError, aiohttp.ContentTypeError), tick=False), ctx.bot.session.get(f"https://www.reddit.com/r/{subreddit}/about.json", allow_redirects=False) as resp:
+        async with ctx.loading(
+                exc_ignore=(KeyError, aiohttp.ContentTypeError), tick=False), \
+                ctx.bot.session.get(f"https://www.reddit.com/r/{subreddit}/about.json",
+                                    allow_redirects=False) as resp:
             data = (await resp.json())['data']
         if resp.status != 200:
-            raise ApiError(f'Recieved {resp.status}')
+            raise ApiError(f'Unable to get subreddit (received {resp.status})')
         sub = Subreddit(data)
         embed = discord.Embed(title=sub.prefixed, url=sub.full_url, color=discord.Color.main)
-        embed.set_thumbnail(url='https://i.imgur.com/gKzmGxt.png' if sub.nsfw and not ctx.channel.is_nsfw() else sub.icon_img)
+        embed.set_thumbnail(
+            url='https://i.imgur.com/gKzmGxt.png' if sub.nsfw and not ctx.channel.is_nsfw()
+                else sub.icon_img)
         embed.description = f"**Title** {sub.title}"
         embed.description += f"\n**Subs** {sub.subscribers:,}"
         embed.description += f"\n**Created** {nt(time.time() - sub.created)}"
