@@ -16,6 +16,7 @@ You should have received a copy of the GNU Affero General Public License
 along with neo.  If not, see <https://www.gnu.org/licenses/>.
 """
 import re
+import asyncio
 from collections import namedtuple
 from contextlib import suppress
 
@@ -85,8 +86,8 @@ class HlMon(commands.Cog):
         self.bot = bot
         self.cache = []
         self.queue = []
-        self.do_highlights.start()
         bot.loop.create_task(self.update_highlight_cache())
+        self.do_highlights.start()
 
     def cog_unload(self):
         self.do_highlights.cancel()
@@ -107,10 +108,12 @@ class HlMon(commands.Cog):
 
     @tasks.loop(seconds=10)
     async def do_highlights(self):
-        for pending in self.queue:
-            with suppress():
-                await pending.user.send(embed=pending.embed)
-        self.queue = []
+        try:
+            for pending in set(self.queue):
+                with suppress(Exception):
+                    await pending.user.send(embed=pending.embed)
+        finally:
+            self.queue = []
 
     @do_highlights.before_loop
     async def wait_for_ready(self):

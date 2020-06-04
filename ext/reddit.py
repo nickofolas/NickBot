@@ -30,6 +30,7 @@ from utils.errors import ApiError
 from utils.paginator import CSMenu, PagedEmbedMenu
 from utils.config import conf
 from utils.converters import RedditConverter
+from utils.formatters import group
 
 PollChoice = namedtuple('PollChoice', ['text', 'votes'])
 
@@ -75,6 +76,25 @@ class Submission:
             if p2 := p.get('reddit_video_preview'):
                 return p2.get('is_gif')
         return False
+
+    @property
+    def to_embed(self):
+        desc = self.text
+        if p := self.poll:
+            pending = p.deadline > datetime.utcnow()
+            desc = '\n'.join(f"➣ {opt.votes} votes: {opt.text}" for opt in p)
+            if pending:
+                desc = "**Poll pending**\n" + '\n'.join(f"➣ {opt.text}" for opt in p)
+            desc += f'\n**{p.total_votes} total votes**'
+        embed = discord.Embed(
+            title=self.title,
+            description=f"<:upvote:698744205710852167> {self.upvotes:,} | :speech_balloon: {self.comments:,} "
+                        f"| 🕙 {nt(self.creation_delta)}\n{desc}",
+            url=self.full_url,
+            color=discord.Color.main
+        ).set_image(url=self.img_url).set_author(name=self.author,
+            url=f"https://www.reddit.com/user/{self.author}")
+        return embed
 
 
 class SubListing:
@@ -142,22 +162,7 @@ class Redditor:
 
 def gen_listing_embeds(listing):
     for post in listing.posts:
-        desc = post.text
-        if p := post.poll:
-            pending = p.deadline > datetime.utcnow()
-            desc = '\n'.join(f"➣ {opt.votes} votes: {opt.text}" for opt in p)
-            if pending:
-                desc = "**Poll pending**\n" + '\n'.join(f"➣ {opt.text}" for opt in p)
-            desc += f'\n**{p.total_votes} total votes**'
-        embed = discord.Embed(
-            title=post.title,
-            description=f"<:upvote:698744205710852167> {post.upvotes:,} | :speech_balloon: {post.comments:,} "
-                        f"| 🕙 {nt(post.creation_delta)}\n{desc}",
-            url=post.full_url,
-            color=discord.Color.main
-        ).set_image(url=post.img_url).set_author(name=post.author,
-                                                 url=f"https://www.reddit.com/user/{post.author}")
-        yield embed
+        yield post.to_embed
 
 
 # noinspection PyMethodParameters,PyUnresolvedReferences
@@ -174,7 +179,7 @@ class Reddit(commands.Cog):
         """Get posts from a subreddit"""
         sub = await RedditConverter().convert(ctx, flags['sub'])
         async with ctx.loading(tick=False, exc_ignore=(KeyError, aiohttp.ContentTypeError)), ctx.bot.session.get(
-                f'https://www.reddit.com/r/{sub}/{flags["sort"]}.json',
+                f'https://www.reddit.com/r/{sub.name}/{flags["sort"]}.json',
                 params={'limit': '100', 't': flags['time']}, allow_redirects=False) as resp:
             data = await resp.json()
         if resp.status != 200:
@@ -190,8 +195,8 @@ class Reddit(commands.Cog):
     async def reddit_user(ctx, *, user: RedditConverter):
         """Get user info on a redditor"""
         async with ctx.loading(tick=False), \
-                ctx.bot.session.get(f"https://reddit.com/user/{user}/about.json") as r1, \
-                ctx.bot.session.get(f"https://reddit.com/user/{user}/trophies.json") as r2:
+                ctx.bot.session.get(f"https://reddit.com/user/{user.name}/about.json") as r1, \
+                ctx.bot.session.get(f"https://reddit.com/user/{user.name}/trophies.json") as r2:
             about, trophies = (await r1.json(), await r2.json())
         if r1.status != 200 or r2.status != 200:
             raise ApiError(f"Unable to get user (received {r1.status}, {r2.status})")
@@ -217,7 +222,7 @@ class Reddit(commands.Cog):
         """Returns brief information on a subreddit"""
         async with ctx.loading(
                 exc_ignore=(KeyError, aiohttp.ContentTypeError), tick=False), \
-                ctx.bot.session.get(f"https://www.reddit.com/r/{subreddit}/about.json",
+                ctx.bot.session.get(f"https://www.reddit.com/r/{subreddit.name}/about.json",
                                     allow_redirects=False) as resp:
             data = (await resp.json())['data']
         if resp.status != 200:
@@ -232,6 +237,27 @@ class Reddit(commands.Cog):
         embed.description += f"\n**Created** {nt(time.time() - sub.created)}"
         await ctx.send(embed=embed)
 
+    # TODO: Improve this, I guess
+    @commands.command(name='get')
+    async def reddit_post(ctx, *, post: RedditConverter):
+        """Gets a post and all its top level comments
+        Post IDs and URLs with the ID in the path are both accepted inputs"""
+        post_id = post.id or post.match.string
+        async with ctx.loading(), ctx.bot.session.get(f"https://www.reddit.com/comments/{post_id}/.json") as resp:
+            data = await resp.json()
+        post = Submission(data[0]['data']['children'][0]['data'])
+        embeds = [post.to_embed]
+        for item in group(data[1]['data']['children'], 5):
+            embed = discord.Embed(title='Browing top-level comments', color=discord.Color.main)
+            for comment in item:
+                embed.add_field(
+                    name=f"<:upvote:698744205710852167> {comment['data']['ups']} | "
+                         f"u/{comment['data']['author']}",
+                    value=f"[🔗](https://reddit.com{comment['data']['permalink']}) {comment['data']['body']}", inline=False)
+            embeds.append(embed)
+        source = PagedEmbedMenu(embeds)
+        menu = CSMenu(source, delete_message_after=True)
+        await menu.start(ctx)
 
 def setup(bot):
     for command in Reddit(bot).get_commands():

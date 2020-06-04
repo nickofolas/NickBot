@@ -27,8 +27,6 @@ from discord.ext import menus
 
 from utils.config import conf
 
-"""ext.menus classes below"""
-
 
 class CSMenu(menus.MenuPages):
     """Subclass of menus.MenuPages to customize emojis and behavior"""

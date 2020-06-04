@@ -33,6 +33,13 @@ def group(iterable, page_len=50):
         iterable = iterable[page_len:]
     return pages
 
+def flatten(iterable):
+    for item in iterable:
+        if isinstance(item, (tuple, list)):
+            yield from flatten(item)
+        else:
+            yield item
+
 
 def return_lang_hl(input_string) -> str:
     for possible_suffix in LANGUAGES:

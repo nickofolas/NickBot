@@ -54,10 +54,9 @@ type_dict = {
 ShellOut = namedtuple('ShellOut', 'stdout stderr')
 
 
-async def do_shell(args):
-    shell = os.getenv("SHELL") or "/bin/bash"
+async def do_shell(cmd):
     process = await asyncio.create_subprocess_shell(
-        f'{shell} -c "{args}"',
+        cmd,
         stdout=asyncio.subprocess.PIPE,
         stderr=asyncio.subprocess.PIPE)
     stdout, stderr = await process.communicate()
@@ -239,6 +238,11 @@ class Dev(commands.Cog):
     @dev_command_group.command(name='source', aliases=['src'])
     async def _dev_src(self, ctx, *, obj):
         new_ctx = await copy_ctx(ctx, f'eval return inspect!.getsource({obj})')
+        await new_ctx.reinvoke()
+
+    @dev_command_group.command(name='journalctl', aliases=['jctl'])
+    async def _dev_journalctl(self, ctx):
+        new_ctx = await copy_ctx(ctx, f"sh sudo journalctl -u neo -o cat")
         await new_ctx.reinvoke()
 
     @dev_command_group.group(name='scope', invoke_without_command=True)

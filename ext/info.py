@@ -64,9 +64,12 @@ class UserInfo:
     def is_nitro(self):
         if self.user.is_avatar_animated():
             return True
-        elif self.context.guild and isinstance(self.user, discord.Member):
-            if self.user.premium_since:
-                return True
+        elif any(g.get_member(self.user.id).premium_since for g in self.context.bot.guilds if self.user in g.members):
+            return True
+        elif mem := discord.utils.get(utils.formatters.flatten(g.members for g in self.context.bot.guilds), id=self.user.id):
+            if a := discord.utils.get(mem.activities, type=discord.ActivityType.custom):
+                if a.emoji.is_custom_emoji():
+                    return True
         return False
 
     @property

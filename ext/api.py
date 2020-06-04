@@ -82,9 +82,9 @@ class Api(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @commands.group(name='reddit', invoke_without_command=True)
+    @commands.group(name='reddit', aliases=['r'], invoke_without_command=True)
     async def reddit_group(self, ctx):
-        pass
+        """Collection of commands made to interact with Reddit"""
 
     @commands.command()
     @commands.cooldown(1, 5, commands.BucketType.channel)
@@ -119,7 +119,7 @@ class Api(commands.Cog):
         info2 = str()
         for k, v in info2_dict.items():
             if v:
-                info2 += f'{k} {v}\n'
+                info2 += f'{k} {discord.utils.escape_markdown(v)}\n'
         if info2:
             embed.add_field(name='_ _', value=info2)
         embed.set_footer(text=info.get('author'))
@@ -247,8 +247,7 @@ class Api(commands.Cog):
 
     @commands.group(name='github', aliases=['gh'], invoke_without_command=True)
     async def git_group(self, ctx):
-        """Interact with GitHub"""
-        pass
+        """Collection of commands made to interact with GitHub"""
 
 
 def setup(bot):

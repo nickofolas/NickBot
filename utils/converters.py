@@ -24,10 +24,11 @@ from discord.ext import commands
 import discord
 
 BetterUser = namedtuple('BetterUser', 'obj')
+RedditMatch = namedtuple('RedditMatch', 'name id match')
 u_conv = commands.UserConverter()
 m_conv = commands.MemberConverter()
 
-reddit_url = re.compile(r"^((https://)?(www\.|old\.|new\.)?reddit.com)?/?(?P<type>user|u|r)?/?(?P<name>[\w\-]*)/?")
+reddit_url = re.compile(r"^((https://)?(www\.|old\.|new\.)?reddit.com)?/?(?P<type>user|u|r)?/?(?P<name>[\w\-]*)(/comments/(?P<id>[\w\-\_]*))?/?")
 github_pattern = re.compile(r"^((https://)?(www\.)?github.com)?/?(?P<user>\w*)/?(?P<repo>[\w\-]*)?/?")
 
 
@@ -41,7 +42,6 @@ class BoolConverter(commands.Converter):
             return False
         else:
             raise commands.BadArgument('Input could not be converted into a true or false result')
-
 
 class BetterUserConverter(commands.Converter):
     async def convert(self, ctx, argument):
@@ -71,7 +71,7 @@ class CBStripConverter(commands.Converter):
 class RedditConverter(commands.Converter):
     async def convert(self, ctx, argument):
         if match := re.match(reddit_url, argument.strip('<>')):
-            return match.groupdict().get('name')
+            return RedditMatch(match.groupdict().get('name'), match.groupdict().get('id'), match)
         raise commands.CommandError(f"Invalid argument '{argument}'")
 
 
