@@ -58,19 +58,18 @@ class User(commands.Cog):
         await ctx.send(embed=embed.set_thumbnail(url=ctx.author.avatar_url_as(static_format='png')))
 
     # END USER SETTINGS ~
-    # BEGIN HIGHLIGHTS GROUP ~
 
     @commands.group(aliases=['hl'], invoke_without_command=True)
     async def highlight(self, ctx):
         """
         Base command for keyword highlights. Run with no arguments to list your active highlights.
         """
-        hl_list = [f"`{c}` {h.kw}" for c, h in enumerate([
+        hl_list = [f"`{c}` {'<:regex:718943797915943054>' if h.is_regex else ''} {h.kw}" for c, h in enumerate([
             h for h in self.bot.get_cog("HlMon").cache if h.user_id==ctx.author.id], 1)]
         await ctx.send(embed=discord.Embed(
             description='\n'.join(hl_list), color=discord.Color.main).set_footer(
-            text=f'{len(hl_list)}/10 slots used'))
-    # END HIGHLIGHTS GROUP ~
+            text=f'{len(hl_list)}/10 slots used'), delete_after=10.0)
+
     # BEGIN TODOS GROUP ~
 
     @commands.group(name='todo', invoke_without_command=True)
@@ -85,18 +84,20 @@ class User(commands.Cog):
             todo_list.append(f'[`{count}`]({value[1]}) {value[0]}')
         if not todo_list:
             todo_list.append('No todos')
-        await ctx.quick_menu(todo_list, 10,
-                             template=discord.Embed(
-                                 color=discord.Color.main).set_author(
-                                 name=f"{ctx.author}'s todos", icon_url=ctx.author.avatar_url_as(static_format='png')),
-                             delete_message_after=True)
+        await ctx.quick_menu(
+            todo_list, 10,
+            template=discord.Embed(
+                color=discord.Color.main).set_author(
+                name=f"{ctx.author}'s todos", icon_url=ctx.author.avatar_url_as(static_format='png')),
+            delete_message_after=True)
 
     @todo_rw.command(name='add')
     async def create_todo(self, ctx, *, content: str):
         """
         Add an item to your todo list
         """
-        await self.bot.conn.execute('INSERT INTO todo VALUES ($1, $2, $3)', ctx.author.id, content, ctx.message.jump_url)
+        await self.bot.conn.execute('INSERT INTO todo VALUES ($1, $2, $3)',
+            ctx.author.id, content, ctx.message.jump_url)
         await ctx.message.add_reaction(ctx.tick(True))
 
     @todo_rw.command(name='remove', aliases=['rm', 'delete', 'del', 'yeet'])

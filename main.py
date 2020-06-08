@@ -49,7 +49,6 @@ warnings.warn = warn
 discord.Color.pornhub = discord.Color(0xffa31a)
 discord.Color.main = discord.Color(0x84cdff)
 
-
 async def get_prefix(bot, message):
     if bot.is_closed():
         return

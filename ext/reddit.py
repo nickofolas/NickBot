@@ -251,9 +251,9 @@ class Reddit(commands.Cog):
             embed = discord.Embed(title='Browing top-level comments', color=discord.Color.main)
             for comment in item:
                 embed.add_field(
-                    name=f"<:upvote:698744205710852167> {comment['data']['ups']} | "
-                         f"u/{comment['data']['author']}",
-                    value=f"[🔗](https://reddit.com{comment['data']['permalink']}) {comment['data']['body']}", inline=False)
+                    name=f"<:upvote:698744205710852167> {comment['data'].get('ups')} | "
+                         f"u/{comment['data'].get('author')}",
+                    value=f"[🔗](https://reddit.com{comment['data'].get('permalink')}) {comment['data'].get('body')}", inline=False)
             embeds.append(embed)
         source = PagedEmbedMenu(embeds)
         menu = CSMenu(source, delete_message_after=True)

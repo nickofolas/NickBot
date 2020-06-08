@@ -50,6 +50,9 @@ activity_type_mapping = {
     discord.ActivityType.listening: 'Listening to'
 }
 
+def to_elapsed(time):
+    return f'{(time.seconds // 60) % 60:>02}:{time.seconds % 60:>02}'
+
 
 class UserInfo:
     __slots__ = ('user', 'context', 'flags')
@@ -68,8 +71,9 @@ class UserInfo:
             return True
         elif mem := discord.utils.get(utils.formatters.flatten(g.members for g in self.context.bot.guilds), id=self.user.id):
             if a := discord.utils.get(mem.activities, type=discord.ActivityType.custom):
-                if a.emoji.is_custom_emoji():
-                    return True
+                if a.emoji:
+                    if a.emoji.is_custom_emoji():
+                        return True
         return False
 
     @property
@@ -200,34 +204,26 @@ class Info(commands.Cog):
     async def spotify(self, ctx, target: discord.Member = None):
         """Get info about someone's Spotify status, if they have one"""
         target = target or ctx.author
-        for activity in target.activities:
-            if isinstance(activity, discord.Spotify):
-                ac = activity
+        for ac in target.activities:
+            if isinstance(ac, discord.Spotify):
                 val = (datetime.utcnow() - ac.start)
-                g = ac.duration
-                e = discord.Embed(color=0x1db954)
+                e = discord.Embed(color=0x1db954).set_thumbnail(url=ac.album_cover_url)
+                bar_len = 5 if ctx.author.is_on_mobile() else 25
+                bar = utils.formatters.bar_make(
+                    val.seconds, ac.duration.seconds, fill='◉', empty='─', point=True, length=bar_len)
+                fields = [{'name': '**Song Title**',
+                    'value': f'[{discord.utils.escape_markdown(ac.title)}](https://open.spotify.com/track/{ac.track_id})'},
+                    {'name': f'**Song {utils.formatters.pluralize("Artist", ac.artists)}**',
+                    'value': ', '.join(ac.artists)},
+                    {'name': '**Album Name**',
+                    'value': discord.utils.escape_markdown(ac.album)},
+                    {'name': '**Song Progress**',
+                    'value': f'`{to_elapsed(val)}` {bar} `{to_elapsed(ac.duration)}`',
+                    'inline': False}]
                 e.set_author(
                     name=target.display_name,
-                    icon_url='https://apkwind.com/wp-content/uploads'
-                             '/2019/10/spotify-1320568267425052388.png')
-                e.set_thumbnail(url=ac.album_cover_url)
-                e.add_field(
-                    name='**Song Title**',
-                    value=f'[{discord.utils.escape_markdown(ac.title)}](https://open.spotify.com/track/{ac.track_id})')
-                e.add_field(
-                    name='**Song Artist(s)**',
-                    value=', '.join(ac.artists))
-                e.add_field(name='**Album Name**', value=discord.utils.escape_markdown(ac.album))
-                bar = utils.formatters.bar_make(
-                    val.seconds, g.seconds, fill='◉', empty='─', point=True, length=5) if ctx.author.is_on_mobile() \
-                    else utils.formatters.bar_make(
-                    val.seconds, g.seconds, fill='◉', empty='─', point=True, length=25)
-                e.add_field(
-                    name='**Song Progress**',
-                    value=f'`{(val.seconds // 60) % 60:>02}:{val.seconds % 60:>02}` '
-                          + bar
-                          + f' `{(g.seconds // 60) % 60:>02}:'
-                            f'{g.seconds % 60:>02}`', inline=False)
+                    icon_url='https://i.imgur.com/PA3vvdN.png')
+                [e.add_field(**field) for field in fields]
                 return await ctx.send(embed=e)
         else:
             await ctx.send("A Spotify status couldn't be detected!")

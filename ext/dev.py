@@ -319,8 +319,9 @@ class Dev(commands.Cog):
         """Take a screenshot of a site"""
         async with ctx.loading(tick=False):
             response = await self.bot.session.get('https://magmafuck.herokuapp.com/api/v1', headers={'website': site})
-            url = (await response.json())['snapshot']
-            await ctx.send(embed=discord.Embed(colour=discord.Color.main).set_image(url=url))
+            data = await response.json()
+            site = data['website']
+            await ctx.send(embed=discord.Embed(colour=discord.Color.main, title=site, url=site).set_image(url=data['snapshot']))
 
     @flags.add_flag('-m', '--mode', choices=['r', 'l', 'u'], default='r')
     @flags.add_flag('-p', '--pull', action='store_true')

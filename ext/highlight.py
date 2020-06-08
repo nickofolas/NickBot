@@ -19,29 +19,36 @@ import re
 import asyncio
 from collections import namedtuple
 from contextlib import suppress
+from textwrap import shorten as shn
 
 import discord
 from discord.ext import commands, flags, tasks
 
 from utils.checks import check_member_in_guild
 from utils.config import conf
+from utils.containers import TimedSet
 
 # Constants
 MAX_HIGHLIGHTS = 10
 PendingHighlight = namedtuple('PendingHighlight', ['user', 'embed'])
 
-regex_check = re.compile(r"(?P<charmatching>(\.|\\w|\\S|\\D)[\*\+]|\[(a-z)?(A-­Z)?(0-9)?(_)?])|(?P<or>(\|.*){5})")
+regex_check = re.compile(r"(?P<charmatching>(\.|\\w|\\S|\\D)(\)*)?[\*\+]|\[(a-z)?(A-­Z)?(0-9)?(_)?])|(?P<or>(\|.*){5})")
 
 
 class Highlight:
-    def __init__(self, user_id, kw, exclude_guild: list = None):
+    def __init__(self, user_id, kw, exclude_guild: list = None, is_regex = True):
         self.user_id = user_id
         self.kw = kw
         self.exc_guilds = exclude_guild
-        self.compiled = re.compile(kw, re.I)
+        self.is_regex = is_regex
+        if is_regex:
+            try:
+                self.compiled = re.compile(kw, re.I)
+            except re.error:
+                self.is_regex = False
 
     def __repr__(self):
-        attrs = ' '.join(f"{k}={v}" for k, v in self.__dict__.items())
+        attrs = ' '.join(f"{k}={v!r}" for k, v in self.__dict__.items())
         return f"<{self.__class__.__name__} {attrs}>"
 
     def check_can_send(self, message, bot):
@@ -67,14 +74,14 @@ class Highlight:
         context_list = []
         async for m in message.channel.history(limit=5):
             avatar_index = m.author.default_avatar.value
-            hl_underline = m.content.replace(match.group(0), f'**__{match.group(0)}__**')
+            hl_underline = m.content.replace(match, f'**__{match}__**') if m.id == message.id else m.content
             repl = r'<a?:\w*:\d*>'
             context_list.append(
                 f"{conf['default_discord_users'][avatar_index]} **{m.author.name}:** "
                 f"{re.sub(repl, ':question:', hl_underline)}")
         context_list = reversed(context_list)
         embed = discord.Embed(
-            title=f'A word has been highlighted!',
+            title=f'A highlight "{shn(match, width=25)}" was triggered',
             description='\n'.join(context_list) + f'\n[Jump URL]({message.jump_url})',
             color=discord.Color.main)
         embed.timestamp = message.created_at
@@ -86,6 +93,7 @@ class HlMon(commands.Cog):
         self.bot = bot
         self.cache = []
         self.queue = []
+        self.recents = {}
         bot.loop.create_task(self.update_highlight_cache())
         self.do_highlights.start()
 
@@ -95,11 +103,25 @@ class HlMon(commands.Cog):
     @commands.Cog.listener(name='on_message')
     async def watch_highlights(self, msg):
         for hl in self.cache:
-            if match := hl.compiled.search(msg.content):
-                if hl.check_can_send(msg, self.bot) is False:
-                    continue
-                if len(self.queue) < 40 and self.queue.count(hl.user_id) < 5:
-                    self.queue.append(PendingHighlight(self.bot.get_user(hl.user_id), (await hl.to_embed(match, msg))))
+            if hl.user_id in self.recents.get(msg.channel.id, {}):
+                continue
+            match = None
+            if hl.is_regex:
+                if m := hl.compiled.search(msg.content):
+                    match = m.group(0)
+            elif hl.is_regex is False and hl.kw in msg.content:
+                match = hl.kw
+            if match is None or hl.check_can_send(msg, self.bot) is False:
+                continue
+            if len(self.queue) < 40 and self.queue.count(hl.user_id) < 5:
+                self.queue.append(PendingHighlight(self.bot.get_user(hl.user_id), (await hl.to_embed(match, msg))))
+
+    @commands.Cog.listener(name='on_message')
+    async def update_recents(self, msg):
+        if msg.author.id in {hl.user_id for hl in self.cache}:
+            if not self.recents.get(msg.channel.id):
+                self.recents.update({msg.channel.id: TimedSet(decay_time=60, loop=self.bot.loop)})
+            self.recents[msg.channel.id].add(msg.author.id)
 
     @commands.Cog.listener(name='on_hl_update')
     async def update_highlight_cache(self):
@@ -129,9 +151,6 @@ def index_check(command_input):
 
 
 def check_regex(kw):
-    if len(kw) < 3:
-        raise commands.CommandError(
-            'Highlights must be more than 2 characters long')
     if s := regex_check.search(kw):
         d = s.groupdict()
         raise commands.CommandError(f"Disallowed regex character(s) {set(i for i in d.values() if i)}")
@@ -154,16 +173,16 @@ class HighlightCommands(commands.Cog):
         highlight_words = re.sub(r"--?re(gex)?", '', subbed).strip()
         if flags['regex']:
             check_regex(highlight_words)
-        else:
-            highlight_words = re.escape(highlight_words)
+        if len(highlight_words) < 3:
+            raise commands.CommandError('Highlights must be more than 2 characters long')
         active = await ctx.bot.conn.fetch('SELECT kw FROM highlights WHERE user_id=$1', ctx.author.id)
         if len(active) >= MAX_HIGHLIGHTS:
             raise commands.CommandError(f'You may only have {MAX_HIGHLIGHTS} highlights at a time')
         if highlight_words in [rec['kw'] for rec in active]:
             raise commands.CommandError('You already have a highlight with this trigger')
         await ctx.bot.conn.execute(
-            'INSERT INTO highlights(user_id, kw) VALUES ( $1, $2 )',
-            ctx.author.id, fr"{highlight_words}")
+            'INSERT INTO highlights(user_id, kw, is_regex) VALUES ( $1, $2, $3 )',
+            ctx.author.id, fr"{highlight_words}", flags['regex'])
         ctx.bot.dispatch('hl_update')
         await ctx.message.add_reaction(ctx.tick(True))
 
@@ -265,18 +284,14 @@ class HighlightCommands(commands.Cog):
         imported_highlights = e.description.splitlines()
         added = 0
         for new_hl in imported_highlights:
-            try:
-                check_regex(new_hl)
-            except commands.CommandError:
-                continue
             active = await ctx.bot.conn.fetch('SELECT kw FROM highlights WHERE user_id=$1', ctx.author.id)
             if len(active) >= MAX_HIGHLIGHTS:
                 break
             if new_hl in [rec['kw'] for rec in active]:
                 raise commands.CommandError('You already have a highlight with this trigger')
             await ctx.bot.conn.execute(
-                'INSERT INTO highlights(user_id, kw) VALUES ( $1, $2 )',
-                ctx.author.id, fr"{new_hl}")
+                'INSERT INTO highlights(user_id, kw, is_regex) VALUES ( $1, $2, $3 )',
+                ctx.author.id, fr"{new_hl}", False)
             added += 1
         ctx.bot.dispatch('hl_update')
         await ctx.send(f'Imported {added} highlights')
