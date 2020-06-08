@@ -165,7 +165,7 @@ class Meta(commands.Cog):
         com_id_brief = self.last_commit_cache["sha"][:7]
         links_val = f'[Invite URL]({invite_url})'
         if ctx.author not in self.bot.get_guild(696739356815392779).members:
-            links_val += f'\nJoin the [support server](https://discord.gg/tjq68yq)'
+            links_val += f'\nJoin our [server](https://discord.gg/tjq68yq)'
         links_val += f'\nLatest commit [`{com_id_brief}`]({com_url})'
         embed.add_field(name='**Links**', value=links_val, inline=False)
         await ctx.send(embed=embed)
