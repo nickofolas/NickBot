@@ -183,7 +183,7 @@ class Guild(commands.Cog):
         to_ban = discord.Object(id=member) if isinstance(member, int) else member
         user_obj = await self.bot.fetch_user(member) if isinstance(member, int) else member
         await ctx.guild.ban(to_ban, reason=f'{ctx.author} ({ctx.author.id}) - {reason}')
-        await ctx.send(f'Banned **{user_obj.name}**')
+        await ctx.send(f'Banned **{user_obj}**')
 
     @commands.command()
     @has_permissions(kick_members=True)

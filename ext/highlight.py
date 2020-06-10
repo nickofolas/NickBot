@@ -36,10 +36,9 @@ regex_check = re.compile(r"(?P<charmatching>(\.|\\w|\\S|\\D)(\)*)?[\*\+]|\[(a-z)
 
 
 class Highlight:
-    def __init__(self, user_id, kw, exclude_guild: list = None, is_regex = True):
+    def __init__(self, user_id, kw, is_regex = True):
         self.user_id = user_id
         self.kw = kw
-        self.exc_guilds = exclude_guild
         self.is_regex = is_regex
         if is_regex:
             try:
@@ -57,12 +56,12 @@ class Highlight:
             return False
         if self.user_id not in [m.id for m in message.guild.members]:
             return False
-        if self.exc_guilds:
-            predicates.append(message.guild.id not in self.exc_guilds)
         predicates.append(not re.search(re.compile(r'([a-zA-Z0-9]{24}\.[a-zA-Z0-9]{6}\.[a-zA-Z0-9_\-]{27}|mfa\.['
                                                    r'a-zA-Z0-9_\-]{84})'), message.content))
+        if wl := bot.user_cache[self.user_id]['hl_whitelist']:
+            predicates.append(message.guild.id in wl)
         if blocks := bot.user_cache[self.user_id]['hl_blocks']:
-            predicates.append(message.author.id not in blocks)
+            predicates.extend([message.author.id not in blocks, message.guild.id not in blocks])
         predicates.extend([self.user_id != message.author.id,
                            message.channel.permissions_for(
                                message.guild.get_member(self.user_id)).read_messages is not False,
@@ -134,6 +133,7 @@ class HlMon(commands.Cog):
             for pending in set(self.queue):
                 with suppress(Exception):
                     await pending.user.send(embed=pending.embed)
+                    await asyncio.sleep(0.25)
         finally:
             self.queue = []
 
@@ -155,6 +155,8 @@ def check_regex(kw):
         d = s.groupdict()
         raise commands.CommandError(f"Disallowed regex character(s) {set(i for i in d.values() if i)}")
 
+def guild_or_user(bot, snowflake_id):
+    return f'**User** {bot.get_user(snowflake_id)}' if bot.get_user(snowflake_id) else f'**Guild** {bot.get_guild(snowflake_id)}'
 
 # noinspection PyMethodParameters
 class HighlightCommands(commands.Cog):
@@ -186,57 +188,49 @@ class HighlightCommands(commands.Cog):
         ctx.bot.dispatch('hl_update')
         await ctx.message.add_reaction(ctx.tick(True))
 
-    @commands.command(name='exclude', aliases=['mute', 'ignore', 'exc'])
-    async def exclude_guild(ctx, highlight_index, guild_id: int = None):
-        """Add and remove guilds to be ignored from highlight notifications.
-        Currently ignored guilds will be un-ignored if passed a second time
-        """
-        if not index_check(highlight_index):
-            raise commands.CommandError('Specify a highlight by its index (found in your list of highlights)')
-        highlight_index = int(highlight_index)
-        guild_id = guild_id or ctx.guild.id
-        user_hl = [hl for hl in ctx.bot.get_cog("HlMon").cache if hl.user_id == ctx.author.id]
-        current = user_hl[highlight_index - 1].exc_guilds
-        strategy = "array_remove" if current and guild_id in current else "array_append"
-        await ctx.bot.conn.execute(f'UPDATE highlights SET exclude_guild = {strategy}(exclude_guild, $1) WHERE '
-                                   'user_id=$2 AND kw=$3',
-                                   guild_id, ctx.author.id, user_hl[highlight_index - 1].kw)
-        ctx.bot.dispatch('hl_update')
-        await ctx.message.add_reaction(ctx.tick(True))
-
     @flags.add_flag('-a', '--add', nargs='*')
     @flags.add_flag('-r', '--remove', nargs='*')
     @commands.command(name='block', aliases=['blocks'], cls=flags.FlagCommand)
     async def hl_block(ctx, **flags):
-        """Add or remove a user from your list of people who won't highlight you, or just view the list
-        Use the --add flag to add a user, and use --remove to do the opposite"""
+        """Add or remove a user or guild from your list of people who won't highlight you, or just view the list
+        Use the --add flag to add a user/guild, and use --remove to do the opposite"""
         if not flags.get('add') and not flags.get('remove'):
             if b := ctx.bot.user_cache[ctx.author.id]['hl_blocks']:
-                blocked = [ctx.bot.get_user(i).__str__() for i in b]
+                blocked = [f"{guild_or_user(ctx.bot, i)} ({i})" for i in b]
             else:
-                blocked = ["No blocked users"]
+                blocked = ["No blocked users or guilds"]
             await ctx.quick_menu(blocked, 10, delete_message_after=True)
             return
         strategy = 'array_append' if flags.get('add') else 'array_remove'
-        person = await commands.UserConverter().convert(ctx, (flags.get('add') or flags.get('remove'))[0])
+        snowflake = (flags.get('add') or flags.get('remove'))[0]
+        try:
+            blocked = (await commands.UserConverter().convert(ctx, snowflake)).id
+        except:
+            blocked = int(snowflake)
         async with ctx.loading():
             await ctx.bot.conn.execute(f"UPDATE user_data SET hl_blocks = {strategy}(hl_blocks, $1) WHERE "
-                                       "user_id=$2", person.id, ctx.author.id)
+                                       "user_id=$2", blocked, ctx.author.id)
             await ctx.bot.build_user_cache()
 
-    @commands.command(name='info')
-    async def view_highlight_info(ctx, highlight_index):
-        """Display info on what triggers a specific highlight, or what guilds are muted from it"""
-        if not index_check(highlight_index):
-            raise commands.CommandError('Specify a highlight by its index (found in your list of highlights)')
-        hl_index = int(highlight_index)
-        hl_data = [hl for hl in ctx.bot.get_cog("HlMon").cache if hl.user_id == ctx.author.id][hl_index - 1]
-        ex_guild_display = f"**Ignored Guilds** {', '.join([ctx.bot.get_guild(i).name for i in hl_data.exc_guilds])}" if \
-            hl_data.exc_guilds else ''
-        embed = discord.Embed(
-            description=f'**Triggered by** "{hl_data.kw}"\n{ex_guild_display}',
-            color=discord.Color.main)
-        await ctx.send(embed=embed)
+    @flags.add_flag('-a', '--add', nargs='*')
+    @flags.add_flag('-r', '--remove', nargs='*')
+    @commands.command(name='whitelist', aliases=['wl'], cls=flags.FlagCommand)
+    async def hl_whitelist(ctx, **flags):
+        """Whitelist a guild for highlighting
+        This will restrict highlights to only be allowed from guilds on the list"""
+        if not flags.get('add') and not flags.get('remove'):
+            if b := ctx.bot.user_cache[ctx.author.id]['hl_whitelist']:
+                whitelisted = [f"{ctx.bot.get_guild(i)} ({i})" for i in b]
+            else:
+                whitelisted = ["No whitelist"]
+            await ctx.quick_menu(whitelisted, 10, delete_message_after=True)
+            return
+        strategy = 'array_append' if flags.get('add') else 'array_remove'
+        snowflake = (flags.get('add') or flags.get('remove'))[0]
+        async with ctx.loading():
+            await ctx.bot.conn.execute(f"UPDATE user_data SET hl_whitelist = {strategy}(hl_whitelist, $1) WHERE "
+                                       "user_id=$2", int(snowflake), ctx.author.id)
+            await ctx.bot.build_user_cache()
 
     @commands.command(name='remove', aliases=['rm', 'delete', 'del', 'yeet'])
     async def remove_highlight(ctx, highlight_index: commands.Greedy[int]):

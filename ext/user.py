@@ -50,7 +50,7 @@ class User(commands.Cog):
         for k, v in self.bot.user_cache[ctx.author.id].items():
             if isinstance(v, bool):
                 readable_settings.append(f'**{discord.utils.escape_markdown(k)}** {ctx.tick(v)}')
-            elif isinstance(v, list):
+            elif isinstance(v, list) or v is None:
                 continue
             else:
                 readable_settings.append(f'**{discord.utils.escape_markdown(k)}** `{v}`')

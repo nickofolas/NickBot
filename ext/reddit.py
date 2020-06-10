@@ -164,6 +164,12 @@ def gen_listing_embeds(listing):
     for post in listing.posts:
         yield post.to_embed
 
+def allow_nsfw_in_channel(channel):
+    if isinstance(channel, discord.DMChannel):
+        return True
+    elif channel.is_nsfw():
+        return True
+
 
 # noinspection PyMethodParameters,PyUnresolvedReferences
 class Reddit(commands.Cog):
@@ -184,7 +190,7 @@ class Reddit(commands.Cog):
             data = await resp.json()
         if resp.status != 200:
             raise ApiError(f'Unable to get listing (received {resp.status})')
-        embeds = [*gen_listing_embeds(SubListing(data, allow_nsfw=ctx.channel.is_nsfw()))]
+        embeds = [*gen_listing_embeds(SubListing(data, allow_nsfw=allow_nsfw_in_channel(ctx.channel)))]
         if not embeds:
             raise ApiError("Couldn't find any posts that matched the contextual criteria")
         source = PagedEmbedMenu(embeds[:flags['amount']])
@@ -230,7 +236,7 @@ class Reddit(commands.Cog):
         sub = Subreddit(data)
         embed = discord.Embed(title=sub.prefixed, url=sub.full_url, color=discord.Color.main)
         embed.set_thumbnail(
-            url='https://i.imgur.com/gKzmGxt.png' if sub.nsfw and not ctx.channel.is_nsfw()
+            url='https://i.imgur.com/gKzmGxt.png' if sub.nsfw and not allow_nsfw_in_channel(ctx.channel)
                 else sub.icon_img)
         embed.description = f"**Title** {sub.title}"
         embed.description += f"\n**Subs** {sub.subscribers:,}"
