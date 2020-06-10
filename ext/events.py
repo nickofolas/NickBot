@@ -20,13 +20,35 @@ import collections
 from contextlib import suppress
 import re
 from datetime import datetime
+import difflib
 
 import discord
 from discord.ext import commands, tasks
+from humanize import naturaltime as nt
 
 from utils.config import conf
 
 ignored_cmds = re.compile(r'\.+')
+
+class SnipedMessage:
+    def __init__(self, *, content=None, author, before=None, after=None, deleted_at):
+        self.author = author
+        self.deleted_at = deleted_at
+        if before and after:
+            diff = difflib.unified_diff(
+                f'{before}\n'.splitlines(keepends=True),
+                f'{after}\n'.splitlines(keepends=True))
+            self.content = '```diff\n' + ''.join(diff) + '```'
+        else:
+            self.content = content
+
+    def to_embed(self):
+        embed = discord.Embed(color=discord.Color.main)
+        embed.description = self.content
+        embed.set_author(
+            name=f"{self.author.name} - deleted {nt(self.deleted_at)}",
+            icon_url=self.author.avatar_url_as(static_format='png'))
+        return embed
 
 
 # noinspection PyCallingNonCallable
@@ -58,9 +80,15 @@ class Events(commands.Cog):
             self.bot.snipes[after.channel.id] = {'deleted': collections.deque(list(), 100),
                                                  'edited': collections.deque(list(), 100)}
         if usr := self.bot.user_cache.get(after.author.id):
-            if usr['can_snipe']:
-                if after.content and not after.author.bot:  # Updates the snipes edit cache
-                    self.bot.snipes[after.channel.id]['edited'].append((before, after, datetime.utcnow()))
+            if not usr['can_snipe']:
+                return
+        if after.content and not after.author.bot:  # Updates the snipes edit cache
+            self.bot.snipes[after.channel.id]['edited'].append(
+                SnipedMessage(
+                    author=after.author,
+                    before=before.content,
+                    after=after.content,
+                    deleted_at=datetime.utcnow()))
 
     @commands.Cog.listener()
     async def on_message_delete(self, message):
@@ -68,9 +96,14 @@ class Events(commands.Cog):
             self.bot.snipes[message.channel.id] = {'deleted': collections.deque(list(), 100),
                                                    'edited': collections.deque(list(), 100)}
         if usr := self.bot.user_cache.get(message.author.id):
-            if usr['can_snipe']:
-                if message.content and not message.author.bot:  # Updates the snipes deleted cache
-                    self.bot.snipes[message.channel.id]['deleted'].append((message, datetime.utcnow()))
+            if not usr['can_snipe']:
+                return
+        if message.content and not message.author.bot:  # Updates the snipes deleted cache
+            self.bot.snipes[message.channel.id]['deleted'].append(
+                SnipedMessage(
+                    author=message.author,
+                    content=message.content,
+                    deleted_at=datetime.utcnow()))
 
     @commands.Cog.listener()
     async def on_guild_join(self, guild):

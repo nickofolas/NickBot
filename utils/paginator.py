@@ -137,19 +137,3 @@ class BareBonesMenu(menus.ListPageSource):
             else:
                 return discord.Embed(description='\n'.join(page), color=discord.Color.main)
 
-
-class SnipeMenu(menus.ListPageSource):
-    def __init__(self, entries, per_page=1):
-        super().__init__(entries, per_page=per_page)
-
-    async def format_page(self, menu, page):
-        embed = discord.Embed(color=discord.Color.main)
-        if page[1].attachments:
-            embed.set_image(url=page[1].attachments[0].proxy_url)
-        if page[1].embeds:
-            embed = copy.copy(page[1].embeds[0])
-        embed.set_author(
-            name=f'{page[1].author.display_name} - {humanize.naturaltime(datetime.utcnow() - page[2])}',
-            icon_url=page[1].author.avatar_url_as(static_format='png'))
-        embed.description = ''.join(page[0])
-        return embed

@@ -58,38 +58,17 @@ class Util(commands.Cog):
             to retrieve the most recently deleted item from that channel"""
         target_channel = self.bot.get_channel(target_channel) if \
             isinstance(target_channel, int) else target_channel or ctx.channel
-        entries = []
-        for msg, when in reversed(self.bot.snipes[target_channel.id]['deleted']):
-            tup = (msg.content, msg, when)
-            entries.append(tup)
-        source = paginator.SnipeMenu(entries)
+        entries = [snipe.to_embed() for snipe in self.bot.snipes.get(target_channel)['deleted']] 
+        source = paginator.PagedEmbedMenu(entries)
         menu = paginator.CSMenu(source, delete_message_after=True)
         await menu.start(ctx)
-
-    @snipe.command(aliases=['dict'])
-    @commands.is_owner()
-    async def viewdict(self, ctx):
-        """View the current dictionary for the snipe command"""
-        send_dict = dict.fromkeys([k for k in self.bot.snipes])
-        for i in self.bot.snipes:
-            send_dict[i] = self.bot.snipes[i]
-        await ctx.safe_send(
-            ('```\n' + pprint.pformat(send_dict).replace('```', '``')
-             + '\n```'))
 
     @snipe.command()
     async def edits(self, ctx, target_channel: Union[discord.TextChannel, int] = None):
         target_channel = self.bot.get_channel(target_channel) if \
             isinstance(target_channel, int) else target_channel or ctx.channel
-        entries = []
-        for before, after, when in reversed(self.bot.snipes[target_channel.id]['edited']):
-            if not before.content or not after.content:
-                continue
-            diff = difflib.unified_diff(f'{before.content}\n'.splitlines(keepends=True),
-                                        f'{after.content}\n'.splitlines(keepends=True))
-            tup = ('```diff\n' + ''.join(diff) + '```', after, when)
-            entries.append(tup)
-        source = paginator.SnipeMenu(entries)
+        entries = [snipe.to_embed() for snipe in self.bot.snipes.get(target_channel)['edited']]
+        source = paginator.PagedEmbedMenu(entries)
         menu = paginator.CSMenu(source, delete_message_after=True)
         await menu.start(ctx)
 

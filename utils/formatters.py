@@ -35,7 +35,7 @@ def group(iterable, page_len=50):
 
 def flatten(iterable):
     for item in iterable:
-        if isinstance(item, (tuple, list)):
+        if hasattr(item, '__iter__'):
             yield from flatten(item)
         else:
             yield item
