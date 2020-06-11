@@ -18,7 +18,6 @@ along with neo.  If not, see <https://www.gnu.org/licenses/>.
 import copy
 import asyncio
 import datetime
-import difflib
 import json
 import os
 import pprint
@@ -27,17 +26,26 @@ import time
 import unicodedata
 from inspect import Parameter
 from typing import Union, Optional
+from contextlib import suppress
 
 import discord
-from discord.ext import commands
+from discord.ext import commands, flags
 from async_timeout import timeout
 
 from utils import paginator
-from utils.formatters import group
+from utils.formatters import group, flatten
 
 
 def zulu_time(dt: datetime.datetime):
     return dt.isoformat()[:-6] + 'Z'
+
+async def do_snipe_menu(ctx, snipes):
+    if not snipes:
+        raise commands.CommandError("Unable to snipe this channel")
+    entries = [snipe.to_embed() for snipe in snipes]
+    source = paginator.PagedEmbedMenu(entries)
+    menu = paginator.CSMenu(source, delete_message_after=True)
+    await menu.start(ctx)
 
 
 class Util(commands.Cog):
@@ -47,30 +55,32 @@ class Util(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    # TODO: Move snipes into PagedEmbedMenu (or whatever it's called)
-    @commands.group(invoke_without_command=True)
-    async def snipe(self, ctx, target_channel: Union[discord.TextChannel, int] = None):
-        """Retrieve the most recently deleted item from a channel
-        This command can be used in 2 different ways:
-            - When run with no arguments, the most recently deleted
-            item from the current channel will be returned
-            - If another channel is passed, then it will attempt
-            to retrieve the most recently deleted item from that channel"""
-        target_channel = self.bot.get_channel(target_channel) if \
-            isinstance(target_channel, int) else target_channel or ctx.channel
-        entries = [snipe.to_embed() for snipe in self.bot.snipes.get(target_channel)['deleted']] 
-        source = paginator.PagedEmbedMenu(entries)
-        menu = paginator.CSMenu(source, delete_message_after=True)
-        await menu.start(ctx)
-
-    @snipe.command()
-    async def edits(self, ctx, target_channel: Union[discord.TextChannel, int] = None):
-        target_channel = self.bot.get_channel(target_channel) if \
-            isinstance(target_channel, int) else target_channel or ctx.channel
-        entries = [snipe.to_embed() for snipe in self.bot.snipes.get(target_channel)['edited']]
-        source = paginator.PagedEmbedMenu(entries)
-        menu = paginator.CSMenu(source, delete_message_after=True)
-        await menu.start(ctx)
+    @flags.add_flag('-e', '--edits', action='store_true')
+    @flags.add_flag('-a', '--all', action='store_true')
+    @flags.add_flag('target_channel', nargs='*')
+    @flags.command(name='snipe')
+    async def snipe(self, ctx, **flags):
+        """
+        Snipe recently deleted and edited messages from a channel
+        The `--all` shows both deleted and edited message, the `--edits` flag shows just edited, and no flags shows deleted
+        Optionally, a target channel can be passed to snipe messages from another channel
+        """
+        target_channel = ctx.channel
+        if tc := flags['target_channel']:
+            with suppress(Exception):
+                target_channel = await commands.TextChannelConverter().convert(ctx, str(tc[0]))
+        try:
+            if flags['all']:
+                snipes = [*flatten([self.bot.snipes.get(target_channel.id)['deleted'], self.bot.snipes.get(target_channel.id)['edited']])]
+                snipes.sort(key=lambda s: s.deleted_at)
+            elif flags['edits']:
+                snipes = self.bot.snipes.get(target_channel.id)['edited']
+            else:
+                snipes = self.bot.snipes.get(target_channel.id)['deleted']
+        except:
+            snipes = []
+        snipes.reverse()
+        await do_snipe_menu(ctx, snipes)
 
     @commands.command()
     async def ping(self, ctx):

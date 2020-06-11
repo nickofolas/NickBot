@@ -40,6 +40,7 @@ class Highlight:
         self.user_id = user_id
         self.kw = kw
         self.is_regex = is_regex
+        self.compiled = re.compile(fr"\b{re.escape(kw)}\b", re.I)
         if is_regex:
             try:
                 self.compiled = re.compile(kw, re.I)
@@ -105,11 +106,8 @@ class HlMon(commands.Cog):
             if hl.user_id in self.recents.get(msg.channel.id, {}):
                 continue
             match = None
-            if hl.is_regex:
-                if m := hl.compiled.search(msg.content):
-                    match = m.group(0)
-            elif hl.is_regex is False and hl.kw in msg.content:
-                match = hl.kw
+            if m := hl.compiled.search(msg.content):
+                match = m.group(0)
             if match is None or hl.check_can_send(msg, self.bot) is False:
                 continue
             if len(self.queue) < 40 and self.queue.count(hl.user_id) < 5:
@@ -222,7 +220,7 @@ class HighlightCommands(commands.Cog):
             if b := ctx.bot.user_cache[ctx.author.id]['hl_whitelist']:
                 whitelisted = [f"{ctx.bot.get_guild(i)} ({i})" for i in b]
             else:
-                whitelisted = ["No whitelist"]
+                whitelisted = ["Highlight guild whitelist is empty"]
             await ctx.quick_menu(whitelisted, 10, delete_message_after=True)
             return
         strategy = 'array_append' if flags.get('add') else 'array_remove'

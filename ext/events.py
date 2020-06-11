@@ -46,7 +46,7 @@ class SnipedMessage:
         embed = discord.Embed(color=discord.Color.main)
         embed.description = self.content
         embed.set_author(
-            name=f"{self.author.name} - deleted {nt(self.deleted_at)}",
+            name=f"{self.author.name} - {nt(datetime.now() - self.deleted_at)}",
             icon_url=self.author.avatar_url_as(static_format='png'))
         return embed
 
@@ -83,12 +83,13 @@ class Events(commands.Cog):
             if not usr['can_snipe']:
                 return
         if after.content and not after.author.bot:  # Updates the snipes edit cache
+            now = datetime.now()
             self.bot.snipes[after.channel.id]['edited'].append(
                 SnipedMessage(
                     author=after.author,
                     before=before.content,
                     after=after.content,
-                    deleted_at=datetime.utcnow()))
+                    deleted_at=now))
 
     @commands.Cog.listener()
     async def on_message_delete(self, message):
@@ -99,11 +100,12 @@ class Events(commands.Cog):
             if not usr['can_snipe']:
                 return
         if message.content and not message.author.bot:  # Updates the snipes deleted cache
+            now = datetime.now()
             self.bot.snipes[message.channel.id]['deleted'].append(
                 SnipedMessage(
                     author=message.author,
                     content=message.content,
-                    deleted_at=datetime.utcnow()))
+                    deleted_at=now))
 
     @commands.Cog.listener()
     async def on_guild_join(self, guild):
