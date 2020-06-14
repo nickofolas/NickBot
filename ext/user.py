@@ -41,7 +41,11 @@ class User(commands.Cog):
             if setting_name not in keys:
                 raise commands.CommandError(f"New setting must be one of {', '.join(keys)}")
             async with ctx.loading():
-                await self.bot.conn.exeor}'s Settings""", color=discord.Color.main)
+               await self.bot.conn.execute(f"UPDATE user_data SET {setting_name}=$1 WHERE user_id=$2", new_setting,
+                                           ctx.author.id)
+            await self.bot.build_user_cache()
+            return
+        embed = discord.Embed(title=f"""{ctx.author}'s Settings""", color=discord.Color.main)
         readable_settings = list()
         for k, v in self.bot.user_cache[ctx.author.id].items():
             if isinstance(v, bool):

@@ -51,7 +51,7 @@ type_dict = {
     'none': None
 }
 
-ShellOut = namedtuple('ShellOut', 'stdout stderr')
+ShellOut = namedtuple('ShellOut', 'stdout stderr returncode')
 
 
 async def do_shell(cmd):
@@ -60,7 +60,7 @@ async def do_shell(cmd):
         stdout=asyncio.subprocess.PIPE,
         stderr=asyncio.subprocess.PIPE)
     stdout, stderr = await process.communicate()
-    return ShellOut(stdout, stderr)
+    return ShellOut(stdout, stderr, str(process.returncode))
 
 
 async def copy_ctx(
@@ -118,10 +118,10 @@ class Dev(commands.Cog):
         if 'git diff' in args:
             hl_lang = 'diff'
         async with ctx.loading(tick=False):
-            stdout, stderr = await do_shell(args)
-            output = clean_bytes(stdout) + '\n' + textwrap.indent(clean_bytes(stderr), '[stderr] ')
+            shellout = await do_shell(args)
+            output = clean_bytes(shellout.stdout) + '\n' + textwrap.indent(clean_bytes(shellout.stderr), '[stderr] ')
             pages = group(output, 1500)
-            pages = [ctx.codeblock(page, hl_lang) for page in pages]
+            pages = [ctx.codeblock(f"{page}\nReturn code {shellout.returncode}", hl_lang) for page in pages]
         await ctx.quick_menu(pages, 1, delete_message_after=True, timeout=1800)
 
     @commands.command(name='eval')
@@ -207,9 +207,8 @@ class Dev(commands.Cog):
             return await ctx.send(f'`{dt:.2f}ms: {results}`')
         rkeys = [*results[0].keys()]
         headers = [textwrap.shorten(col, width=40//len(rkeys), placeholder='') for col in rkeys]
-        r2 = [list(r.values()) for r in results]
         r = []
-        for item in r2:
+        for item in [list(res.values()) for res in results]:
             for i in item:
                 r.append(textwrap.shorten(str(i), width=40//len(rkeys), placeholder=''))
         r = group(r, len(rkeys))

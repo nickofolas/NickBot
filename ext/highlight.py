@@ -81,7 +81,7 @@ class Highlight:
                 f"{re.sub(repl, ':question:', hl_underline)}")
         context_list = reversed(context_list)
         embed = discord.Embed(
-            title=f'A highlight "{shn(match, width=25)}" was triggered',
+            title=f'Highlighted in {message.guild.name}/#{message.channel.name} with "{shn(match, width=25)}"',
             description='\n'.join(context_list) + f'\n[Jump URL]({message.jump_url})',
             color=discord.Color.main)
         embed.timestamp = message.created_at
@@ -156,6 +156,8 @@ def check_regex(kw):
 def guild_or_user(bot, snowflake_id):
     return f'**User** {bot.get_user(snowflake_id)}' if bot.get_user(snowflake_id) else f'**Guild** {bot.get_guild(snowflake_id)}'
 
+strategies = {'block': 'array_append', 'unblock': 'array_remove'}
+
 # noinspection PyMethodParameters
 class HighlightCommands(commands.Cog):
     def __init__(self, bot):
@@ -186,21 +188,18 @@ class HighlightCommands(commands.Cog):
         ctx.bot.dispatch('hl_update')
         await ctx.message.add_reaction(ctx.tick(True))
 
-    @flags.add_flag('-a', '--add', nargs='*')
-    @flags.add_flag('-r', '--remove', nargs='*')
-    @commands.command(name='block', aliases=['blocks'], cls=flags.FlagCommand)
-    async def hl_block(ctx, **flags):
-        """Add or remove a user or guild from your list of people who won't highlight you, or just view the list
-        Use the --add flag to add a user/guild, and use --remove to do the opposite"""
-        if not flags.get('add') and not flags.get('remove'):
+    @commands.command(name='block', aliases=['unblock'])
+    async def hl_block(ctx, user_or_guild = None):
+        """Block and unblock users and guilds"""
+        if not user_or_guild:
             if b := ctx.bot.user_cache[ctx.author.id]['hl_blocks']:
                 blocked = [f"{guild_or_user(ctx.bot, i)} ({i})" for i in b]
             else:
                 blocked = ["No blocked users or guilds"]
             await ctx.quick_menu(blocked, 10, delete_message_after=True)
             return
-        strategy = 'array_append' if flags.get('add') else 'array_remove'
-        snowflake = (flags.get('add') or flags.get('remove'))[0]
+        strategy = strategies.get(ctx.subcommand_passed)
+        snowflake = user_or_guild
         try:
             blocked = (await commands.UserConverter().convert(ctx, snowflake)).id
         except:

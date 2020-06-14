@@ -19,45 +19,19 @@ import argparse
 import re
 import shlex
 from typing import Union
+from types import SimpleNamespace
+from contextlib import suppress
 
 import discord
-from discord.ext import commands
+from discord.ext import commands, flags
 from discord.ext.commands import has_permissions
 
 from utils.checks import is_owner_or_administrator
 from utils.converters import BoolConverter
 from utils.formatters import prettify_text
 
-
-class Arguments(argparse.ArgumentParser):
-    def error(self, message):
-        raise RuntimeError(message)
-
-
-ereg = re.compile(
-    r'(<a?:\w*:\d*>)|([\U00002600-\U000027BF])|([\U0001f300-\U0001f64F])|([\U0001f680-\U0001f6FF])'
-)
-
-
-async def do_removal(ctx,
-                     limit,
-                     predicate,
-                     *,
-                     before=None,
-                     after=None):
-    if limit > 2000:
-        return await ctx.send(
-            f'Too many messages to search given ({limit}/2000)')
-
-    if before is None:
-        before = ctx.message
-    else:
-        before = discord.Object(id=before)
-
-    if after is not None:
-        after = discord.Object(id=after)
-    await ctx.channel.purge(
-        limit=limit, before=before, after=after, check=predicate)
+custom_emoji = re.compile(
+    r'(<a?:\w*:\d*>)|([\U00002600-\U000027BF])|([\U0001f300-\U0001f64F])|([\U0001f680-\U0001f6FF])')
 
 
 class Guild(commands.Cog):
@@ -72,96 +46,42 @@ class Guild(commands.Cog):
         else:
             return False
 
-    # Bulk clear command
-    @commands.group(aliases=['c', 'purge'], invoke_without_command=True)
+    @flags.add_flag('-u', '--user', nargs='+')
+    @flags.add_flag('-c', '--contains', nargs='+')
+    @flags.add_flag('-o', '--or', action='store_true', dest='_or')
+    @flags.add_flag('-n', '--not', action='store_true', dest='_not')
+    @flags.add_flag('-e', '--emoji', action='store_true')
+    @flags.add_flag('-b', '--bot', action='store_const', const=lambda m: m.author.bot)
+    @flags.add_flag(
+        '-f', '--files',
+        action='store_const',
+        const=lambda m: len(m.attachments))
+    @flags.add_flag(
+        '-r', '--reactions',
+        action='store_const',
+        const=lambda m: len(m.reactions))
+    @flags.add_flag('search_depth', type=int, default=5)
     @has_permissions(manage_messages=True)
-    async def clear(self, ctx, amount: int = 1):
-        """Bulk clear a specified amount of messages"""
-        if ctx.invoked_subcommand is None:
-            await ctx.message.delete()
-            await ctx.channel.purge(limit=amount)
-
-    @clear.command(aliases=['-c', 'cu', 'adv'])  # TODO: Flags parse this?
-    @has_permissions(manage_messages=True)
-    async def custom(self, ctx, *, args: str):
-        """
-        Advanced clear command that takes any combination of args
-        `--user|--contains|--starts|--ends|--search|--after|--before`
-        Flag options (no arguments):
-        `--bot|--embeds|--files|--emoji|--reactions|--or|--not|--nohide|--code`
-        """
-        parser = Arguments(add_help=False, allow_abbrev=False)
-        parser.add_argument('--user', nargs='+')
-        parser.add_argument('--contains', nargs='+')
-        parser.add_argument('--regex')
-        parser.add_argument('--starts', nargs='+')
-        parser.add_argument('--ends', nargs='+')
-        parser.add_argument('--or', action='store_true', dest='_or')
-        parser.add_argument('--not', action='store_true', dest='_not')
-        parser.add_argument('--emoji', action='store_true')
-        parser.add_argument('--nohide', action='store_true')
-        parser.add_argument(
-            '--bot', action='store_const', const=lambda m: m.author.bot)
-        parser.add_argument(
-            '--embeds', action='store_const', const=lambda m: len(m.embeds))
-        parser.add_argument(
-            '--code', action='store_true')
-        parser.add_argument(
-            '--files',
-            action='store_const',
-            const=lambda m: len(m.attachments))
-        parser.add_argument(
-            '--reactions',
-            action='store_const',
-            const=lambda m: len(m.reactions))
-        parser.add_argument('--search', type=int, default=5)
-        parser.add_argument('--after', type=int)
-        parser.add_argument('--before', type=int)
-
-        try:
-            args = parser.parse_args(shlex.split(args))
-        except Exception as e:
-            await ctx.send(str(e))
-            return
+    @flags.command(name='clear', aliases=['c'])
+    async def custom(self, ctx, **args):
+        """Clear messages from the channel
+        Can be specialised using flags"""
+        args = SimpleNamespace(**args)
         predicates = []
-        if args.bot:
-            predicates.append(args.bot)
-        if args.embeds:
-            predicates.append(args.embeds)
-        if args.files:
-            predicates.append(args.files)
-        if args.reactions:
-            predicates.append(args.reactions)
+        [predicates.append(flag) for flag in (args.bot, args.files) if flag]
         if args.emoji:
-            custom_emoji = re.compile(
-                r'(<a?:\w*:\d*>)|([\U00002600-\U000027BF])|([\U0001f300-\U0001f64F])|([\U0001f680-\U0001f6FF])'
-            )
             predicates.append(lambda m: custom_emoji.search(m.content))
-        if args.regex:
-            custom_regex = re.compile(args.regex)
-            predicates.append(lambda m, x=custom_regex: x.search(m.content))
-        if args.code:
-            predicates.append(lambda m: '```' in m.content)
         if args.user:
             users = []
             converter = commands.MemberConverter()
             for u in args.user:
-                try:
+                with suppress(Exception):
                     user = await converter.convert(ctx, u)
                     users.append(user)
-                except Exception as e:
-                    await ctx.send(str(e))
-                    return
             predicates.append(lambda m: m.author in users)
         if args.contains:
             predicates.append(
                 lambda m: any(sub in m.content for sub in args.contains))
-        if args.starts:
-            predicates.append(
-                lambda m: any(m.content.startswith(s) for s in args.starts))
-        if args.ends:
-            predicates.append(
-                lambda m: any(m.content.endswith(s) for s in args.ends))
         op = all if not args._or else any
 
         def predicate(m):
@@ -170,11 +90,12 @@ class Guild(commands.Cog):
                 return not r
             return r
 
-        args.search = max(0, min(2000, args.search))  # clamp from 0-2000
-        if not args.nohide:
-            await ctx.message.delete()
-        await do_removal(
-            ctx, args.search, predicate, before=args.before, after=args.after)
+        args.search_depth = max(0, min(2000, args.search_depth))  # clamp from 0-2000
+        async with ctx.loading():
+            if args.reactions:
+                [await m.clear_reactions() async for m in ctx.channel.history(limit=args.search_depth) if m.reactions]
+                return
+            await ctx.channel.purge(limit=args.search_depth, check=predicate, before=ctx.message)
 
     @commands.command()
     @has_permissions(ban_members=True)

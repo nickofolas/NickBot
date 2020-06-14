@@ -31,8 +31,10 @@ from contextlib import suppress
 import discord
 from discord.ext import commands, flags
 from async_timeout import timeout
+from yarl import URL
 
 from utils import paginator
+from utils.converters import BetterUserConverter
 from utils.formatters import group, flatten
 
 
@@ -47,6 +49,9 @@ async def do_snipe_menu(ctx, snipes):
     menu = paginator.CSMenu(source, delete_message_after=True)
     await menu.start(ctx)
 
+round_values = [1 << i for i in range(1, 13)][3:]
+def constrained_round(n):
+    return min(round_values, key=lambda i: abs(i-n))
 
 class Util(commands.Cog):
     """A variety of commands made with an emphasis
@@ -55,9 +60,9 @@ class Util(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @flags.add_flag('-e', '--edits', action='store_true')
-    @flags.add_flag('-a', '--all', action='store_true')
     @flags.add_flag('target_channel', nargs='*')
+    @flags.add_flag('-e', '--edits', action='store_true')
+    @flags.add_flag('-a', '--all', action='store_true') 
     @flags.command(name='snipe')
     async def snipe(self, ctx, **flags):
         """
@@ -122,18 +127,17 @@ class Util(commands.Cog):
         ).set_thumbnail(url=self.bot.user.avatar_url_as(static_format='png'))
         await ctx.send(embed=embed)
 
-    @commands.command(aliases=['av'])
-    async def avatar(self, ctx, *, target: Union[discord.Member, discord.User, int] = None):
-        """Get your own, or another user's avatar
-        When run with no arguments, this will return
-        your avatar. You can pass a user ID or a mention
-        to return the avatar of another user, who can be from
-        the current guild, or anywhere."""
-        target = (await self.bot.fetch_user(target)) if \
-            isinstance(target, int) else target or ctx.author
-        embed = discord.Embed(title=" ", description=" ", color=discord.Color.main)
-        embed.set_image(url=target.avatar_url_as(static_format='png', size=4096))
-        embed.set_footer(text=f"Showing avatar for: {target}")
+    @flags.add_flag('target', nargs='?')
+    @flags.add_flag('-s', '--size', nargs='?', type=int)
+    @flags.command(aliases=['av'])
+    async def avatar(self, ctx, **flags):
+        """Get your own, or another user's avatar"""
+        target = (await BetterUserConverter().convert(ctx, flags.get('target'))).obj
+        new_size = constrained_round(flags.get('size') or 4096)
+        embed = discord.Embed(color=discord.Color.main)
+        embed.set_image(url=(aurl := target.avatar_url_as(static_format='png', size=new_size)))
+        actual_size = URL(str(aurl)).query['size']
+        embed.set_footer(text=f"{target} | {actual_size}x{actual_size} px")
         await ctx.send(embed=embed)
 
     @commands.command(aliases=['charinfo'])
