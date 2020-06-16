@@ -18,10 +18,13 @@ along with neo.  If not, see <https://www.gnu.org/licenses/>.
 import textwrap
 from contextlib import suppress
 from datetime import datetime
+from string import ascii_letters
+from random import choice
 
 import discord
 from discord.ext import commands
 from humanize import naturaltime as nt
+from yarl import URL
 
 from utils.converters import GitHubConverter
 from utils.errors import ApiError
@@ -31,25 +34,22 @@ path_mapping = {'repos': 'repositories'}
 
 
 class GHUser:
-    __slots__ = ('data', 'name', 'url', 'bio', 'av_url', 'location', 'user_id', 'created', 'updated')
+    __slots__ = ('data', 'name', 'url', 'bio', 'av_url', 'location', 'user_id', 'created', 'updated',
+                 'refol')
 
     def __init__(self, data):
         self.data = data
         self.name = data.get('login')
         self.url = data.get('html_url')
         self.bio = data.get('bio')
-        self.av_url = data.get('avatar_url', 'https://i.imgur.com/OTc2e9R.png').split('?')[0]
+        self.av_url = URL(data.get('avatar_url')).update_query(f'{choice(ascii_letters)}={choice(ascii_letters)}')
+        # ^ This looks unnecessary, but it helps bypass discord's caching the avatar images
         self.location = data.get('location')
         self.user_id = data.get('id')
         self.created = from_tz(data.get('created_at'))
         self.updated = from_tz((data.get('updated_at')))
-
-    @property
-    def refol(self):
-        points = {}
-        [points.update({k: v}) for k, v in self.data.items() if k in
-         ('public_repos', 'public_gists', 'followers', 'following')]
-        return points
+        self.refol = {k: v for k, v in self.data.items() if k in 
+                      ('public_repos', 'public_gists', 'followers', 'following')}
 
 
 class GHRepo:

@@ -140,7 +140,7 @@ class Meta(commands.Cog):
             # noinspection PyAttributeOutsideInit
             self.last_commit_cache = await resp1.json()
 
-    @commands.command(aliases=['ab', 'info'])
+    @commands.command(aliases=['ab', 'info', 'support'])
     async def about(self, ctx):
         """Displays info about the bot"""
         appinfo = await self.bot.application_info()
@@ -163,9 +163,10 @@ class Meta(commands.Cog):
         )
         com_url = self.last_commit_cache['html_url']
         com_id_brief = self.last_commit_cache["sha"][:7]
-        links_val = f'**Invite neo** [Invite URL]({invite_url})'
+        links_val = str()
         if ctx.author not in self.bot.get_guild(696739356815392779).members:
-            links_val += f'\n**Support Server** [Join Here](https://discord.gg/tjq68yq)'
+            links_val += f'\n**Support Server** [Join Here](https://discord.gg/tjq68yq)\n'
+        links_val += f'**Invite neo** [Invite URL]({invite_url})' 
         links_val += f'\n**Latest Commit** [`{com_id_brief}`]({com_url})'
         embed.add_field(name='**Links**', value=links_val, inline=False)
         await ctx.send(embed=embed)

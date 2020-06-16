@@ -16,7 +16,8 @@ You should have received a copy of the GNU Affero General Public License
 along with neo.  If not, see <https://www.gnu.org/licenses/>.
 """
 import io
-from datetime import datetime
+from datetime import datetime, timedelta
+import re
 
 import matplotlib.pyplot as plt
 
@@ -68,6 +69,17 @@ def from_tz(str_time):
     if str_time is None:
         return None
     return datetime.strptime(str_time, "%Y-%m-%dT%H:%M:%SZ")
+
+class DTParser:
+  def __init__(self):
+    self.hdr = re.compile('(?P<time>[0-9]+)\\s?(?P<unit>s(econd)?|month|m(inute)?|h(our)?|d(ay)?|w(eek)?|y(ear)?)', re.IGNORECASE)
+    self.mapping = {'s': 1, 'second': 1, 'm': 60, 'minute': 60, 'h': 3600, 'hour': 3600, 'd': 86400, 'day': 86400, 'month': 2592000, 'y': 3.154e+7, 'year': 3.154e+7}
+  def __call__(self, to_parse):
+    total = []
+    for match in self.hdr.finditer(to_parse):
+      ass = match.groupdict()
+      total.append(int(ass['time']) * self.mapping[ass['unit']])
+    return datetime.utcnow() + timedelta(seconds=sum(total) if total else 300)
 
 
 class StatusChart:
