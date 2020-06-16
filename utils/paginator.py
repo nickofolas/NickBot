@@ -28,13 +28,11 @@ from discord.ext import menus
 from utils.config import conf
 
 
-class CSMenu(menus.MenuPages):
+class CSMenu(menus.MenuPages, inherit_buttons=False):
     """Subclass of menus.MenuPages to customize emojis and behavior"""
 
     def __init__(self, source, **kwargs):
         super().__init__(source, **kwargs)
-        for b in ['⏮️', '◀️', '⏹️', '▶️', '⏭️']:
-            super().remove_button(b)
 
     def should_add_reactions(self):
         return True
@@ -89,7 +87,7 @@ class CSMenu(menus.MenuPages):
         await self.show_page(self._source.get_max_pages() - 1)
 
     @menus.button(conf['emoji_suite']['search'], position=menus.First(2), skip_if=_skip_double_triangle_buttons)
-    async def go_to_inputted_page(self, payload):
+    async def number_page(self, payload):
         prompt = await self.ctx.send('Enter the number of the page you would like to go to')
         try:
             msg = await self.bot.wait_for('message', check=lambda m: m.author.id == self._author_id, timeout=10.0)

@@ -62,7 +62,7 @@ class Util(commands.Cog):
 
     @flags.add_flag('target_channel', nargs='*')
     @flags.add_flag('-e', '--edits', action='store_true')
-    @flags.add_flag('-a', '--all', action='store_true') 
+    @flags.add_flag('-a', '--all', action='store_true')
     @flags.command(name='snipe')
     async def snipe(self, ctx, **flags):
         """
@@ -103,12 +103,7 @@ class Util(commands.Cog):
 
     @commands.command(aliases=['inv'])
     async def invite(self, ctx, *, permissions=None):
-        """Gets an invite link for the bot
-        When run with no arguments, an invite link with
-        default permissions will be returned. However, this
-        command also allows for granular permission setting:
-            - To request an invite link with only read_messages
-            permissions, one would run `invite read_messages`"""
+        """Gets an invite link for the bot"""
         if permissions:
             try:
                 p = int(permissions)
@@ -128,15 +123,25 @@ class Util(commands.Cog):
         await ctx.send(embed=embed)
 
     @flags.add_flag('target', nargs='?')
-    @flags.add_flag('-s', '--size', nargs='?', type=int)
+    @flags.add_flag('-s', '--size', nargs='?', type=int, default=4096)
+    @flags.add_flag('-f', '--format', nargs='?')
     @flags.command(aliases=['av'])
     async def avatar(self, ctx, **flags):
         """Get your own, or another user's avatar"""
         target = (await BetterUserConverter().convert(ctx, flags.get('target'))).obj
-        new_size = constrained_round(flags.get('size') or 4096)
+        new_size = constrained_round(flags['size'])
+        formats = ['png', 'jpeg', 'webp', 'jpg']
+        if f := flags.get('format'):
+            main_format = f
+        if target.is_avatar_animated(): 
+            formats.append('gif')
+            main_format = 'gif'
+        else:
+            main_format = 'png'
         embed = discord.Embed(color=discord.Color.main)
-        embed.set_image(url=(aurl := target.avatar_url_as(static_format='png', size=new_size)))
-        actual_size = URL(str(aurl)).query['size']
+        embed.set_image(url=(aurl := target.avatar_url_as(format=main_format, size=new_size)))
+        embed.description = ' | '.join(f"[{fmt.upper()}]({target.avatar_url_as(format=fmt, size=new_size)})" for fmt in formats)
+        actual_size = URL(str(aurl)).query.get('size', new_size)
         embed.set_footer(text=f"{target} | {actual_size}x{actual_size} px")
         await ctx.send(embed=embed)
 

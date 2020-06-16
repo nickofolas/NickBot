@@ -88,7 +88,7 @@ class User(commands.Cog):
             todo_list, 10,
             template=discord.Embed(
                 color=discord.Color.main).set_author(
-                name=f"{ctx.author}'s todos", icon_url=ctx.author.avatar_url_as(static_format='png')),
+                    name=f"{ctx.author}'s todos ({len(todo_list):,} items)", icon_url=ctx.author.avatar_url_as(static_format='png')),
             delete_message_after=True)
 
     @todo_rw.command(name='add')

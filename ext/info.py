@@ -21,6 +21,7 @@ import re
 import textwrap
 from datetime import datetime
 from typing import Union
+from collections import Counter, namedtuple
 
 import discord
 import humanize
@@ -53,6 +54,7 @@ activity_type_mapping = {
 def to_elapsed(time):
     return f'{(time.seconds // 60) % 60:>02}:{time.seconds % 60:>02}'
 
+statuses_base = namedtuple('statuses_base', 'online dnd idle offline')
 
 class UserInfo:
     __slots__ = ('user', 'context', 'flags')
@@ -232,9 +234,9 @@ class Info(commands.Cog):
         aliases=['guild', 'guildinfo', 'server'],
         invoke_without_command=True)
     @commands.guild_only()
-    async def serverinfo(self, ctx, guild: int = None):
+    async def serverinfo(self, ctx):
         """Get info about the current server"""
-        guild = self.bot.get_guild(guild) or ctx.guild
+        guild = ctx.guild
         embed = discord.Embed(
             color=discord.Color.main).set_footer(
             text=f'Created '
@@ -248,20 +250,13 @@ class Info(commands.Cog):
         stats_val += f'**Verification Level** {str(guild.verification_level).capitalize()}\n'
         stats_val += f'**Emojis** {len([emoji for emoji in guild.emojis if not emoji.animated])}/{guild.emoji_limit}\n'
         stats_val += f'**Max Upload** {round(guild.filesize_limit * 0.00000095367432)}MB'
-        embed.add_field(
-            name='**General**',
-            value=stats_val,
-            inline=True)
-        statuses = {v: 0 for v in conf['emoji_dict'].values()}
-        ls = sorted([m.status for m in guild.members])
-        for key, group in itertools.groupby(ls, lambda x: x):
-            statuses[conf['emoji_dict'][str(key)]] = len(list(group))
-        s_members = [f'{k}{v:,}' for k, v in statuses.items()]
+        embed.add_field(name='**General**', value=stats_val, inline=True)
+        statuses = statuses_base(**Counter([m.status.value for m in guild.members]))._asdict()
+        s_members = [f'{conf["emoji_dict"][k]}{v:,}' for k, v in statuses.items()]
         s_members.append(f'<:bot:699991045886312488>{sum(m.bot for m in guild.members):,}')
-        stat_disp = '\n'.join(s_members)
         embed.add_field(
-            name=f'**Members ({len(guild.members):,})**',
-            value=stat_disp,
+            name=f'**Members ({guild.member_count:,})**',
+            value='\n'.join(s_members),
             inline=True)
         await ctx.send(embed=embed)
 

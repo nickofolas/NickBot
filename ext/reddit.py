@@ -180,7 +180,7 @@ class Reddit(commands.Cog):
     @flags.add_flag('-s', '--sort', choices=['top', 'new', 'rising', 'hot', 'controversial', 'best'], default='hot')
     @flags.add_flag('-a', '--amount', type=int, default=5)
     @flags.add_flag('sub', nargs='?')
-    @flags.command(name='redditposts', aliases=['posts'])
+    @flags.command(name='posts')
     async def reddit_posts(ctx, **flags):
         """Get posts from a subreddit"""
         sub = await RedditConverter().convert(ctx, flags['sub'])
@@ -237,7 +237,7 @@ class Reddit(commands.Cog):
         embed = discord.Embed(title=sub.prefixed, url=sub.full_url, color=discord.Color.main)
         embed.set_thumbnail(
             url='https://i.imgur.com/gKzmGxt.png' if sub.nsfw and not allow_nsfw_in_channel(ctx.channel)
-                else sub.icon_img)
+                else sub.icon_img or '')
         embed.description = f"**Title** {sub.title}"
         embed.description += f"\n**Subs** {sub.subscribers:,}"
         embed.description += f"\n**Created** {nt(time.time() - sub.created)}"
@@ -259,7 +259,8 @@ class Reddit(commands.Cog):
                 embed.add_field(
                     name=f"<:upvote:698744205710852167> {comment['data'].get('ups')} | "
                          f"u/{comment['data'].get('author')}",
-                    value=f"[🔗](https://reddit.com{comment['data'].get('permalink')}) {comment['data'].get('body')}", inline=False)
+                    value=f"[🔗](https://reddit.com{comment['data'].get('permalink')}) {textwrap.shorten(comment['data'].get('body'), width=125)}",
+                    inline=False)
             embeds.append(embed)
         source = PagedEmbedMenu(embeds)
         menu = CSMenu(source, delete_message_after=True)
