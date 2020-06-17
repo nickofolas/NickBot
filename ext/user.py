@@ -17,19 +17,22 @@ along with neo.  If not, see <https://www.gnu.org/licenses/>.
 """
 import re
 import string
+import asyncio
 import pprint
 from random import Random
 from datetime import datetime
 from typing import Union
 from uuid import uuid4
+from textwrap import dedent
 
 import discord
 from discord.ext import commands, flags
 from humanize import naturaldelta as nd
 from yarl import URL
+import parsedatetime
 
 from utils.checks import check_member_in_guild
-from utils.formatters import prettify_text, DTParser
+from utils.formatters import prettify_text
 from utils.converters import BoolConverter
 
 
@@ -42,7 +45,12 @@ class Reminder:
         self.rm_id = rm_id
         self.jump_origin = jump_origin
         self.bot = bot
-        self.task = bot.loop.create_task(self._do_wait())
+        if str(rm_id) not in {task.get_name() for task in asyncio.all_tasks(bot.loop)}:
+            self.task = bot.loop.create_task(self._do_wait(), name=self.rm_id)
+
+    def __repr__(self):
+        attrs = ' '.join(f"{k}={v!r}" for k, v in self.__dict__.items())
+        return f"<{self.__class__.__name__} {attrs}>"
 
     async def _do_wait(self):
         await discord.utils.sleep_until(self.deadline)
@@ -52,9 +60,10 @@ class Reminder:
         target = self.bot.get_channel(int(list(URL(self.jump_origin).parts)[3])) or self.user
         if self.bot.user_cache[self.user.id]['dm_reminders'] is True:
             target = self.user
-        await target.send(self.user.mention if isinstance(target, discord.TextChannel) else '',embed=discord.Embed(
-            description=f"[Reminder (click here to jump to origin)]({self.jump_origin})\n{self.content}",
-            colour=discord.Color.main), allowed_mentions=discord.AllowedMentions(users=[self.user]))
+        send_content = dedent(f"""**{self.user.mention} - <{self.jump_origin}>**
+        {self.content}
+        """)
+        await target.send(send_content, allowed_mentions=discord.AllowedMentions(users=[self.user]))
         await self.conn_pool.execute('DELETE FROM reminders WHERE id=$1 and user_id=$2', self.rm_id, self.user.id)
 
     def _cancel(self):
@@ -65,8 +74,8 @@ class User(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.max_highlights = 10
-        self.dt_parser = DTParser()
-        self.pending_reminders = []
+        self.dt_parser = parsedatetime.Calendar()
+        self.pending_reminders = set()
         bot.loop.create_task(self._update_active_reminders())
 
     # START USER SETTINGS ~
@@ -164,13 +173,12 @@ class User(commands.Cog):
 
     @commands.group(name='remind', invoke_without_command=True)
     async def _remind(self, ctx, *, reminder):
-        """Add a new reminder. Time is parsed relatively, so an input such as `walk the dog in 4 hours` would create a reminder
-        for 4 hours from the current time. Absolute time (like jan 4) is currently not supported."""
+        """Add a new reminder."""
         reminder_id = Random(datetime.utcnow()).randint(1, 1000**2)
         async with ctx.loading():
             await self.bot.conn.execute(
                 "INSERT INTO reminders (user_id, content, deadline, id, origin_jump) VALUES ($1, $2, $3, $4, $5)",
-                ctx.author.id, reminder, self.dt_parser(reminder), reminder_id, ctx.message.jump_url)
+                ctx.author.id, reminder, datetime(*self.dt_parser.parse(reminder)[0][:6]), reminder_id, ctx.message.jump_url)
         await self._update_active_reminders()
 
     @_remind.command(name='list')
@@ -179,10 +187,10 @@ class User(commands.Cog):
         reminders = []
         for remind in await self.bot.conn.fetch("SELECT * FROM reminders WHERE user_id=$1", ctx.author.id):
             reminders.append(f"**({remind['id']}): in {nd(remind['deadline'] - datetime.utcnow())}**\n{remind['content']}")
-        await ctx.quick_menu(reminders or ['No reminders'], 5, 
+        await ctx.quick_menu(reminders or ['No reminders'], 5,
                              template=discord.Embed(colour=discord.Color.main)
-                             .set_author(name=ctx.author, 
-                                         icon_url=ctx.author.avatar_url_as(static_format='png')), 
+                             .set_author(name=ctx.author,
+                                         icon_url=ctx.author.avatar_url_as(static_format='png')),
                              delete_message_after=True)
 
     @_remind.command(name='remove', aliases=['del', 'rm'])
@@ -195,11 +203,10 @@ class User(commands.Cog):
         await self._update_active_reminders()
 
     async def _update_active_reminders(self):
-        for reminder in self.pending_reminders:
-            reminder._cancel()
-        self.pending_reminders = []
+        await self.bot.wait_until_ready()
+        self.pending_reminders.clear()
         for record in await self.bot.conn.fetch("SELECT * FROM reminders"):
-            self.pending_reminders.append(Reminder(
+            self.pending_reminders.add(Reminder(
                 user=self.bot.get_user(record['user_id']), content=record['content'],
                 deadline=record['deadline'], bot=self.bot, conn_pool=self.bot.conn,
                 rm_id=record['id'], jump_origin=record['origin_jump']))

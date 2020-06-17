@@ -232,7 +232,7 @@ class Util(commands.Cog):
         image = image_url or ctx.message.attachments[0].url
         async with timeout(30), ctx.loading(tick=False), self.bot.session.get('https://api.tsu.sh/google/ocr', params={'q': image}) as resp:
             output = (await resp.json()).get('text', 'No result')
-        await ctx.quick_menu(group(output, 1000), 1, delete_message_after=True)
+        await ctx.quick_menu(group(output, 750), 1, delete_message_after=True)
 
 
 def setup(bot):

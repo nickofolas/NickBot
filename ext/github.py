@@ -108,7 +108,7 @@ class Github(commands.Cog):
     async def git_repo(ctx, *, repo: GitHubConverter):
         """Fetch data on a github repository
         MUST be a public repository"""
-        async with ctx.loading(tick=False), ctx.bot.session.get(f'https://api.github.com/repos/'
+        async with ctx.loading(tick=False), ctx.bot.session.get(repo_url := f'https://api.github.com/repos/'
                                                                 f'{repo.get("user")}/{repo.get("repo")}') as resp:
             if resp.status != 200:
                 raise ApiError(f'Received {resp.status}')
@@ -118,19 +118,21 @@ class Github(commands.Cog):
             embed = discord.Embed(title=f'{repo.full_name} ({repo.repo_id})',
                                   description=textwrap.fill(repo.description, width=40) if repo.description else None,
                                   color=discord.Color.main, url=repo.url).set_thumbnail(url=repo.owner.av_url)
+            push_delta = (datetime.utcnow() - repo.last_push)
+            create_delta = (datetime.utcnow() - repo.created)
             fone_txt = str()
             fone_txt += f'**Owner** {repo.owner.name}\n'
             fone_txt += f'**Language** {repo.language}\n'
             fone_txt += f'**Forks** {repo.forks}\n'
+            fone_txt += f"**Pushed** {nt(push_delta)}"
             ftwo_txt = str()
-            ftwo_txt += f':scales: {repo.license_id}\n'
-            ftwo_txt += f':star: {repo.gazers}\n'
-            ftwo_txt += f':telescope: {repo.watchers}'
+            ftwo_txt += f'<:license:722646741106556938> {repo.license_id}\n'
+            ftwo_txt += f'<:starred:722646740720812141> {repo.gazers}\n'
+            ftwo_txt += f'<:watcher:722646741274591255>  {repo.watchers}\n'
+            ftwo_txt += "<:commit:722646741027127378> " + str(sum((await (await ctx.bot.session.get(f"{repo_url}/stats/participation")).json())['all']))
             embed.add_field(name='Info', value=fone_txt)
-            embed.add_field(name='_ _', value=ftwo_txt)
-            push_delta = (datetime.utcnow() - repo.last_push)
-            create_delta = (datetime.utcnow() - repo.created)
-            embed.set_footer(text=f'Created {nt(create_delta)} | Last push {nt(push_delta)}')
+            embed.add_field(name='_ _', value=ftwo_txt) 
+            embed.set_footer(text=f'Created {nt(create_delta)}')
             await ctx.send(embed=embed)
 
 
