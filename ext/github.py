@@ -20,6 +20,7 @@ from contextlib import suppress
 from datetime import datetime
 from string import ascii_letters
 from random import choice
+import urllib.parse
 
 import discord
 from discord.ext import commands
@@ -77,6 +78,15 @@ class GHRepo:
             return lic.get('spdx_id')
         return None
 
+async def get_repo_commit_count(session, url):
+    async with session.get(url, params={'per_page': 1}) as resp:
+        commit_count = len(await resp.json())
+    last_page = resp.links.get('last')
+    if last_page:
+        qs = URL(last_page['url']).query_string
+        commit_count = int(dict(urllib.parse.parse_qsl(qs))['page'])
+    return f"{commit_count:,}"
+
 
 # noinspection PyMethodParameters,PyUnresolvedReferences
 class Github(commands.Cog):
@@ -129,7 +139,7 @@ class Github(commands.Cog):
             ftwo_txt += f'<:license:722646741106556938> {repo.license_id}\n'
             ftwo_txt += f'<:starred:722646740720812141> {repo.gazers}\n'
             ftwo_txt += f'<:watcher:722646741274591255>  {repo.watchers}\n'
-            ftwo_txt += "<:commit:722646741027127378> " + str(sum((await (await ctx.bot.session.get(f"{repo_url}/stats/participation")).json())['all']))
+            ftwo_txt += f"<:commit:722646741027127378> {await get_repo_commit_count(session=ctx.bot.session, url=(repo_url + '/commits'))}"
             embed.add_field(name='Info', value=fone_txt)
             embed.add_field(name='_ _', value=ftwo_txt) 
             embed.set_footer(text=f'Created {nt(create_delta)}')
