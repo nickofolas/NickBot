@@ -109,7 +109,7 @@ class UserInfo:
             elif isinstance(a, discord.CustomActivity):
                 emoji = ''
                 if a.emoji:
-                    emoji = ':question:' if a.emoji.is_custom_emoji() else a.emoji
+                    emoji = ':question:' if a.emoji.is_custom_emoji() and not self.context.bot.get_emoji(a.emoji.id) else a.emoji
                 activity = f'{emoji} {a.name or ""}'
             elif isinstance(a, discord.Game):
                 activity = f'Playing **{a.name}**'

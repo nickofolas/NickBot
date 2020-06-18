@@ -112,7 +112,7 @@ class NeoBot(commands.Bot):
 
     # noinspection PyAttributeOutsideInit
     async def on_ready(self):
-        user = self.get_user(680835476034551925)
+        user = self.get_user(723268667579826267)
         embed = discord.Embed(
             title='Bot is now running',
             description=textwrap.dedent(f"""

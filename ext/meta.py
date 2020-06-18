@@ -151,7 +151,7 @@ class Meta(commands.Cog):
         embed = discord.Embed(color=discord.Color.main).set_thumbnail(url=self.bot.user.avatar_url_as(
             static_format='png'))
         embed.set_footer(text=f'Python {vi.major}.{vi.minor}.{vi.micro} | discord.py {discord.__version__}')
-        embed.set_author(name=f'Owner: {appinfo.owner}', icon_url=appinfo.owner.avatar_url_as(static_format='png'))
+        embed.set_author(name=f'Owner: {appinfo.team.owner}', icon_url=appinfo.team.owner.avatar_url_as(static_format='png'))
         embed.add_field(
             name='**Bot Info**',
             value=textwrap.dedent(f"""

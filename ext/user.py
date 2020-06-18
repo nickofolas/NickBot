@@ -23,13 +23,13 @@ from random import Random
 from datetime import datetime
 from typing import Union
 from uuid import uuid4
-from textwrap import dedent
+from textwrap import indent, shorten
 
 import discord
 from discord.ext import commands, flags
 from humanize import naturaldelta as nd
 from yarl import URL
-import parsedatetime
+from dateparser.search import search_dates
 
 from utils.checks import check_member_in_guild
 from utils.formatters import prettify_text
@@ -45,8 +45,7 @@ class Reminder:
         self.rm_id = rm_id
         self.jump_origin = jump_origin
         self.bot = bot
-        if str(rm_id) not in {task.get_name() for task in asyncio.all_tasks(bot.loop)}:
-            self.task = bot.loop.create_task(self._do_wait(), name=self.rm_id)
+        self.task = bot.loop.create_task(self._do_wait(), name=f"REMINDER-{self.rm_id}")
 
     def __repr__(self):
         attrs = ' '.join(f"{k}={v!r}" for k, v in self.__dict__.items())
@@ -60,23 +59,16 @@ class Reminder:
         target = self.bot.get_channel(int(list(URL(self.jump_origin).parts)[3])) or self.user
         if self.bot.user_cache[self.user.id]['dm_reminders'] is True:
             target = self.user
-        send_content = dedent(f"""**{self.user.mention} - <{self.jump_origin}>**
-        {self.content}
-        """)
+        send_content = f"**{self.user.mention} - <{self.jump_origin}>**\n" + indent(self.content, '> ')
         await target.send(send_content, allowed_mentions=discord.AllowedMentions(users=[self.user]))
         await self.conn_pool.execute('DELETE FROM reminders WHERE id=$1 and user_id=$2', self.rm_id, self.user.id)
-
-    def _cancel(self):
-        self.task.cancel()
-
 
 class User(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.max_highlights = 10
-        self.dt_parser = parsedatetime.Calendar()
-        self.pending_reminders = set()
-        bot.loop.create_task(self._update_active_reminders())
+        self.pending_reminders = list()
+        bot.loop.create_task(self._create_first_reminders())
 
     # START USER SETTINGS ~
     @commands.command(name='settings')
@@ -109,7 +101,7 @@ class User(commands.Cog):
         """
         Base command for keyword highlights. Run with no arguments to list your active highlights.
         """
-        hl_list = [f"`{c}` {'<:regex:718943797915943054>' if h.is_regex else ''} {h.kw}" for c, h in enumerate([
+        hl_list = [f"`{c}` {'<:regex:718943797915943054>' if h.is_regex else ''} {shorten(h.kw, width=175)}" for c, h in enumerate([
             h for h in self.bot.get_cog("HlMon").cache if h.user_id==ctx.author.id], 1)]
         await ctx.send(embed=discord.Embed(
             description='\n'.join(hl_list), color=discord.Color.main).set_footer(
@@ -173,13 +165,19 @@ class User(commands.Cog):
 
     @commands.group(name='remind', invoke_without_command=True)
     async def _remind(self, ctx, *, reminder):
-        """Add a new reminder."""
+        """Add a new reminder. The first time/date found will be the one used."""
         reminder_id = Random(datetime.utcnow()).randint(1, 1000**2)
+        try:
+            dt_string, parsed_time = (await self.bot.loop.run_in_executor(None, search_dates, reminder))[0]
+        except TypeError:
+            raise commands.CommandError("The inputted time was invalid or missing")
+        new_content = reminder.replace(dt_string, '') or '...'
         async with ctx.loading():
             await self.bot.conn.execute(
                 "INSERT INTO reminders (user_id, content, deadline, id, origin_jump) VALUES ($1, $2, $3, $4, $5)",
-                ctx.author.id, reminder, datetime(*self.dt_parser.parse(reminder)[0][:6]), reminder_id, ctx.message.jump_url)
-        await self._update_active_reminders()
+                ctx.author.id, new_content, parsed_time, reminder_id, ctx.message.jump_url)
+        Reminder(user=ctx.author, content=new_content, deadline=parsed_time, 
+                 bot=self.bot, conn_pool=self.bot.conn, rm_id=reminder_id, jump_origin=ctx.message.jump_url)
 
     @_remind.command(name='list')
     async def _remind_list(self, ctx):
@@ -196,21 +194,22 @@ class User(commands.Cog):
     @_remind.command(name='remove', aliases=['del', 'rm'])
     async def _remind_remove(self, ctx, items: commands.Greedy[int]):
         """Remove one, or many reminders by their unique ID"""
+        running = [*filter(lambda task: task.get_name().startswith("REMINDER"), asyncio.all_tasks(self.bot.loop))]
         async with ctx.loading():
             for reminder_id in items:
-                discord.utils.get(self.pending_reminders, rm_id=reminder_id)._cancel()
+                [task.cancel() for task in running if task.get_name().endswith(str(reminder_id))]
                 await self.bot.conn.execute("DELETE FROM reminders WHERE id=$1 and user_id=$2", reminder_id, ctx.author.id)
-        await self._update_active_reminders()
 
-    async def _update_active_reminders(self):
+    async def _create_first_reminders(self):
         await self.bot.wait_until_ready()
-        self.pending_reminders.clear()
         for record in await self.bot.conn.fetch("SELECT * FROM reminders"):
-            self.pending_reminders.add(Reminder(
-                user=self.bot.get_user(record['user_id']), content=record['content'],
+            Reminder(user=self.bot.get_user(record['user_id']), content=record['content'],
                 deadline=record['deadline'], bot=self.bot, conn_pool=self.bot.conn,
-                rm_id=record['id'], jump_origin=record['origin_jump']))
+                rm_id=record['id'], jump_origin=record['origin_jump'])
 
+    def cog_unload(self):
+        running = [*filter(lambda task: task.get_name().startswith("REMINDER"), asyncio.all_tasks(self.bot.loop))]
+        [task.cancel() for task in running]
 
 
 def setup(bot):

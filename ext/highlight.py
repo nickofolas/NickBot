@@ -32,6 +32,7 @@ from utils.containers import TimedSet
 MAX_HIGHLIGHTS = 10
 PendingHighlight = namedtuple('PendingHighlight', ['user', 'embed'])
 
+regex_flag = re.compile(r"--?re(gex)?")
 regex_check = re.compile(r"(?P<charmatching>(\.|\\w|\\S|\\D)(\)*)?[\*\+]|\[(a-z)?(A-­Z)?(0-9)?(_)?])|(?P<or>(\|.*){5})")
 
 
@@ -163,9 +164,7 @@ class HighlightCommands(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @flags.add_flag('highlight', nargs='+')
-    @flags.add_flag('-re', '--regex', action='store_true')
-    @commands.command(cls=flags.FlagCommand)
+    @commands.command(usage="<highlight> [--regex]")
     async def add(ctx, **flags):
         """
         Add a new highlight! When a highlighted word is used, you'll get notified!
@@ -173,7 +172,8 @@ class HighlightCommands(commands.Cog):
         """
         subbed = re.sub(fr"{ctx.prefix}h(igh)?l(ight)? add", '', ctx.message.content)
         highlight_words = re.sub(r"--?re(gex)?", '', subbed).strip()
-        if flags['regex']:
+        with_regex = bool(regex_flag.search(ctx.message.content))
+        if with_regex:
             check_regex(highlight_words)
         if len(highlight_words) < 3:
             raise commands.CommandError('Highlights must be more than 2 characters long')
@@ -184,7 +184,7 @@ class HighlightCommands(commands.Cog):
             raise commands.CommandError('You already have a highlight with this trigger')
         await ctx.bot.conn.execute(
             'INSERT INTO highlights(user_id, kw, is_regex) VALUES ( $1, $2, $3 )',
-            ctx.author.id, fr"{highlight_words}", flags['regex'])
+            ctx.author.id, fr"{highlight_words}", with_regex)
         ctx.bot.dispatch('hl_update')
         await ctx.message.add_reaction(ctx.tick(True))
 
