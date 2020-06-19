@@ -70,18 +70,6 @@ def upscale(inp):
     return bf
 
 
-async def fetch_one(self, ctx, thing: str):
-    converter = commands.EmojiConverter()
-    # TODO: Cache this
-    indexed_guilds = [self.bot.get_guild(rec['guild_id'])
-                      for rec in await self.bot.conn.fetch('SELECT guild_id FROM guild_prefs WHERE index_emojis=TRUE')]
-    available_emojis = list()
-    for guild in indexed_guilds:
-        available_emojis.extend(guild.emojis)
-    choice = process.extractOne(thing, [e.name for e in available_emojis])[0]
-    return await converter.convert(ctx, choice)
-
-
 class Fun(commands.Cog):
     """Collection of fun commands"""
 
@@ -223,12 +211,22 @@ class Fun(commands.Cog):
         menu = CSMenu(source, delete_message_after=True)
         await menu.start(ctx)
 
+    async def fetch_one(self, ctx, thing: str):
+        converter = commands.EmojiConverter()
+        indexed_guilds = [self.bot.get_guild(k) for k, v in filter(lambda i: i[1]['index_emojis'] is True, self.bot.guild_cache.items())]
+        available_emojis = list()
+        for guild in indexed_guilds:
+            available_emojis.extend(guild.emojis)
+        choice = process.extractOne(thing, [e.name for e in available_emojis])[0]
+        return await converter.convert(ctx, choice)
+
+
     @commands.group(name='emoji', aliases=['em'], invoke_without_command=True)
     async def get_emoji(self, ctx, *, emoji):
         """
         Don't have nitro? Not a problem! Use this to get some custom emoji!
         """
-        await ctx.send(await fetch_one(self, ctx, emoji))
+        await ctx.send(await self.fetch_one(ctx, emoji))
 
     @get_emoji.command(aliases=['r'])
     async def react(self, ctx, *, emoji):
@@ -237,7 +235,7 @@ class Fun(commands.Cog):
         Use the command with an emoji name, and then add your reaction
         within 15 seconds, and the bot will remove its own.
         """
-        to_react = await fetch_one(self, ctx, emoji)
+        to_react = await self.fetch_one(ctx, emoji)
         async for m in ctx.channel.history(limit=2).filter(lambda m: m.id != ctx.message.id):
             await m.add_reaction(to_react)
             important_msg = m
@@ -259,7 +257,7 @@ class Fun(commands.Cog):
     async def big(
             self, ctx,
             emoji: Union[discord.Emoji, discord.PartialEmoji, str]):
-        i = await fetch_one(self, ctx, emoji) if \
+        i = await self.fetch_one(ctx, emoji) if \
             isinstance(emoji, str) else emoji
         out = await self.bot.loop.run_in_executor(None, upscale, (await i.url.read()))
         await ctx.send(file=discord.File(io.BytesIO(out), filename='largeemoji.png'))
@@ -278,9 +276,7 @@ class Fun(commands.Cog):
 
     @commands.command()
     async def owoify(self, ctx, *, message):
-        """
-        Do you hate yourself with a passion? This is the command for you!
-        """
+        """uwuify some text"""
         flags = uwuify.SMILEY
         await ctx.safe_send(uwuify.uwu(message, flags=flags))
 
@@ -311,22 +307,6 @@ class Fun(commands.Cog):
                         continue
         except (asyncio.TimeoutError, asyncio.CancelledError):
             return await ctx.send(f"Time's up! It was {user}")
-
-    @commands.command(aliases=['comp'])
-    async def compliment(self, ctx, victim: Union[discord.Member, discord.User] = None):
-        """Want to hear something nice about you or someone else?"""
-        victim = victim or ctx.author
-        async with self.bot.session.get('https://complimentr.com/api') as resp:
-            js = await resp.json()
-        await ctx.safe_send(victim.display_name + f', {js["compliment"].lower()}')
-
-    @commands.command(aliases=['ins'])
-    async def insult(self, ctx, victim: Union[discord.Member, discord.Member] = None):
-        """What, you egg?"""
-        victim = victim or ctx.author
-        async with self.bot.session.get('http://quandyfactory.com/insult/json') as resp:
-            js = await resp.json()
-        await ctx.safe_send(victim.display_name + f', {js["insult"].lower()}')
 
     @commands.command()
     async def dongsize(self, ctx, *, victim: discord.Member = None):

@@ -132,6 +132,7 @@ class Events(commands.Cog):
         await self.bot.conn.execute(  # Adds/updates this guild in the db using upsert syntax
             'INSERT INTO guild_prefs (guild_id, prefix) VALUES ($1, $2) ON CONFLICT (guild_id) DO UPDATE SET prefix=$2',
             guild.id, 'n/')
+        await self.bot.build_guild_cache()
         await self.bot.logging_channels.get('guild_io').send(embed=embed)
 
     @commands.Cog.listener()
@@ -142,6 +143,7 @@ class Events(commands.Cog):
             description=f'Removed from guild {guild.name} [{guild.id}]',
             color=discord.Color.pornhub)  # Don't ask
         embed.set_thumbnail(url=guild.icon_url_as(static_format='png'))
+        await self.bot.build_guild_cache()
         await self.bot.logging_channels.get('guild_io').send(embed=embed)
 
 

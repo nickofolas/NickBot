@@ -123,16 +123,15 @@ class Guild(commands.Cog):
         """
         View or modify the configuration for the current guild.
         """
-        current_settings = dict(
-            (await self.bot.conn.fetch('SELECT * FROM guild_prefs WHERE guild_id=$1', ctx.guild.id))[0])
+        current_settings = self.bot.guild_cache[ctx.guild.id]
         readable_settings = list()
         for k, v in current_settings.items():
             if isinstance(v, bool):
-                readable_settings.append(f'**{discord.utils.escape_markdown(prettify_text(k))}** {ctx.tick(v)}')
+                readable_settings.append(f'**{ctx.toggle(v)} {discord.utils.escape_markdown(k)}**')
             else:
-                readable_settings.append(f'**{discord.utils.escape_markdown(prettify_text(k))}** `{v}`')
+                readable_settings.append(f'**{discord.utils.escape_markdown(k)}** `{v}`')
         await ctx.send(embed=discord.Embed(
-            title='Current Guild Settings', description='\n'.join(readable_settings[1:]),
+            title='Current Guild Settings', description='\n'.join(readable_settings),
             color=discord.Color.main).set_thumbnail(url=ctx.guild.icon_url_as(static_format='png')))
 
     @guild_config.command(aliases=['pfx'])
@@ -149,6 +148,7 @@ class Guild(commands.Cog):
         await self.bot.conn.execute(
             'INSERT INTO guild_prefs (guild_id, prefix) VALUES ($1, $2) ON CONFLICT (guild_id) DO UPDATE SET prefix=$2',
             ctx.guild.id, new_prefix)
+        await self.bot.build_guild_cache()
         await ctx.send(f'Prefix successfully changed to `{new_prefix}`')
 
     @guild_config.command(name='index')
@@ -158,6 +158,7 @@ class Guild(commands.Cog):
         Toggle whether or not emojis from the current guild will be indexed by emoji commands
         """
         await self.bot.conn.execute('UPDATE guild_prefs SET index_emojis=$1 WHERE guild_id=$2', on_off, ctx.guild.id)
+        await self.bot.build_guild_cache()
         await ctx.message.add_reaction(ctx.tick(True))
 
 

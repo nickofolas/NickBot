@@ -86,7 +86,7 @@ class User(commands.Cog):
         readable_settings = list()
         for k, v in self.bot.user_cache[ctx.author.id].items():
             if isinstance(v, bool):
-                readable_settings.append(f'{ctx.tick(v)} **{discord.utils.escape_markdown(k)}**')
+                readable_settings.append(f'{ctx.toggle(v)} **{discord.utils.escape_markdown(k)}**')
             elif isinstance(v, list) or v is None:
                 continue
             else:
@@ -105,7 +105,9 @@ class User(commands.Cog):
             h for h in self.bot.get_cog("HlMon").cache if h.user_id==ctx.author.id], 1)]
         await ctx.send(embed=discord.Embed(
             description='\n'.join(hl_list), color=discord.Color.main).set_footer(
-            text=f'{len(hl_list)}/10 slots used'), delete_after=15.0)
+            text=f'{len(hl_list)}/10 slots used').set_author(
+            name=f"{ctx.author}'s highlights", icon_url=ctx.author.avatar_url_as(static_format='png')),
+                       delete_after=15.0)
 
     # BEGIN TODOS GROUP ~
 
@@ -167,12 +169,12 @@ class User(commands.Cog):
     async def _remind(self, ctx, *, reminder):
         """Add a new reminder. The first time/date found will be the one used."""
         reminder_id = Random(datetime.utcnow()).randint(1, 1000**2)
-        try:
-            dt_string, parsed_time = (await self.bot.loop.run_in_executor(None, search_dates, reminder))[0]
-        except TypeError:
-            raise commands.CommandError("The inputted time was invalid or missing")
-        new_content = reminder.replace(dt_string, '') or '...'
         async with ctx.loading():
+            try:
+                dt_string, parsed_time = (await self.bot.loop.run_in_executor(None, search_dates, reminder))[0]
+            except TypeError:
+                raise commands.CommandError("The inputted time was invalid or missing")
+            new_content = reminder.replace(dt_string, '') or '...'
             await self.bot.conn.execute(
                 "INSERT INTO reminders (user_id, content, deadline, id, origin_jump) VALUES ($1, $2, $3, $4, $5)",
                 ctx.author.id, new_content, parsed_time, reminder_id, ctx.message.jump_url)

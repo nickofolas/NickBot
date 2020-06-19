@@ -134,7 +134,7 @@ class HlMon(commands.Cog):
                     await pending.user.send(embed=pending.embed)
                     await asyncio.sleep(0.25)
         finally:
-            self.queue = []
+            self.queue.clear()
 
     @do_highlights.before_loop
     async def wait_for_ready(self):

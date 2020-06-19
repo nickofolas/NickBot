@@ -24,6 +24,8 @@ emoji_suite:
   'alarm': '<:balarm_cl:710365167996764201>'
   'search': '<:search:710376307342704652>'
   'loading': '<a:loading:681628799376293912>'
+  'toggleoff': '<:neotoggleoff:723373277896114279>'
+  'toggleon': '<:neotoggleon:723373252302471168>'
 license: |
   neo Discord bot
   Copyright (C) 2020 nickofolas

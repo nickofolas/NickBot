@@ -138,7 +138,3 @@ dmypy.json
 # Cython debug symbols
 cython_debug/
 
-# Various files specific to this bot
-prefixes.json
-TODO.txt
-*.db

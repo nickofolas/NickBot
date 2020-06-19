@@ -51,6 +51,13 @@ activity_type_mapping = {
     discord.ActivityType.listening: 'Listening to'
 }
 
+channel_type_map = {
+    'TextChannel': '<:text_channel:687064764421373954> ', 
+    'VoiceChannel': '<:voice_channel:687064782167212165> ',
+    'TextChannel-locked': '<:text_locked:697526634848452639> ',
+    'VoiceChannel-locked': '<:voice_locked:697526650333691986> '
+}
+
 def to_elapsed(time):
     return f'{(time.seconds // 60) % 60:>02}:{time.seconds % 60:>02}'
 
@@ -206,27 +213,26 @@ class Info(commands.Cog):
     async def spotify(self, ctx, target: discord.Member = None):
         """Get info about someone's Spotify status, if they have one"""
         target = target or ctx.author
-        for ac in target.activities:
-            if isinstance(ac, discord.Spotify):
-                val = (datetime.utcnow() - ac.start)
-                e = discord.Embed(color=0x1db954).set_thumbnail(url=ac.album_cover_url)
-                bar_len = 5 if ctx.author.is_on_mobile() else 25
-                bar = utils.formatters.bar_make(
-                    val.seconds, ac.duration.seconds, fill='◉', empty='─', point=True, length=bar_len)
-                fields = [{'name': '**Song Title**',
-                    'value': f'[{discord.utils.escape_markdown(ac.title)}](https://open.spotify.com/track/{ac.track_id})'},
-                    {'name': f'**Song {utils.formatters.pluralize("Artist", ac.artists)}**',
-                    'value': ', '.join(ac.artists)},
-                    {'name': '**Album Name**',
-                    'value': discord.utils.escape_markdown(ac.album)},
-                    {'name': '**Song Progress**',
-                    'value': f'`{to_elapsed(val)}` {bar} `{to_elapsed(ac.duration)}`',
-                    'inline': False}]
-                e.set_author(
-                    name=target.display_name,
-                    icon_url='https://i.imgur.com/PA3vvdN.png')
-                [e.add_field(**field) for field in fields]
-                return await ctx.send(embed=e)
+        if ac := discord.utils.find(lambda a: isinstance(a, discord.Spotify), target.activities):
+            val = (datetime.utcnow() - ac.start)
+            e = discord.Embed(color=0x1db954).set_thumbnail(url=ac.album_cover_url)
+            bar_len = 5 if ctx.author.is_on_mobile() else 25
+            bar = utils.formatters.bar_make(
+                val.seconds, ac.duration.seconds, fill='◉', empty='─', point=True, length=bar_len)
+            fields = [{'name': '**Song Title**',
+                'value': f'[{discord.utils.escape_markdown(ac.title)}](https://open.spotify.com/track/{ac.track_id})'},
+                {'name': f'**Song {utils.formatters.pluralize("Artist", ac.artists)}**',
+                'value': ', '.join(ac.artists)},
+                {'name': '**Album Name**',
+                'value': discord.utils.escape_markdown(ac.album)},
+                {'name': '**Song Progress**',
+                'value': f'`{to_elapsed(val)}` {bar} `{to_elapsed(ac.duration)}`',
+                'inline': False}]
+            e.set_author(
+                name=target.display_name,
+                icon_url='https://i.imgur.com/PA3vvdN.png')
+            [e.add_field(**field) for field in fields]
+            return await ctx.send(embed=e)
         else:
             await ctx.send("A Spotify status couldn't be detected!")
 
@@ -277,34 +283,23 @@ class Info(commands.Cog):
                             ['#43b581', '#f04847', 'grey', '#f9a61a']).make_pie)),
                     filename='test.png'))
 
+    @staticmethod
+    def format_channels(channel):
+        spacer = '\N{zwsp} _ _'
+        if isinstance(channel, discord.CategoryChannel):
+            return f'<:expanded:702065051036680232> **{channel.name.upper()}**'
+        elif isinstance(channel, (discord.TextChannel, discord.VoiceChannel)):
+            emoji = channel_type_map[channel.__class__.__name__ + '-locked' if
+                                     channel.overwrites_for(channel.guild.default_role).read_messages 
+                                     is False else channel.__class__.__name__]
+            return f'{spacer*5} {emoji} {channel.name}'
+
     @serverinfo.command()
-    @commands.guild_only()  # TODO: Make this not suck
+    @commands.guild_only()
     async def channels(self, ctx, guild: int = None):
         guild = self.bot.get_guild(guild) or ctx.guild
-        final = list()
-        for cat, chanlist in guild.by_category():
-            to_append = (
-                f'<:expanded:702065051036680232> {cat.name}',
-                [ctx.tab(5) + (
-                    ('<:text_channel:687064764421373954> ' + chan.name if not
-                        chan.overwrites_for(guild.default_role).read_messages
-                        is False else '<:text_locked:697526634848452639> ' + chan.name)
-                    if isinstance(chan, discord.TextChannel)
-                    else (
-                        '<:voice_channel:687064782167212165> '
-                        + chan.name if not
-                        chan.overwrites_for(guild.default_role)
-                            .read_messages is False else
-                        '<:voice_locked:697526650333691986> ' + chan.name))
-                 for chan in chanlist])
-            if to_append[1]:
-                final.append(to_append)
-        embed = discord.Embed(color=discord.Color.main)
-        for item in final:
-            embed.add_field(
-                name=item[0], value='\n'.join(item[1]),
-                inline=False)
-        await ctx.send(embed=embed)
+        final = list(map(self.format_channels, [c for c in utils.formatters.flatten(guild.by_category()) if c]))
+        await ctx.quick_menu(utils.formatters.group(final, 25), 1, clear_reactions_after=True)
 
     @serverinfo.command()
     @commands.guild_only()

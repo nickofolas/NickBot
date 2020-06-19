@@ -80,6 +80,15 @@ class Context(commands.Context):
             return f'{emoji}: {label}'
         return emoji
 
+    def toggle(self, opt):
+        options = {
+            True: _EMOJIS.toggleon,
+            False: _EMOJIS.toggleoff,
+            None: _EMOJIS.toggleoff
+        }
+        emoji = options.get(opt, _EMOJIS.toggleoff)
+        return emoji
+
     @staticmethod
     def codeblock(content, hl_lang=None):
         return f'```{hl_lang or ""}\n' + content + '\n```'
