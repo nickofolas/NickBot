@@ -77,15 +77,14 @@ class Util(commands.Cog):
         try:
             if flags['all']:
                 snipes = [*flatten([self.bot.snipes.get(target_channel.id)['deleted'], self.bot.snipes.get(target_channel.id)['edited']])]
-                snipes.sort(key=lambda s: s.deleted_at)
             elif flags['edits']:
                 snipes = self.bot.snipes.get(target_channel.id)['edited']
             else:
                 snipes = self.bot.snipes.get(target_channel.id)['deleted']
         except:
             snipes = []
-        snipes.reverse()
-        await do_snipe_menu(ctx, snipes)
+        (new_snipes := list(snipes)).sort(key=lambda s: s.deleted_at, reverse=True)
+        await do_snipe_menu(ctx, new_snipes)
 
     @commands.command()
     async def ping(self, ctx):

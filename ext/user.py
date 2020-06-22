@@ -22,8 +22,8 @@ import pprint
 from random import Random
 from datetime import datetime
 from typing import Union
-from uuid import uuid4
 from textwrap import indent, shorten
+from contextlib import suppress
 
 import discord
 from discord.ext import commands, flags
@@ -118,7 +118,8 @@ class User(commands.Cog):
         """
         todo_list = []
         fetched = [(rec['content'], rec['jump_url']) for rec in
-                   await self.bot.conn.fetch("SELECT content, jump_url from todo WHERE user_id=$1", ctx.author.id)]
+                   await self.bot.conn.fetch("SELECT content, jump_url from todo WHERE user_id=$1 ORDER BY created_at ASC",
+                                             ctx.author.id)]
         for count, value in enumerate(fetched, 1):
             todo_list.append(f'[`{count}`]({value[1]}) {value[0]}')
         if not todo_list:
@@ -136,8 +137,8 @@ class User(commands.Cog):
         """
         Add an item to your todo list
         """
-        await self.bot.conn.execute('INSERT INTO todo VALUES ($1, $2, $3)',
-            ctx.author.id, content, ctx.message.jump_url)
+        await self.bot.conn.execute('INSERT INTO todo (user_id, content, jump_url, created_at) VALUES ($1, $2, $3, $4)',
+            ctx.author.id, content, ctx.message.jump_url, datetime.utcnow())
         await ctx.message.add_reaction(ctx.tick(True))
 
     @todo_rw.command(name='remove', aliases=['rm', 'delete', 'del', 'yeet'])
@@ -178,8 +179,9 @@ class User(commands.Cog):
             await self.bot.conn.execute(
                 "INSERT INTO reminders (user_id, content, deadline, id, origin_jump) VALUES ($1, $2, $3, $4, $5)",
                 ctx.author.id, new_content, parsed_time, reminder_id, ctx.message.jump_url)
-        Reminder(user=ctx.author, content=new_content, deadline=parsed_time, 
-                 bot=self.bot, conn_pool=self.bot.conn, rm_id=reminder_id, jump_origin=ctx.message.jump_url)
+        with suppress(UnboundLocalError):
+            Reminder(user=ctx.author, content=new_content, deadline=parsed_time, 
+                     bot=self.bot, conn_pool=self.bot.conn, rm_id=reminder_id, jump_origin=ctx.message.jump_url)
 
     @_remind.command(name='list')
     async def _remind_list(self, ctx):

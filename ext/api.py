@@ -151,7 +151,7 @@ class Api(commands.Cog):
             res = await cli.search(query)
             results = [GoogleResults(
                 title=result.title,
-                description=result.description,
+               description=result.description,
                 result_url=result.url,
                 image_url=None) for result in res]
             embeds = build_google_embeds(results)

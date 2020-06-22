@@ -80,7 +80,9 @@ class Highlight:
             context_list.append(
                 f"{conf['default_discord_users'][avatar_index]} **{m.author.name}:** "
                 f"{re.sub(repl, ':question:', hl_underline)}")
-        context_list = reversed(context_list)
+        context_list.reverse()
+        while len('\n'.join(context_list)) > 2048:
+            context_list = context_list[1:]
         embed = discord.Embed(
             title=f'Highlighted in {message.guild.name}/#{message.channel.name} with "{shn(match, width=25)}"',
             description='\n'.join(context_list) + f'\n[Jump URL]({message.jump_url})',

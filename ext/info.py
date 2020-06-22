@@ -61,7 +61,7 @@ channel_type_map = {
 def to_elapsed(time):
     return f'{(time.seconds // 60) % 60:>02}:{time.seconds % 60:>02}'
 
-statuses_base = namedtuple('statuses_base', 'online dnd idle offline')
+statuses_base = namedtuple('statuses_base', 'online dnd idle offline', defaults=(0, 0, 0, 0))
 
 class UserInfo:
     __slots__ = ('user', 'context', 'flags')

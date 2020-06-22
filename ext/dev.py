@@ -51,6 +51,8 @@ type_dict = {
     'none': None
 }
 
+file_ext_re = re.compile(r"(~?/?(/\w)*)?\.(?P<extension>\w*)")
+
 ShellOut = namedtuple('ShellOut', 'stdout stderr returncode')
 
 
@@ -113,15 +115,15 @@ class Dev(commands.Cog):
     async def shell(self, ctx, *, args: CBStripConverter):
         """Invokes the system shell, attempting to run the inputted command"""
         hl_lang = 'sh'
-        if 'cat' in args:
-            hl_lang = return_lang_hl(args)
+        if match := file_ext_re.search(args):
+            hl_lang = return_lang_hl(match.groupdict().get('extension', 'sh'))
         if 'git diff' in args:
             hl_lang = 'diff'
         async with ctx.loading(tick=False):
             shellout = await do_shell(args)
             output = clean_bytes(shellout.stdout) + '\n' + textwrap.indent(clean_bytes(shellout.stderr), '[stderr] ')
             pages = group(output, 1500)
-            pages = [ctx.codeblock(f"{page}\nReturn code {shellout.returncode}", hl_lang) for page in pages]
+            pages = [ctx.codeblock(page, hl_lang) + f"\n`Return code {shellout.returncode}`" for page in pages]
         await ctx.quick_menu(pages, 1, delete_message_after=True, timeout=1800)
 
     @commands.command(name='eval')
@@ -153,10 +155,10 @@ class Dev(commands.Cog):
                 import_expression.exec(to_compile, env)
             except Exception as e:
                 raise HandleTb(ctx, e)
-            evaluated_func = env['func']
+            _aexec = env['func']
             try:
                 with redirect_stdout(stdout):
-                    result = await evaluated_func(self.scope, self.retain) or ''
+                    result = await _aexec(self.scope, self.retain) or ''
             except Exception as e:
                 raise HandleTb(ctx, e)
             else:
@@ -166,7 +168,7 @@ class Dev(commands.Cog):
         if to_return:
             pages = group(to_return, 1500)
             pages = [ctx.codeblock(page, 'py') for page in pages]
-            await ctx.quick_menu(pages, 1, delete_message_after=True, timeout=1800)
+            await ctx.quick_menu(pages, 1, delete_message_after=True, timeout=None)
 
     @commands.command()
     async def debug(self, ctx, *, command_string):
@@ -222,7 +224,6 @@ class Dev(commands.Cog):
     @commands.group(name='dev', invoke_without_command=True)
     async def dev_command_group(self, ctx):
         """Some dev commands"""
-        await ctx.send("We get it buddy, you're super cool because you can use the dev commands")
 
     @dev_command_group.command(name='delete', aliases=['del'])
     async def delete_bot_msg(self, ctx, message_ids: commands.Greedy[int]):
@@ -243,25 +244,6 @@ class Dev(commands.Cog):
     async def _dev_journalctl(self, ctx):
         new_ctx = await copy_ctx(ctx, f"sh sudo journalctl -u neo -o cat")
         await new_ctx.reinvoke()
-
-    @dev_command_group.group(name='scope', invoke_without_command=True)
-    async def _dev_scope(self, ctx, toggle: BoolConverter = None):
-        if toggle is None:
-            pages = group(str(self.scope), 1500)
-            pages = [ctx.codeblock(page, 'py') for page in pages]
-            await ctx.quick_menu(pages, 1,
-                template=discord.Embed(
-                    title=f'Retain: {self.retain}',
-                    color=discord.Color.main),
-                delete_message_after=True, timeout=300)
-            return
-        async with ctx.loading():
-            self.retain = toggle
-
-    @_dev_scope.command(name='flush')
-    async def _clear_scope(self, ctx):
-        async with ctx.loading():
-            self.scope = {}
 
     @flags.add_flag('-s', '--status', default='online', choices=['online', 'offline', 'dnd', 'idle'])
     @flags.add_flag('-p', '--presence', nargs='+', dest='presence')
