@@ -29,7 +29,7 @@ from discord.ext import commands
 import uwuify
 from async_timeout import timeout
 
-from utils.config import conf
+from config import conf
 from utils.paginator import BareBonesMenu, CSMenu
 
 CODE = {'A': '.-', 'B': '-...', 'C': '-.-.',
@@ -168,7 +168,7 @@ class Fun(commands.Cog):
             check=lambda r, u:
                 r.message.id == triv.id and u.id == ctx.author.id)
         try:
-            ind = int(conf['emoji_numbers'][react.emoji])
+            ind = int({v : k for k, v in conf['number_emojis'].items()}[react.emoji])
             if anwrs[ind-1] == us(data['correct_answer']):
                 await triv.edit(embed=discord.Embed(
                     title='',

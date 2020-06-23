@@ -25,13 +25,15 @@ import discord
 import humanize
 from discord.ext import menus
 
-from utils.config import conf
+from config import conf
 
 
 class CSMenu(menus.MenuPages, inherit_buttons=False):
     """Subclass of menus.MenuPages to customize emojis and behavior"""
 
-    def __init__(self, source, **kwargs):
+    def __init__(self, source, *, delete_on_button = False, **kwargs):
+        self.delete_on_button = delete_on_button
+        self.closed_via_button = False
         super().__init__(source, **kwargs)
 
     def should_add_reactions(self):
@@ -60,6 +62,10 @@ class CSMenu(menus.MenuPages, inherit_buttons=False):
                 text=f'Page {self.current_page + 1}/{self._source.get_max_pages()}' if
                 self._source.get_max_pages() > 1 else ''),
                     'content': None}
+
+    async def finalize(self):
+        if self.closed_via_button is True and self.delete_on_button is True:
+            await self.message.delete()
 
     @menus.button(
         f'{conf["emoji_suite"]["menu_dleft"]}\ufe0f',
@@ -102,6 +108,7 @@ class CSMenu(menus.MenuPages, inherit_buttons=False):
     @menus.button(f'{conf["emoji_suite"]["x_button"]}\ufe0f', position=menus.First(1))
     async def stop_pages(self, payload):
         """stops the pagination session."""
+        self.closed_via_button = True
         self.stop()
 
 

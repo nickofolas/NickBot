@@ -33,7 +33,7 @@ from discord.ext import commands, flags
 from tabulate import tabulate
 
 import utils
-from utils.config import conf
+from config import conf
 from utils.formatters import return_lang_hl, pluralize, group
 from utils.converters import CBStripConverter, BoolConverter
 
@@ -89,7 +89,8 @@ class HandleTb(Exception):
     def __init__(self, ctx, error):
         self.ctx = ctx
         self.error = error
-        ctx.bot.loop.create_task(ctx.quick_menu(self.format_exception(), 1, delete_message_after=True, timeout=300))
+        ctx.bot.loop.create_task(ctx.quick_menu(self.format_exception(), 1, delete_on_button=True,
+                                                clear_reactions_after=True, timeout=300))
 
     def format_exception(self):
         fmtd_exc = ''.join(traceback.format_exception(type(self.error), self.error, self.error.__traceback__))
@@ -124,7 +125,7 @@ class Dev(commands.Cog):
             output = clean_bytes(shellout.stdout) + '\n' + textwrap.indent(clean_bytes(shellout.stderr), '[stderr] ')
             pages = group(output, 1500)
             pages = [ctx.codeblock(page, hl_lang) + f"\n`Return code {shellout.returncode}`" for page in pages]
-        await ctx.quick_menu(pages, 1, delete_message_after=True, timeout=1800)
+        await ctx.quick_menu(pages, 1, delete_on_button=True, clear_reactions_after=True, timeout=1800)
 
     @commands.command(name='eval')
     async def eval_(self, ctx, *, body: CBStripConverter):
@@ -168,7 +169,7 @@ class Dev(commands.Cog):
         if to_return:
             pages = group(to_return, 1500)
             pages = [ctx.codeblock(page, 'py') for page in pages]
-            await ctx.quick_menu(pages, 1, delete_message_after=True, timeout=None)
+            await ctx.quick_menu(pages, 1, delete_on_button=True, clear_reactions_after=True, timeout=1800)
 
     @commands.command()
     async def debug(self, ctx, *, command_string):
@@ -216,7 +217,7 @@ class Dev(commands.Cog):
         r = group(r, len(rkeys))
         table = tabulate(r, headers=headers, tablefmt='pretty')
         pages = [ctx.codeblock(page) for page in group(table, 1500)]
-        await ctx.quick_menu(pages, 1, delete_message_after=True, timeout=300,
+        await ctx.quick_menu(pages, 1, delete_on_button=True, clear_reactions_after=True, timeout=300,
                              template=discord.Embed(
                                  color=discord.Color.main)
                              .set_author(name=f'Returned {rows} {pluralize("row", rows)} in {dt:.2f}ms'))

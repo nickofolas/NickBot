@@ -21,7 +21,7 @@ import re
 
 import matplotlib.pyplot as plt
 
-from utils.config import conf
+from config import conf
 
 
 LANGUAGES = conf['hl_langs']

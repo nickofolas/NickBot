@@ -25,7 +25,7 @@ import discord
 from discord.ext import commands, flags, tasks
 
 from utils.checks import check_member_in_guild
-from utils.config import conf
+from config import conf
 from utils.containers import TimedSet
 
 # Constants

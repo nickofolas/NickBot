@@ -31,7 +31,7 @@ import aiogoogletrans
 from discord.ext import commands, flags
 
 import utils.errors as errors
-from utils.config import conf
+from config import conf
 from utils.paginator import PagedEmbedMenu, CSMenu
 
 GoogleResults = namedtuple('GoogleResults', ['title', 'description', 'result_url', 'image_url'])
@@ -159,7 +159,7 @@ class Api(commands.Cog):
         if not embeds:
             return
         source = PagedEmbedMenu(embeds)
-        menu = CSMenu(source, delete_message_after=True)
+        menu = CSMenu(source, delete_on_button=True, clear_reactions_after=True)
         await menu.start(ctx)
 
     @google.command(aliases=['img'])
@@ -182,7 +182,7 @@ class Api(commands.Cog):
         if not embeds:
             return
         source = PagedEmbedMenu(embeds)
-        menu = CSMenu(source, delete_message_after=True)
+        menu = CSMenu(source, delete_on_button=True, clear_reactions_after=True)
         await menu.start(ctx)
 
     @commands.group(aliases=['fn'], invoke_without_command=True)

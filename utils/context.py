@@ -24,7 +24,7 @@ from discord.ext import commands
 import discord
 
 import utils.paginator as pages
-from utils.config import CONFIG
+from config import CONFIG
 
 _EMOJIS = CONFIG.emoji_suite
 

@@ -31,7 +31,8 @@ import async_cleverbot as ac
 import asyncpg
 
 import utils.context
-from utils.config import conf
+from utils.containers import Cache
+from config import conf
 
 load_dotenv()
 
@@ -54,11 +55,10 @@ async def get_prefix(bot, message):
         return
     await bot.wait_until_ready()
     prefix = 'n/'
-    if not message.guild:
-        return commands.when_mentioned_or(prefix)(bot, message)
-    with suppress(IndexError):
-        prefix = bot.guild_cache[message.guild.id]['prefix']
-        return commands.when_mentioned_or(prefix)(bot, message)
+    if message.guild:
+        with suppress(KeyError):
+            prefix = bot.guild_cache[message.guild.id]['prefix']
+    return commands.when_mentioned_or(prefix)(bot, message)
 
 
 # Bot class itself, kinda important
@@ -76,7 +76,7 @@ class NeoBot(commands.Bot):
         self._cd = commands.CooldownMapping.from_cooldown(1.0, 2.5, commands.BucketType.user)
         self.add_check(self.global_cooldown)
         self.user_cache = dict()
-        self.guild_cache = dict()
+        self.guild_cache = dict() 
         self.before_invoke(self.before)
 
         for ext in conf.get('exts'):
@@ -89,6 +89,8 @@ class NeoBot(commands.Bot):
         cn = {"user": os.getenv('DBUSER'), "password": os.getenv('DBPASS'), "database": os.getenv('DB'),
               "host": os.getenv('DBHOST')}
         self.conn = await asyncpg.create_pool(**cn)
+        self.guild_cache_2 = Cache(db_query="SELECT * FROM guild_prefs",
+                                   key='guild_id', loop=self.loop, pool=self.conn)
 
     async def get_context(self, message, *, cls=utils.context.Context):
         return await super().get_context(message, cls=cls)

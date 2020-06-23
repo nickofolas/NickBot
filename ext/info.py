@@ -28,7 +28,7 @@ import humanize
 from discord.ext import commands
 
 import utils.formatters
-from utils.config import conf
+from config import conf
 from utils.converters import BetterUserConverter
 
 badges = {
@@ -78,7 +78,7 @@ class UserInfo:
             return True
         elif any(g.get_member(self.user.id).premium_since for g in self.context.bot.guilds if self.user in g.members):
             return True
-        elif mem := discord.utils.get(utils.formatters.flatten(g.members for g in self.context.bot.guilds), id=self.user.id):
+        elif mem := discord.utils.get(self.context.bot.get_all_members(), id=self.user.id):
             if a := discord.utils.get(mem.activities, type=discord.ActivityType.custom):
                 if a.emoji:
                     if a.emoji.is_custom_emoji():
@@ -107,7 +107,7 @@ class UserInfo:
         return status_display
 
     @property
-    async def user_activities(self):
+    def user_activities(self):
         if not isinstance(self.user, discord.Member):
             return
         for a in self.user.activities:
@@ -178,7 +178,7 @@ class Info(commands.Cog):
         stats_disp += f'**Registered **{humanize.naturaltime(datetime.utcnow() - user.created_at)}'
         stats_disp += f'\n{guild_level_stats}' if guild_level_stats else ''
         embed.add_field(name='Stats', value=stats_disp)
-        if acts := [a async for a in user_info.user_activities]:
+        if acts := [*user_info.user_activities]:
             embed.add_field(
                 name='Activities',
                 value='\n'.join(acts),

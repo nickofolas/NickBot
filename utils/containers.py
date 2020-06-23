@@ -40,3 +40,25 @@ class TimedSet(set):
     async def decay(self, item):
         await asyncio.sleep(self.decay_time)
         self.discard(item)
+
+class Cache(dict):
+    def __init__(self, *, db_query, loop, query_params = [], pool, key, lazy_load = False):
+        self.pool = pool
+        self.loop = loop
+        self.db_query = db_query
+        self.query_params = query_params
+        self.key = key
+        if not lazy_load:
+            loop.create_task(self._build_cache())
+
+    async def _build_cache(self):
+        data = await self.pool.fetch(self.db_query, *self.query_params)
+        for record in data:
+            copied = dict(record)
+            self[copied.pop(self.key)] = copied
+        return self
+
+    async def refresh(self):
+        self.clear()
+        await self._build_cache()
+        return self

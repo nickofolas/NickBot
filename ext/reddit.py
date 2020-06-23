@@ -28,7 +28,7 @@ from humanize import naturaltime as nt
 
 from utils.errors import ApiError
 from utils.paginator import CSMenu, PagedEmbedMenu
-from utils.config import conf
+from config import conf
 from utils.converters import RedditConverter
 from utils.formatters import group
 
