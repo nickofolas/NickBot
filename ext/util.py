@@ -36,6 +36,7 @@ from yarl import URL
 from utils import paginator
 from utils.converters import BetterUserConverter
 from utils.formatters import group, flatten
+from config import _secrets
 
 
 def zulu_time(dt: datetime.datetime):
@@ -46,7 +47,7 @@ async def do_snipe_menu(ctx, snipes):
         raise commands.CommandError("Unable to snipe this channel")
     entries = [snipe.to_embed() for snipe in snipes]
     source = paginator.PagedEmbedMenu(entries)
-    menu = paginator.CSMenu(source, delete_message_after=True)
+    menu = paginator.CSMenu(source, delete_on_button=True, clear_reactions_after=True)
     await menu.start(ctx)
 
 round_values = [1 << i for i in range(1, 13)][3:]
@@ -163,7 +164,7 @@ class Util(commands.Cog):
         if image is None and not ctx.message.attachments:
             raise commands.MissingRequiredArgument(Parameter(name='image', kind=Parameter.KEYWORD_ONLY))
         image = image or await ctx.message.attachments[0].read()
-        headers = {'Authorization': f"Client-ID {os.getenv('IMGUR_ID')}"}
+        headers = {'Authorization': f"Client-ID {_secrets.imgur_id}"}
         data = {'image': image}
         async with ctx.loading(), self.bot.session.post('https://api.imgur.com/3/image',
                                                         headers=headers, data=data) as resp:
@@ -178,7 +179,7 @@ class Util(commands.Cog):
         """Shorten a link into a compact redirect"""
         resp = await self.bot.session.post('https://api.rebrandly.com/v1/links',
                                            headers={'Content-type': 'application/json',
-                                                    'apikey': os.getenv('REBRANDLY_KEY')},
+                                                    'apikey': _secrets.rebrandly_key},
                                            data=json.dumps({'destination': link}))
         if url := (await resp.json())["shortUrl"]:
             await ctx.send(f'Shortened URL: <https://{url}>')
@@ -231,7 +232,7 @@ class Util(commands.Cog):
         image = image_url or ctx.message.attachments[0].url
         async with timeout(30), ctx.loading(tick=False), self.bot.session.get('https://api.tsu.sh/google/ocr', params={'q': image}) as resp:
             output = (await resp.json()).get('text', 'No result')
-        await ctx.quick_menu(group(output, 750), 1, delete_message_after=True)
+        await ctx.quick_menu(group(output, 750), 1, delete_on_button=True, clear_reactions_after=True)
 
 
 def setup(bot):

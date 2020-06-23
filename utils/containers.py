@@ -42,9 +42,9 @@ class TimedSet(set):
         self.discard(item)
 
 class Cache(dict):
-    def __init__(self, *, db_query, loop, query_params = [], pool, key, lazy_load = False):
+    def __init__(self, *, db_query, loop = None, query_params = [], pool, key, lazy_load = False):
         self.pool = pool
-        self.loop = loop
+        self.loop = loop or asyncio.get_running_loop()
         self.db_query = db_query
         self.query_params = query_params
         self.key = key

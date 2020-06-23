@@ -60,7 +60,7 @@ class Guild(commands.Cog):
         '-r', '--reactions',
         action='store_const',
         const=lambda m: len(m.reactions))
-    @flags.add_flag('search_depth', type=int, default=5)
+    @flags.add_flag('search_depth', type=int, nargs='?', default=5)
     @has_permissions(manage_messages=True)
     @flags.command(name='clear', aliases=['c'])
     async def custom(self, ctx, **args):

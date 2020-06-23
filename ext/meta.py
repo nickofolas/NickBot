@@ -27,7 +27,7 @@ import humanize
 import psutil
 from discord.ext import commands
 
-from config import conf
+from config import conf, _secrets
 
 checked_perms = ['is_owner', 'guild_only', 'dm_only', 'is_nsfw']
 checked_perms.extend([p[0] for p in discord.Permissions()])
@@ -134,7 +134,7 @@ class Meta(commands.Cog):
         await ctx.send(f'<https://github.com/nickofolas/neo/blob/master/{location}#L{first_line}-L{last_line}>')
 
     async def fetch_latest_commit(self):
-        headers = {'Authorization': f'token  {os.getenv("GITHUB_TOKEN")}'}
+        headers = {'Authorization': f'token  {_secrets.github_token}'}
         url = 'https://api.github.com/repos/nickofolas/neo/commits'
         async with self.bot.session.get(f'{url}/master', headers=headers) as resp1:
             # noinspection PyAttributeOutsideInit

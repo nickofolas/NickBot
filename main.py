@@ -32,7 +32,7 @@ import asyncpg
 
 import utils.context
 from utils.containers import Cache
-from config import conf
+from config import conf, _secrets
 
 load_dotenv()
 
@@ -82,13 +82,13 @@ class NeoBot(commands.Bot):
         for ext in conf.get('exts'):
             self.load_extension(ext)
 
-        TOKEN = os.getenv("TOKEN")
-        self.run(TOKEN)
+        self.run(_secrets.bot_token)
 
     async def ainit(self):
         cn = {"user": os.getenv('DBUSER'), "password": os.getenv('DBPASS'), "database": os.getenv('DB'),
               "host": os.getenv('DBHOST')}
-        self.conn = await asyncpg.create_pool(**cn)
+        self.conn = await asyncpg.create_pool(
+            user=_secrets.dbuser, password=_secrets.dbpass, database=_secrets.db, host=_secrets.dbhost)
         self.guild_cache_2 = Cache(db_query="SELECT * FROM guild_prefs",
                                    key='guild_id', loop=self.loop, pool=self.conn)
 

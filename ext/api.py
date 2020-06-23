@@ -31,7 +31,7 @@ import aiogoogletrans
 from discord.ext import commands, flags
 
 import utils.errors as errors
-from config import conf
+from config import conf, _secrets
 from utils.paginator import PagedEmbedMenu, CSMenu
 
 GoogleResults = namedtuple('GoogleResults', ['title', 'description', 'result_url', 'image_url'])
@@ -146,8 +146,8 @@ class Api(commands.Cog):
         """
         embeds = list()
         async with ctx.loading(tick=False):
-            keys = os.getenv('SEARCH_TOKENS').split(',')
-            cli = cse.Search(list(keys))
+            keys = _secrets.gsearch_keys
+            cli = cse.Search(keys)
             res = await cli.search(query)
             results = [GoogleResults(
                 title=result.title,
@@ -169,8 +169,8 @@ class Api(commands.Cog):
         """
         embeds = list()
         async with ctx.loading(tick=False):
-            keys = os.getenv('IMAGE_TOKENS').split(',')
-            cli = cse.Search(list(keys))
+            keys = _secrets.gimage_keys
+            cli = cse.Search(keys)
             res = await cli.search(query, image_search=True)
             results = [GoogleResults(
                 title=result.title,
@@ -194,7 +194,7 @@ class Api(commands.Cog):
     async def itemshop(self, ctx):
         """Lists out the items currently in the Fortnite item shop"""
         async with self.bot.session.get(
-                'https://api.fortnitetracker.com/v1/store', headers={'TRN-Api-Key': os.getenv('FORTNITE_KEY')}) as resp:
+                'https://api.fortnitetracker.com/v1/store', headers={'TRN-Api-Key': _secrets.fortnite_key}) as resp:
             js = await resp.json()
 
         def _gather():
@@ -218,7 +218,7 @@ class Api(commands.Cog):
         """
         async with self.bot.session.get(
                 f'https://api.fortnitetracker.com/v1/profile/{platform}/{epic_name}',
-                headers={'TRN-Api-Key': os.getenv('FORTNITE_KEY')}) as resp:
+                headers={'TRN-Api-Key': _secrets.fortnite_key}) as resp:
             js = await resp.json()
         embed = discord.Embed(color=discord.Color.main).set_author(
             name=js.get('epicUserHandle'), icon_url='https://i.imgur.com/XMTZAQT.jpg')
