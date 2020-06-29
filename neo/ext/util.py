@@ -33,10 +33,10 @@ from discord.ext import commands, flags
 from async_timeout import timeout
 from yarl import URL
 
-from utils import paginator
-from utils.converters import BetterUserConverter
-from utils.formatters import group, flatten
-from config import _secrets
+from neo.utils import paginator
+from neo.utils.converters import BetterUserConverter
+from neo.utils.formatters import group, flatten
+from neo.config import _secrets
 
 
 def zulu_time(dt: datetime.datetime):

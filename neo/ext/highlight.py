@@ -24,9 +24,9 @@ from textwrap import shorten as shn
 import discord
 from discord.ext import commands, flags, tasks
 
-from utils.checks import check_member_in_guild
-from config import conf
-from utils.containers import TimedSet
+from neo.utils.checks import check_member_in_guild
+from neo.config import conf
+from neo.utils.containers import TimedSet
 
 # Constants
 MAX_HIGHLIGHTS = 10

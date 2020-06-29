@@ -19,7 +19,6 @@ from collections import namedtuple
 from contextlib import suppress
 import re
 
-# noinspection PyPackageRequirements
 from discord.ext import commands
 import discord
 

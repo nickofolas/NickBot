@@ -26,9 +26,9 @@ import discord
 from discord.ext import commands, flags
 from discord.ext.commands import has_permissions
 
-from utils.checks import is_owner_or_administrator
-from utils.converters import BoolConverter
-from utils.formatters import prettify_text
+from neo.utils.checks import is_owner_or_administrator
+from neo.utils.converters import BoolConverter
+from neo.utils.formatters import prettify_text
 
 custom_emoji = re.compile(
     r'(<a?:\w*:\d*>)|([\U00002600-\U000027BF])|([\U0001f300-\U0001f64F])|([\U0001f680-\U0001f6FF])')

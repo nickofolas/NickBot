@@ -24,7 +24,7 @@ import textwrap
 
 import import_expression
 
-from config import conf
+from neo.config import conf
 
 
 LANGUAGES = conf['hl_langs']

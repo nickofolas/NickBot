@@ -26,11 +26,11 @@ import aiohttp
 from discord.ext import commands, flags
 from humanize import naturaltime as nt
 
-from utils.errors import ApiError
-from utils.paginator import CSMenu, PagedEmbedMenu
-from config import conf
-from utils.converters import RedditConverter
-from utils.formatters import group
+from neo.utils.errors import ApiError
+from neo.utils.paginator import CSMenu, PagedEmbedMenu
+from neo.config import conf
+from neo.utils.converters import RedditConverter
+from neo.utils.formatters import group
 
 PollChoice = namedtuple('PollChoice', ['text', 'votes'])
 

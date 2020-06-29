@@ -30,9 +30,9 @@ import humanize
 import aiogoogletrans
 from discord.ext import commands, flags
 
-import utils.errors as errors
-from config import conf, _secrets
-from utils.paginator import PagedEmbedMenu, CSMenu
+import neo.utils.errors as errors
+from neo.config import conf, _secrets
+from neo.utils.paginator import PagedEmbedMenu, CSMenu
 
 GoogleResults = namedtuple('GoogleResults', ['title', 'description', 'result_url', 'image_url'])
 

@@ -27,7 +27,7 @@ import humanize
 import psutil
 from discord.ext import commands
 
-from config import conf, _secrets
+from neo.config import conf, _secrets
 
 checked_perms = ['is_owner', 'guild_only', 'dm_only', 'is_nsfw']
 checked_perms.extend([p[0] for p in discord.Permissions()])

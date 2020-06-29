@@ -29,9 +29,9 @@ import aiohttp
 import async_cleverbot as ac
 import asyncpg
 
-import utils.context
-from utils.containers import Cache
-from config import conf, _secrets
+import neo.context
+from neo.utils.containers import Cache
+from neo.config import conf, _secrets
 
 
 def warn(*args, **kwargs):
@@ -89,7 +89,7 @@ class NeoBot(commands.Bot):
         self.guild_cache = await Cache(db_query="SELECT * FROM guild_prefs",
                                    key='guild_id', pool=self.conn)
 
-    async def get_context(self, message, *, cls=utils.context.Context):
+    async def get_context(self, message, *, cls=neo.context.Context):
         return await super().get_context(message, cls=cls)
 
     async def global_cooldown(self, ctx):
@@ -133,5 +133,3 @@ class NeoBot(commands.Bot):
         await self.conn.close()
         await super().close()
 
-
-NeoBot().run()

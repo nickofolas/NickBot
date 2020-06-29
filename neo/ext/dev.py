@@ -34,12 +34,12 @@ import import_expression
 from discord.ext import commands, flags
 from tabulate import tabulate
 
-import utils
-from config import conf
-from utils.formatters import (return_lang_hl, pluralize, group, 
+import neo
+from neo.config import conf
+from neo.utils.formatters import (return_lang_hl, pluralize, group, 
                               insert_return, clean_bytes, format_exception, insert_yield,
                               _wrap_code)
-from utils.converters import CBStripConverter, BoolConverter
+from neo.utils.converters import CBStripConverter, BoolConverter
 
 status_dict = {
     'online': discord.Status.online,
@@ -77,7 +77,7 @@ async def copy_ctx(
     msg.channel = channel or ctx.channel
     msg.author = author or ctx.author
     msg.content = ctx.prefix + command_string
-    new_ctx = await ctx.bot.get_context(msg, cls=utils.context.Context)
+    new_ctx = await ctx.bot.get_context(msg, cls=neo.context.Context)
     return new_ctx
 
 

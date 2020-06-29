@@ -27,9 +27,9 @@ from discord.ext import commands
 from humanize import naturaltime as nt
 from yarl import URL
 
-from utils.converters import GitHubConverter
-from utils.errors import ApiError
-from utils.formatters import prettify_text, from_tz
+from neo.utils.converters import GitHubConverter
+from neo.utils.errors import ApiError
+from neo.utils.formatters import prettify_text, from_tz
 
 path_mapping = {'repos': 'repositories'}
 

@@ -29,8 +29,8 @@ from discord.ext import commands
 import uwuify
 from async_timeout import timeout
 
-from config import conf
-from utils.paginator import BareBonesMenu, CSMenu
+from neo.config import conf
+from neo.utils.paginator import BareBonesMenu, CSMenu
 
 CODE = {'A': '.-', 'B': '-...', 'C': '-.-.',
         'D': '-..', 'E': '.', 'F': '..-.',

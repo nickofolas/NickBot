@@ -26,7 +26,7 @@ import discord
 from discord.ext import commands, tasks
 from humanize import naturaltime as nt
 
-from config import conf
+from neo.config import conf
 
 ignored_cmds = re.compile(r'\.+')
 

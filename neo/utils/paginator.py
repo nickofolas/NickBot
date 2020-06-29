@@ -25,7 +25,7 @@ import discord
 import humanize
 from discord.ext import menus
 
-from config import conf
+from neo.config import conf
 
 
 class CSMenu(menus.MenuPages, inherit_buttons=False):

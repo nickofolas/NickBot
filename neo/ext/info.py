@@ -27,9 +27,9 @@ import discord
 import humanize
 from discord.ext import commands
 
-import utils.formatters
-from config import conf
-from utils.converters import BetterUserConverter
+import neo.utils.formatters
+from neo.config import conf
+from neo.utils.converters import BetterUserConverter
 
 badges = {
     'staff': '<:staff:699986149288181780>',
@@ -217,11 +217,11 @@ class Info(commands.Cog):
             val = (datetime.utcnow() - ac.start)
             e = discord.Embed(color=0x1db954).set_thumbnail(url=ac.album_cover_url)
             bar_len = 5 if ctx.author.is_on_mobile() else 25
-            bar = utils.formatters.bar_make(
+            bar = neo.utils.formatters.bar_make(
                 val.seconds, ac.duration.seconds, fill='◉', empty='─', point=True, length=bar_len)
             fields = [{'name': '**Song Title**',
                 'value': f'[{discord.utils.escape_markdown(ac.title)}](https://open.spotify.com/track/{ac.track_id})'},
-                {'name': f'**Song {utils.formatters.pluralize("Artist", ac.artists)}**',
+                {'name': f'**Song {neo.utils.formatters.pluralize("Artist", ac.artists)}**',
                 'value': ', '.join(ac.artists)},
                 {'name': '**Album Name**',
                 'value': discord.utils.escape_markdown(ac.album)},
@@ -281,8 +281,8 @@ class Info(commands.Cog):
     @commands.guild_only()
     async def channels(self, ctx, guild: int = None):
         guild = self.bot.get_guild(guild) or ctx.guild
-        final = list(map(self.format_channels, [c for c in utils.formatters.flatten(guild.by_category()) if c]))
-        await ctx.quick_menu(utils.formatters.group(final, 25), 1, clear_reactions_after=True)
+        final = list(map(self.format_channels, [c for c in neo.utils.formatters.flatten(guild.by_category()) if c]))
+        await ctx.quick_menu(neo.utils.formatters.group(final, 25), 1, clear_reactions_after=True)
 
     @serverinfo.command()
     @commands.guild_only()

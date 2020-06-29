@@ -31,9 +31,9 @@ from humanize import naturaldelta as nd
 from yarl import URL
 from dateparser.search import search_dates
 
-from utils.checks import check_member_in_guild
-from utils.formatters import prettify_text
-from utils.converters import BoolConverter
+from neo.utils.checks import check_member_in_guild
+from neo.utils.formatters import prettify_text
+from neo.utils.converters import BoolConverter
 
 
 class Reminder:
