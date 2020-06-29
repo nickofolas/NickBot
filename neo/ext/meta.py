@@ -130,8 +130,12 @@ class Meta(commands.Cog):
             title = 'View full source'
             url = 'https://github.com/nickofolas/neo'
         else:
-            c = cmd.callback
-            fpath = os.path.relpath(c.__code__.co_filename)
+            if isinstance(cmd, self.bot.help_command._command_impl.__class__):
+                c = type(self.bot.help_command)
+                fpath = os.path.relpath(inspect.getsourcefile(c))
+            else:
+                c = cmd.callback
+                fpath = os.path.relpath(c.__code__.co_filename)
             lines, first_ln = inspect.getsourcelines(c)
             last_ln = first_ln + (len(lines) - 1)
             title = f'View source for command {cmd.qualified_name}'

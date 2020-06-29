@@ -24,11 +24,6 @@ import textwrap
 
 import import_expression
 
-from neo.config import conf
-
-
-LANGUAGES = conf['hl_langs']
-
 
 def group(iterable, page_len=50):
     pages = []
@@ -45,13 +40,6 @@ def flatten(iterable):
             yield item
 
 
-def return_lang_hl(input_string) -> str:
-    for possible_suffix in LANGUAGES:
-        if input_string.endswith(possible_suffix):
-            return possible_suffix
-    return 'sh'
-
-
 def pluralize(inp, value):
     if isinstance(value, list):
         inp = inp + 's' if len(value) != 1 else inp
@@ -62,10 +50,6 @@ def pluralize(inp, value):
 
 def prettify_text(content):
     return content.replace('_', ' ').capitalize()
-
-
-def gen(guild, status_type):
-    return len([m for m in guild.members if str(m.status) == status_type])
 
 
 def from_tz(str_time):
@@ -101,7 +85,7 @@ code_base = 'async def func(scope, should_retain=True):' \
             '\n    if should_retain:' \
             '\n      scope.update(locals())' 
 
-def _wrap_code(code_input):
+def wrap_code(code_input):
     code_in = import_expression.parse(code_input)
     base = import_expression.parse(code_base)
     try_block = base.body[-1].body[-1].body

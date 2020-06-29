@@ -27,6 +27,7 @@ import discord
 from PIL import Image
 from discord.ext import commands
 import uwuify
+from humanize import apnumber
 from async_timeout import timeout
 
 from neo.config import conf
@@ -49,6 +50,8 @@ CODE = {'A': '.-', 'B': '-...', 'C': '-.-.',
         }
 
 CODE_REVERSED = {value: key for key, value in CODE.items()}
+
+NUM_EMOJIS = {str(num): f":{apnumber(num)}:" for num in range(10)}
 
 
 def to_morse(s):
@@ -104,7 +107,7 @@ class Fun(commands.Cog):
         out = []
         for letter in list(message):
             if letter in string.digits:
-                out.append(conf['number_emojis'][str(letter)])
+                out.append(NUM_EMOJIS[letter])
             elif letter in string.ascii_letters:
                 out.append(f":regional_indicator_{letter.lower()}:")
             else:
@@ -126,70 +129,6 @@ class Fun(commands.Cog):
         vote = await ctx.send(embed=embed)
         await vote.add_reaction('<:upvote:655880245047459853>')
         await vote.add_reaction('<:downvote:655880259358687252>')
-
-    @commands.command()
-    async def quiz(self, ctx, difficulty=None):
-        """Start a quick trivia"""
-        if not difficulty:
-            difficulty = random.choice(['easy', 'medium', 'hard'])
-        async with self.bot.session.get(
-                'https://opentdb.com/api.php',
-                params={'amount': 1, 'difficulty': difficulty}
-                ) as r:
-            dat = await r.json()
-        data = dat['results'][0]
-        final_display = []
-        anwrs = [us(a) for a in data['incorrect_answers']]
-        anwrs.append(us(data['correct_answer']))
-        random.shuffle(anwrs)
-        for index, value in enumerate(anwrs, 1):
-            final_display.append(f'{index}. `{value}`')
-        final_display = '\n'.join(final_display)
-        embed = discord.Embed(
-            title='',
-            description=f'**{us(data["question"])}**\n{final_display}',
-            color=discord.Color.main
-            )
-        embed.add_field(
-            name='Category',
-            value=f'`{us(data["category"])}`',
-            inline=True
-            )
-        embed.add_field(
-            name='Difficulty',
-            value=f'`{us(data["difficulty"]).title()}`'
-            )
-        triv = await ctx.send(embed=embed)
-        for index, value in enumerate(anwrs):
-            await triv.add_reaction(conf['number_emojis'][str(index+1)])
-        await triv.add_reaction(ctx.tick(False))
-        react, user = await self.bot.wait_for(
-            'reaction_add',
-            check=lambda r, u:
-                r.message.id == triv.id and u.id == ctx.author.id)
-        try:
-            ind = int({v : k for k, v in conf['number_emojis'].items()}[react.emoji])
-            if anwrs[ind-1] == us(data['correct_answer']):
-                await triv.edit(embed=discord.Embed(
-                    title='',
-                    description=f'Correct! **{us(data["correct_answer"])}**'
-                    ' was the correct answer!',
-                    color=discord.Color.main
-                    ))
-            else:
-                await triv.edit(embed=discord.Embed(
-                    title='',
-                    description=f'Sorry, **{us(data["correct_answer"])}**'
-                    ' was the correct answer',
-                    color=discord.Color.main
-                    ))
-        except Exception:
-            await triv.edit(embed=discord.Embed(
-                title='',
-                description=f'Quiz cancelled. The answer was '
-                f'**{us(data["correct_answer"])}**',
-                color=discord.Color.main
-                ))
 
     @commands.command()
     @commands.is_nsfw()

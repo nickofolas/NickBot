@@ -36,9 +36,7 @@ from tabulate import tabulate
 
 import neo
 from neo.config import conf
-from neo.utils.formatters import (return_lang_hl, pluralize, group, 
-                              insert_return, clean_bytes, format_exception, insert_yield,
-                              _wrap_code)
+from neo.utils.formatters import pluralize, group, clean_bytes, format_exception, wrap_code
 from neo.utils.converters import CBStripConverter, BoolConverter
 
 status_dict = {
@@ -107,7 +105,7 @@ class Dev(commands.Cog):
         """Invokes the system shell, attempting to run the inputted command"""
         hl_lang = 'sh'
         if match := file_ext_re.search(args):
-            hl_lang = return_lang_hl(match.groupdict().get('extension', 'sh'))
+            hl_lang = match.groupdict().get('extension', 'sh')
         if 'git diff' in args:
             hl_lang = 'diff'
         async with ctx.loading(tick=False):
@@ -137,7 +135,7 @@ class Dev(commands.Cog):
         final_results = list()
         async with ctx.loading():
             try:
-                import_expression.exec(compile(_wrap_code(body), "<eval>", "exec"), env)
+                import_expression.exec(compile(wrap_code(body), "<eval>", "exec"), env)
                 _aexec = env['func']
                 with redirect_stdout(stdout):
                     async for res in _get_results(_aexec, self.scope, self.retain):
