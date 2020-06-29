@@ -26,15 +26,12 @@ import logging
 from discord.ext import commands
 import discord
 import aiohttp
-from dotenv import load_dotenv
 import async_cleverbot as ac
 import asyncpg
 
 import utils.context
 from utils.containers import Cache
 from config import conf, _secrets
-
-load_dotenv()
 
 
 def warn(*args, **kwargs):
