@@ -21,9 +21,9 @@ import io
 import asyncio
 from html import unescape as us
 from typing import Union
+from difflib import get_close_matches
 
 import discord
-from fuzzywuzzy import process
 from PIL import Image
 from discord.ext import commands
 import uwuify
@@ -40,7 +40,7 @@ CODE = {'A': '.-', 'B': '-...', 'C': '-.-.',
         'P': '.--.', 'Q': '--.-', 'R': '.-.',
         'S': '...', 'T': '-', 'U': '..-',
         'V': '...-', 'W': '.--', 'X': '-..-',
-        'Y': '-.--', 'Z': '--..',
+        'Y': '-.--', 'Z': '-..',
 
         '0': '-----', '1': '.----', '2': '..---',
         '3': '...--', '4': '....-', '5': '.....',
@@ -217,7 +217,7 @@ class Fun(commands.Cog):
         available_emojis = list()
         for guild in indexed_guilds:
             available_emojis.extend(guild.emojis)
-        choice = process.extractOne(thing, [e.name for e in available_emojis])[0]
+        choice = get_close_matches(thing, map(lambda e: e.name, available_emojis))[0]
         return await converter.convert(ctx, choice)
 
 

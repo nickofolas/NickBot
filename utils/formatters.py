@@ -22,7 +22,6 @@ import ast
 import traceback
 import textwrap
 
-import matplotlib.pyplot as plt
 import import_expression
 
 from config import conf

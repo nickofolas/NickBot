@@ -1,11 +1,12 @@
+async-timeout
 aiohttp
 humanize
+dateparser
 async-cleverbot
 jishaku
 import-expression
 aiogoogletrans
 tabulate
-fuzzywuzzy
 Pillow
 uwuify
 psutil
