@@ -42,6 +42,9 @@ class SnipedMessage:
         else:
             self.content = content
 
+    def __repr__(self):
+        return f"<SnipedMessage deleted_at={self.deleted_at!r} author={str(self.author)!r}>"
+
     def to_embed(self):
         embed = discord.Embed(color=discord.Color.main)
         embed.description = self.content
@@ -132,8 +135,10 @@ class Events(commands.Cog):
         await self.bot.conn.execute(  # Adds/updates this guild in the db using upsert syntax
             'INSERT INTO guild_prefs (guild_id, prefix) VALUES ($1, $2) ON CONFLICT (guild_id) DO UPDATE SET prefix=$2',
             guild.id, 'n/')
-        await self.bot.build_guild_cache()
+        await self.bot.guild_cache.refresh()
         await self.bot.logging_channels.get('guild_io').send(embed=embed)
+        if guild.id == 333949691962195969:
+            [setattr(cmd, "enabled", False) for cmd in (self.bot.get_command('ui'), self.bot.get_command('av'))]
 
     @commands.Cog.listener()
     async def on_guild_remove(self, guild):
@@ -143,7 +148,7 @@ class Events(commands.Cog):
             description=f'Removed from guild {guild.name} [{guild.id}]',
             color=discord.Color.pornhub)  # Don't ask
         embed.set_thumbnail(url=guild.icon_url_as(static_format='png'))
-        await self.bot.build_guild_cache()
+        await self.bot.guild_cache.refresh()
         await self.bot.logging_channels.get('guild_io').send(embed=embed)
 
 

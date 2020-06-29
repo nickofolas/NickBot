@@ -148,7 +148,7 @@ class Guild(commands.Cog):
         await self.bot.conn.execute(
             'INSERT INTO guild_prefs (guild_id, prefix) VALUES ($1, $2) ON CONFLICT (guild_id) DO UPDATE SET prefix=$2',
             ctx.guild.id, new_prefix)
-        await self.bot.build_guild_cache()
+        await self.bot.guild_cache.refresh()
         await ctx.send(f'Prefix successfully changed to `{new_prefix}`')
 
     @guild_config.command(name='index')
@@ -158,7 +158,7 @@ class Guild(commands.Cog):
         Toggle whether or not emojis from the current guild will be indexed by emoji commands
         """
         await self.bot.conn.execute('UPDATE guild_prefs SET index_emojis=$1 WHERE guild_id=$2', on_off, ctx.guild.id)
-        await self.bot.build_guild_cache()
+        await self.bot.guild_cache.refresh()
         await ctx.message.add_reaction(ctx.tick(True))
 
 

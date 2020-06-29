@@ -159,16 +159,14 @@ class Meta(commands.Cog):
                 **Total Guilds **{len(self.bot.guilds):,}
                 **Visible Users **{len(self.bot.users):,}
                 **Memory **{mem}%
-            """)
-        )
+            """))
         com_url = self.last_commit_cache['html_url']
         com_id_brief = self.last_commit_cache["sha"][:7]
-        links_val = str()
+        links = list()
         if ctx.author not in self.bot.get_guild(696739356815392779).members:
-            links_val += f'\n**Support Server** [Join Here](https://discord.gg/tjq68yq)\n'
-        links_val += f'**Invite neo** [Invite URL]({invite_url})' 
-        links_val += f'\n**Latest Commit** [`{com_id_brief}`]({com_url})'
-        embed.add_field(name='**Links**', value=links_val, inline=False)
+            links.append(f'[Support](https://discord.gg/tjq68yq)')
+        links.extend((f'[Invite]({invite_url})', f'[`{com_id_brief}`]({com_url})'))
+        embed.add_field(name='**Links**', value=' | '.join(links), inline=False)
         await ctx.send(embed=embed)
 
     @commands.command(name='license', aliases=['copyright'])

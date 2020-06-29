@@ -80,7 +80,7 @@ class User(commands.Cog):
             async with ctx.loading():
                await self.bot.conn.execute(f"UPDATE user_data SET {setting_name}=$1 WHERE user_id=$2", new_setting,
                                            ctx.author.id)
-            await self.bot.build_user_cache()
+            await self.bot.user_cache.refresh()
             return
         embed = discord.Embed(title=f"""{ctx.author}'s Settings""", color=discord.Color.main)
         readable_settings = list()
@@ -96,16 +96,21 @@ class User(commands.Cog):
 
     # END USER SETTINGS ~
 
-    @commands.group(aliases=['hl'], invoke_without_command=True)
+    @commands.group(aliases=['hl'], invoke_without_command=True, ignore_extra=False)
     async def highlight(self, ctx):
         """
         Base command for keyword highlights. Run with no arguments to list your active highlights.
         """
-        hl_list = [f"`{c}` {'<:regex:718943797915943054>' if h.is_regex else ''} {shorten(h.kw, width=175)}" for c, h in enumerate([
-            h for h in self.bot.get_cog("HlMon").cache if h.user_id==ctx.author.id], 1)]
+        def format_hl(valtup):
+            index, hl = valtup
+            kw_full = hl.kw[:175] + ' ...' if len(hl.kw) > 175 else hl.kw
+            if hl.is_regex:
+                return f"`{index}` <:regex:718943797915943054> `{kw_full}`"
+            return f"`{index}` `{kw_full}`"
+        my_hl = list(filter(lambda hl: hl.user_id == ctx.author.id, self.bot.get_cog('HlMon').cache))
         await ctx.send(embed=discord.Embed(
-            description='\n'.join(hl_list), color=discord.Color.main).set_footer(
-            text=f'{len(hl_list)}/10 slots used').set_author(
+            description='\n'.join(map(format_hl, enumerate(my_hl, 1))), color=discord.Color.main).set_footer(
+            text=f'{len(my_hl)}/10 slots used').set_author(
             name=f"{ctx.author}'s highlights", icon_url=ctx.author.avatar_url_as(static_format='png')),
                        delete_after=15.0)
 
@@ -149,7 +154,7 @@ class User(commands.Cog):
         if not todo_index:
             raise commands.CommandError('Use the index of a todo (found in your list of todos) to remove it')
         fetched = [rec['content'] for rec in
-                   await self.bot.conn.fetch("SELECT content from todo WHERE user_id=$1", ctx.author.id)]
+                   await self.bot.conn.fetch("SELECT content from todo WHERE user_id=$1 ORDER BY created_at ASC", ctx.author.id)]
         for num in todo_index:
             await self.bot.conn.execute('DELETE FROM todo WHERE user_id=$1 AND content=$2',
                                         ctx.author.id, fetched[num - 1])
@@ -193,7 +198,7 @@ class User(commands.Cog):
                              template=discord.Embed(colour=discord.Color.main)
                              .set_author(name=ctx.author,
                                          icon_url=ctx.author.avatar_url_as(static_format='png')),
-                             delete_message_after=True)
+                             delete_on_button=True, clear_reactions_after=True)
 
     @_remind.command(name='remove', aliases=['del', 'rm'])
     async def _remind_remove(self, ctx, items: commands.Greedy[int]):

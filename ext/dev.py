@@ -20,7 +20,9 @@ import copy
 import io
 import os
 import re
+import ast
 import textwrap
+import inspect
 import time
 import traceback
 from contextlib import redirect_stdout
@@ -34,7 +36,9 @@ from tabulate import tabulate
 
 import utils
 from config import conf
-from utils.formatters import return_lang_hl, pluralize, group
+from utils.formatters import (return_lang_hl, pluralize, group, 
+                              insert_return, clean_bytes, format_exception, insert_yield,
+                              _wrap_code)
 from utils.converters import CBStripConverter, BoolConverter
 
 status_dict = {
@@ -77,26 +81,12 @@ async def copy_ctx(
     return new_ctx
 
 
-def clean_bytes(line):
-    """
-    Cleans a byte sequence of shell directives and decodes it.
-    """
-    text = line.decode('utf-8').replace('\r', '').strip('\n')
-    return re.sub(r'\x1b[^m]*m', '', text).replace("``", "`\u200b`").strip('\n')
-
-
-class HandleTb(Exception):
-    def __init__(self, ctx, error):
-        self.ctx = ctx
-        self.error = error
-        ctx.bot.loop.create_task(ctx.quick_menu(self.format_exception(), 1, delete_on_button=True,
-                                                clear_reactions_after=True, timeout=300))
-
-    def format_exception(self):
-        fmtd_exc = ''.join(traceback.format_exception(type(self.error), self.error, self.error.__traceback__))
-        formatted = ''.join(re.sub(r'File ".+",', 'File "<eval>"', fmtd_exc))
-        pages = group(formatted, 1500)
-        return [self.ctx.codeblock(page, 'py') for page in pages]
+async def _get_results(func, *args, **kwargs):
+    if inspect.isasyncgenfunction(func):
+        async for result in func(*args, **kwargs):
+            yield result
+    else:
+        yield await func(*args, **kwargs) or ''
 
 
 # noinspection PyBroadException
@@ -124,7 +114,7 @@ class Dev(commands.Cog):
             shellout = await do_shell(args)
             output = clean_bytes(shellout.stdout) + '\n' + textwrap.indent(clean_bytes(shellout.stderr), '[stderr] ')
             pages = group(output, 1500)
-            pages = [ctx.codeblock(page, hl_lang) + f"\n`Return code {shellout.returncode}`" for page in pages]
+            pages = [str(ctx.codeblock(content=page, lang=hl_lang)) + f"\n`Return code {shellout.returncode}`" for page in pages]
         await ctx.quick_menu(pages, 1, delete_on_button=True, clear_reactions_after=True, timeout=1800)
 
     @commands.command(name='eval')
@@ -144,31 +134,28 @@ class Dev(commands.Cog):
             env.update(self.scope)
         stdout = io.StringIO()
         to_return = None
-        to_compile = f'async def func(scope, should_retain=True):' \
-                     f'\n  try:' \
-                     f'\n{textwrap.indent(body, "    ")}' \
-                     f'\n  finally:' \
-                     f'\n    if not should_retain:' \
-                     f'\n      return' \
-                     f'\n    scope.update(locals())'
-        async with ctx.loading(exc_ignore=HandleTb):
+        final_results = list()
+        async with ctx.loading():
             try:
-                import_expression.exec(to_compile, env)
-            except Exception as e:
-                raise HandleTb(ctx, e)
-            _aexec = env['func']
-            try:
+                import_expression.exec(compile(_wrap_code(body), "<eval>", "exec"), env)
+                _aexec = env['func']
                 with redirect_stdout(stdout):
-                    result = await _aexec(self.scope, self.retain) or ''
+                    async for res in _get_results(_aexec, self.scope, self.retain):
+                        if res is None:
+                            continue
+                        self._last_result = res
+                        if not isinstance(res, str):
+                            res = repr(res)
+                        final_results.append(res)
             except Exception as e:
-                raise HandleTb(ctx, e)
+                await format_exception(ctx, e)
+                return
             else:
-                value = stdout.getvalue() or ''
-                self._last_result = result
-                to_return = f'{value}{result}'
+                value = stdout.getvalue() or '' 
+                to_return = f'{value}' + '\n'.join(final_results)
         if to_return:
             pages = group(to_return, 1500)
-            pages = [ctx.codeblock(page, 'py') for page in pages]
+            pages = [str(ctx.codeblock(content=page, lang='py')) for page in pages]
             await ctx.quick_menu(pages, 1, delete_on_button=True, clear_reactions_after=True, timeout=1800)
 
     @commands.command()
@@ -216,7 +203,7 @@ class Dev(commands.Cog):
                 r.append(textwrap.shorten(str(i), width=40//len(rkeys), placeholder=''))
         r = group(r, len(rkeys))
         table = tabulate(r, headers=headers, tablefmt='pretty')
-        pages = [ctx.codeblock(page) for page in group(table, 1500)]
+        pages = [str(ctx.codeblock(content=page)) for page in group(table, 1500)]
         await ctx.quick_menu(pages, 1, delete_on_button=True, clear_reactions_after=True, timeout=300,
                              template=discord.Embed(
                                  color=discord.Color.main)

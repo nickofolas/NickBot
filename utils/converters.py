@@ -29,7 +29,7 @@ u_conv = commands.UserConverter()
 m_conv = commands.MemberConverter()
 
 reddit_url = re.compile(r"^((https://)?(www\.|old\.|new\.)?reddit.com)?/?(?P<type>user|u|r)?/?(?P<name>[\w\-]*)(/comments/(?P<id>[\w\-\_]*))?/?")
-github_pattern = re.compile(r"^((https://)?(www\.)?github.com)?/?(?P<user>\w*)/?(?P<repo>[\w\-\.]*)?/?")
+github_pattern = re.compile(r"^((https://)?(www\.)?github.com)?/?(?P<user>[\w\.\-]*)/?(?P<repo>[\w\-\.]*)?/?")
 
 
 class BoolConverter(commands.Converter):

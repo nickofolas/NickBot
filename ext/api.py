@@ -162,7 +162,7 @@ class Api(commands.Cog):
         menu = CSMenu(source, delete_on_button=True, clear_reactions_after=True)
         await menu.start(ctx)
 
-    @google.command(aliases=['img'])
+    @google.command(aliases=['img', 'i'])
     async def image(self, ctx, *, query: str):
         """
         Search Google Images for the query

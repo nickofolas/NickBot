@@ -167,13 +167,12 @@ class HighlightCommands(commands.Cog):
         self.bot = bot
 
     @commands.command(usage="<highlight> [--regex]")
-    async def add(ctx, **flags):
+    async def add(ctx):
         """
         Add a new highlight! When a highlighted word is used, you'll get notified!
         If the --regex flag is passed, the highlight will be compiled as a regex
         """
-        subbed = re.sub(fr"{ctx.prefix}h(igh)?l(ight)? add", '', ctx.message.content)
-        highlight_words = re.sub(r"--?re(gex)?", '', subbed).strip()
+        highlight_words = regex_flag.sub('', re.sub(fr"{ctx.prefix}h(igh)?l(ight)? add", '', ctx.message.content)).strip()
         with_regex = bool(regex_flag.search(ctx.message.content))
         if with_regex:
             check_regex(highlight_words)
@@ -209,7 +208,7 @@ class HighlightCommands(commands.Cog):
         async with ctx.loading():
             await ctx.bot.conn.execute(f"UPDATE user_data SET hl_blocks = {strategy}(hl_blocks, $1) WHERE "
                                        "user_id=$2", blocked, ctx.author.id)
-            await ctx.bot.build_user_cache()
+            await ctx.bot.user_cache.refresh()
 
     @flags.add_flag('-a', '--add', nargs='*')
     @flags.add_flag('-r', '--remove', nargs='*')
@@ -229,7 +228,7 @@ class HighlightCommands(commands.Cog):
         async with ctx.loading():
             await ctx.bot.conn.execute(f"UPDATE user_data SET hl_whitelist = {strategy}(hl_whitelist, $1) WHERE "
                                        "user_id=$2", int(snowflake), ctx.author.id)
-            await ctx.bot.build_user_cache()
+            await ctx.bot.user_cache.refresh()
 
     @commands.command(name='remove', aliases=['rm', 'delete', 'del', 'yeet'])
     async def remove_highlight(ctx, highlight_index: commands.Greedy[int]):

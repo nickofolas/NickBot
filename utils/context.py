@@ -29,6 +29,19 @@ from config import CONFIG
 _EMOJIS = CONFIG.emoji_suite
 
 
+class Codeblock:
+    def __init__(self, *, content, lang=None, cb_safe=True):
+        self.lang = lang or ''
+        self.cb_safe = cb_safe
+        self.content = content.replace('``', '`\N{ZWSP}`') if cb_safe else content
+
+    def __str__(self):
+        return f"```{self.lang}\n{self.content}\n```"
+
+    def __repr__(self):
+        return f"<Codeblock content={self.content!r} lang={self.lang!r} cb_safe={self.cb_safe}>"
+
+
 class Context(commands.Context):
 
     def __init__(self, **kwargs):
@@ -90,8 +103,8 @@ class Context(commands.Context):
         return emoji
 
     @staticmethod
-    def codeblock(content, hl_lang=None):
-        return f'```{hl_lang or ""}\n' + content + '\n```'
+    def codeblock(**kwargs):
+        return Codeblock(**kwargs)
 
     def tab(self, repeat=1):
         tabs = []

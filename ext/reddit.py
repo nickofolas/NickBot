@@ -254,7 +254,7 @@ class Reddit(commands.Cog):
         post = Submission(data[0]['data']['children'][0]['data'])
         embeds = [post.to_embed]
         for item in group(data[1]['data']['children'], 5):
-            embed = discord.Embed(title='Browing top-level comments', color=discord.Color.main)
+            embed = discord.Embed(title='Browsing top-level comments', color=discord.Color.main)
             for comment in item:
                 embed.add_field(
                     name=f"<:upvote:698744205710852167> {comment['data'].get('ups')} | "

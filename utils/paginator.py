@@ -51,6 +51,14 @@ class CSMenu(menus.MenuPages, inherit_buttons=False):
             return True
         return max_pages == 1
 
+    def reaction_check(self, payload):
+        """Just extends the default reaction_check to use owner_ids"""
+        if payload.message_id != self.message.id:
+            return False
+        if payload.user_id not in (*self.bot.owner_ids, self.bot.owner_id, self._author_id):
+            return False
+        return payload.emoji in self.buttons
+
     async def _get_kwargs_from_page(self, page):
         value = await discord.utils.maybe_coroutine(self._source.format_page, self, page)
         if isinstance(value, dict):

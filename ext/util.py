@@ -152,13 +152,14 @@ class Util(commands.Cog):
         def to_string(c):
             digit = f'{ord(c):X}'  # :X} means uppercase hex formatting
             name = unicodedata.name(c, 'Name not found.')
-            return f'`\\U{digit:>08}`: ' \
+            return f'`\\U{digit:>08}` | `{c}` | ' \
                    f'[{name}](http://www.fileformat.info/info/unicode/char/' \
-                   f'{digit}) - `{c}`'
+                   f'{digit})'
         chars = [*map(to_string, characters)]
-        await ctx.quick_menu(chars, 10, delete_message_after=True)
+        await ctx.quick_menu(chars, 10, delete_on_button=True, clear_reactions_after=True)
 
     @commands.command(name='imgur')
+    @commands.max_concurrency(1, commands.BucketType.channel)
     async def imgur(self, ctx, *, image=None):
         """Upload an image to imgur via attachment or link"""
         if image is None and not ctx.message.attachments:
@@ -183,45 +184,6 @@ class Util(commands.Cog):
                                            data=json.dumps({'destination': link}))
         if url := (await resp.json())["shortUrl"]:
             await ctx.send(f'Shortened URL: <https://{url}>')
-
-    @commands.command()
-    async def raw(self, ctx, message_id: str = None):
-        """Decode the markdown of a message"""
-        if message_id is None:
-            async for m in ctx.channel.history(limit=2):
-                if m.id == ctx.message.id:
-                    continue
-                else:
-                    await ctx.safe_send(discord.utils.escape_markdown(m.content))
-        else:
-            # await ctx.message.add_reaction('<a:loading:681628799376293912>')
-            converter = commands.MessageConverter()
-            m = await converter.convert(ctx, message_id)
-            await ctx.safe_send(discord.utils.escape_markdown(m.content))
-
-    @commands.command(aliases=['spoll'])
-    @commands.max_concurrency(1, commands.BucketType.channel)
-    async def strawpoll(self, ctx, deadline_days: Optional[int] = 1, *, question):
-        """
-        Create a poll on Strawpoll
-        - deadline_days is an optional parameter that can be passed to adjust the number of days the poll will remain
-        active, defaults to 1 day.
-        - question is a required parameter
-        - After the command is run, you will be prompted to input the possible answers for the poll.
-        Answers must be separated with a comma (`,`)
-        """
-        zulu_deadline = zulu_time(ctx.message.created_at + datetime.timedelta(days=deadline_days))
-        answr_prompt = await ctx.send('What should the possible answers be? Separate them with `,`, or respond with '
-                                      '`abort` to cancel')
-        msg = await self.bot.wait_for('message', check=lambda m: m.author == ctx.author)
-        await answr_prompt.delete()
-        if msg.content.lower() == 'abort':
-            return await ctx.send('Strawpoll creation cancelled')
-        data = {"poll": {"title": question, "answers": msg.content.split(','), "has_deadline": True,
-                         "deadline": zulu_deadline, "mip": True}}
-        async with self.bot.session.post('https://strawpoll.com/api/poll', data=json.dumps(data)) as resp:
-            js = await resp.json()
-        await ctx.send(f"Here's your poll: <https://strawpoll.com/{js.get('content_id')}>")
 
     @commands.command(name='ocr')
     @commands.max_concurrency(1, commands.BucketType.channel)

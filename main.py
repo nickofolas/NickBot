@@ -75,8 +75,6 @@ class NeoBot(commands.Bot):
         self.loop.create_task(self.ainit())
         self._cd = commands.CooldownMapping.from_cooldown(1.0, 2.5, commands.BucketType.user)
         self.add_check(self.global_cooldown)
-        self.user_cache = dict()
-        self.guild_cache = dict() 
         self.before_invoke(self.before)
 
         for ext in conf.get('exts'):
@@ -89,8 +87,10 @@ class NeoBot(commands.Bot):
               "host": os.getenv('DBHOST')}
         self.conn = await asyncpg.create_pool(
             user=_secrets.dbuser, password=_secrets.dbpass, database=_secrets.db, host=_secrets.dbhost)
-        self.guild_cache_2 = Cache(db_query="SELECT * FROM guild_prefs",
-                                   key='guild_id', loop=self.loop, pool=self.conn)
+        self.user_cache = await Cache(db_query="SELECT * FROM user_data",
+                                      key='user_id', pool=self.conn)
+        self.guild_cache = await Cache(db_query="SELECT * FROM guild_prefs",
+                                   key='guild_id', pool=self.conn)
 
     async def get_context(self, message, *, cls=utils.context.Context):
         return await super().get_context(message, cls=cls)
@@ -109,7 +109,7 @@ class NeoBot(commands.Bot):
             with suppress(asyncpg.exceptions.UniqueViolationError):
                 await self.conn.execute('INSERT INTO user_data (user_id) VALUES ($1)', ctx.author.id)
                 # Adds people to the user_data table whenever they execute their first command
-                await self.build_user_cache() # And then updates the user cache
+                await self.user_cache.refresh() # And then updates the user cache
 
 
     # noinspection PyAttributeOutsideInit
@@ -129,20 +129,6 @@ class NeoBot(commands.Bot):
         self.logging_channels = {
             'guild_io': self.get_channel(710331034922647613)
         }
-        await self.build_user_cache()
-        await self.build_guild_cache()
-
-    async def build_user_cache(self):
-        self.user_cache.clear()
-        for record in await self.conn.fetch("SELECT * FROM user_data"):
-            user = dict(record)
-            self.user_cache[user.pop('user_id')] = user
-
-    async def build_guild_cache(self):
-        self.guild_cache.clear()
-        for record in await self.conn.fetch("SELECT * FROM guild_prefs"):
-            guild = dict(record)
-            self.guild_cache[guild.pop('guild_id')] = guild
 
     async def close(self):
         [task.cancel() for task in all_tasks(loop=self.loop)]
