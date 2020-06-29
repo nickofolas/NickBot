@@ -124,20 +124,26 @@ class Meta(commands.Cog):
 
     @commands.command(aliases=['src'])
     async def source(self, ctx, *, cmd=None):
-        if cmd is None:
-            return await ctx.send('<https://github.com/nickofolas/neo>')
-        c = self.bot.get_command(cmd).callback
-        file = c.__code__.co_filename
-        location = os.path.relpath(file)
-        lines, first_line = inspect.getsourcelines(c)
-        last_line = first_line + (len(lines) - 1)
-        await ctx.send(f'<https://github.com/nickofolas/neo/blob/master/{location}#L{first_line}-L{last_line}>')
+        desc = str()
+        cmd = self.bot.get_command(cmd) if cmd else None
+        if not cmd:
+            title = 'View full source'
+            url = 'https://github.com/nickofolas/neo'
+        else:
+            c = cmd.callback
+            fpath = os.path.relpath(c.__code__.co_filename)
+            lines, first_ln = inspect.getsourcelines(c)
+            last_ln = first_ln + (len(lines) - 1)
+            title = f'View source for command {cmd.qualified_name}'
+            url = f'https://github.com/nickofolas/neo/blob/master/{fpath}#L{first_ln}-L{last_ln}'
+            desc += f'**File** {fpath}\n**Lines** {first_ln} - {last_ln} [{len(lines) - 1} total]\n\n'
+        desc += '<:starred:722646740720812141> the repository to support neo\'s development!'
+        await ctx.send(embed=discord.Embed(colour=discord.Colour.main, title=title, description=desc, url=url))
 
     async def fetch_latest_commit(self):
         headers = {'Authorization': f'token  {_secrets.github_token}'}
         url = 'https://api.github.com/repos/nickofolas/neo/commits'
         async with self.bot.session.get(f'{url}/master', headers=headers) as resp1:
-            # noinspection PyAttributeOutsideInit
             self.last_commit_cache = await resp1.json()
 
     @commands.command(aliases=['ab', 'info', 'support'])
