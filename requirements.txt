@@ -10,6 +10,7 @@ tabulate
 Pillow
 uwuify
 psutil
+async-cse
 asyncpg
 PyYAML
 discord-flags

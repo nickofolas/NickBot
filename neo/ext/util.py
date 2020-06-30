@@ -61,7 +61,7 @@ class Util(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @flags.add_flag('target_channel', nargs='*')
+    @flags.add_flag('target_channel', nargs='?', type=int)
     @flags.add_flag('-e', '--edits', action='store_true')
     @flags.add_flag('-a', '--all', action='store_true')
     @flags.command(name='snipe')
@@ -69,19 +69,18 @@ class Util(commands.Cog):
         """
         Snipe recently deleted and edited messages from a channel
         The `--all` shows both deleted and edited message, the `--edits` flag shows just edited, and no flags shows deleted
-        Optionally, a target channel can be passed to snipe messages from another channel
+        Optionally, a target channel ID can be passed to snipe messages from another channel
         """
-        target_channel = ctx.channel
+        target_channel = ctx.channel.id
         if tc := flags['target_channel']:
-            with suppress(Exception):
-                target_channel = await commands.TextChannelConverter().convert(ctx, str(tc[0]))
+            target_channel = tc
         try:
             if flags['all']:
-                snipes = [*flatten([self.bot.snipes.get(target_channel.id)['deleted'], self.bot.snipes.get(target_channel.id)['edited']])]
+                snipes = [*flatten([self.bot.snipes.get(target_channel)['deleted'], self.bot.snipes.get(target_channel)['edited']])]
             elif flags['edits']:
-                snipes = self.bot.snipes.get(target_channel.id)['edited']
+                snipes = self.bot.snipes.get(target_channel)['edited']
             else:
-                snipes = self.bot.snipes.get(target_channel.id)['deleted']
+                snipes = self.bot.snipes.get(target_channel)['deleted']
         except:
             snipes = []
         (new_snipes := list(snipes)).sort(key=lambda s: s.deleted_at, reverse=True)

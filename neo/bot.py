@@ -29,6 +29,7 @@ import aiohttp
 import async_cleverbot as ac
 import asyncpg
 
+import neo
 import neo.context
 from neo.utils.containers import Cache
 from neo.config import conf, _secrets
@@ -112,15 +113,14 @@ class NeoBot(commands.Bot):
     # noinspection PyAttributeOutsideInit
     async def on_ready(self):
         user = self.get_user(723268667579826267)
-        embed = discord.Embed(
+        embed = neo.Embed(
             title='Bot is now running',
             description=textwrap.dedent(f"""
             **Name** {self.user}
             **ID** {self.user.id}
             **Guilds** {len(self.guilds)}
             **Users** {len(self.users)}
-            """),
-            colour=discord.Color.main).set_thumbnail(url=self.user.avatar_url_as(static_format='png'))
+            """)).set_thumbnail(url=self.user.avatar_url_as(static_format='png'))
         embed.timestamp = datetime.utcnow()
         await user.send(embed=embed)
         self.logging_channels = {

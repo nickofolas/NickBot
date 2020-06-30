@@ -41,10 +41,7 @@ class Guild(commands.Cog):
         self.bot = bot
 
     def cog_check(self, ctx):
-        if ctx.guild:
-            return True
-        else:
-            return False
+        return bool(ctx.guild)
 
     @flags.add_flag('-u', '--user', nargs='+')
     @flags.add_flag('-c', '--contains', nargs='+')
@@ -101,21 +98,16 @@ class Guild(commands.Cog):
     @has_permissions(ban_members=True)
     async def ban(self, ctx, member: Union[discord.Member, int], *, reason=None):
         """Issue a ban, can use the ID of a member outside the guild to hackban them"""
-        to_ban = discord.Object(id=member) if isinstance(member, int) else member
         user_obj = await self.bot.fetch_user(member) if isinstance(member, int) else member
-        await ctx.guild.ban(to_ban, reason=f'{ctx.author} ({ctx.author.id}) - {reason}')
+        await ctx.guild.ban(user_obj, reason=f'{ctx.author} ({ctx.author.id}) - {reason}')
         await ctx.send(f'Banned **{user_obj}**')
 
     @commands.command()
     @has_permissions(kick_members=True)
     async def kick(self, ctx, member: discord.Member, *, reason=None):
         """Kick a member - optional reason can be provided"""
-        await member.send(
-            f'You have been kicked from the {ctx.guild} server. Reason: **{reason}**'
-        )
-        await member.kick(reason=reason)
-        await ctx.send(f'{member} was kicked - **{reason}**')
-        await ctx.message.delete()
+        await member.kick(reason=f'{ctx.author} ({ctx.author.id}) - {reason}')
+        await ctx.send(f'Kicked **{member}**')
 
     @commands.group(name='config', aliases=['cfg'], invoke_without_command=True)
     @is_owner_or_administrator()

@@ -15,6 +15,13 @@ GNU Affero General Public License for more details.
 You should have received a copy of the GNU Affero General Public License
 along with neo.  If not, see <https://www.gnu.org/licenses/>.
 """
+import discord
+
 from .bot import NeoBot
 from .config import *
+
+class Embed(discord.Embed):
+    def __init__(self, *args, **kwargs):
+        kwargs.setdefault('colour', 0x84cdff)
+        super().__init__(*args, **kwargs)
 

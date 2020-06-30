@@ -24,7 +24,7 @@ from typing import Union
 from difflib import get_close_matches
 
 import discord
-from PIL import Image
+from PIL import Image, ImageSequence
 from discord.ext import commands
 import uwuify
 from humanize import apnumber
@@ -62,15 +62,23 @@ def from_morse(s):
     return ''.join(CODE_REVERSED.get(i, i) for i in s.split())
 
 
-def upscale(inp):
+def upscale(inp, is_gif=False):
     img = Image.open(io.BytesIO(inp))
-    h, w = img.size
-    newsize = (h*2, w*2)
-    img = img.resize(newsize)
-    with io.BytesIO() as out:
-        img.save(out, format='PNG')
-        bf = out.getvalue()
-    return bf
+    with io.BytesIO() as buffer:
+        if is_gif:
+            frames = []
+            for frame in ImageSequence.Iterator(Image.open(io.BytesIO(inp))):
+                h, w = frame.size
+                frame = frame.resize((h*2, w*2), Image.LANCZOS)
+                frames.append(frame)
+            frames[0].save(buffer, format='GIF', save_all=True, 
+                           append_images=frames[1:], disposal=2)
+        else:
+            h, w = img.size
+            newsize = (h*2, w*2)
+            img = img.resize(newsize)
+            img.save(buffer, format='PNG')
+        return buffer.getvalue()
 
 
 class Fun(commands.Cog):
@@ -198,8 +206,10 @@ class Fun(commands.Cog):
             emoji: Union[discord.Emoji, discord.PartialEmoji, str]):
         i = await self.fetch_one(ctx, emoji) if \
             isinstance(emoji, str) else emoji
-        out = await self.bot.loop.run_in_executor(None, upscale, (await i.url.read()))
-        await ctx.send(file=discord.File(io.BytesIO(out), filename='largeemoji.png'))
+        extension = 'gif' if i.animated else 'png'
+        async with ctx.loading():
+            out = await self.bot.loop.run_in_executor(None, upscale, (await i.url.read()), i.animated)
+        await ctx.send(file=discord.File(io.BytesIO(out), filename=f'largeemoji.{extension}'))
 
     @get_emoji.command()
     async def view(self, ctx):

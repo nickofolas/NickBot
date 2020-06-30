@@ -30,6 +30,7 @@ import humanize
 import aiogoogletrans
 from discord.ext import commands, flags
 
+import neo
 import neo.utils.errors as errors
 from neo.config import conf, _secrets
 from neo.utils.paginator import PagedEmbedMenu, CSMenu
@@ -50,7 +51,7 @@ async def do_translation(ctx, content, dest='en'):
     tr = aiogoogletrans.Translator()
     langs = aiogoogletrans.LANGUAGES
     translated = await tr.translate(content, dest=dest)
-    embed = discord.Embed(color=discord.Color.main)
+    embed = neo.Embed()
     embed.add_field(
         name=f'Input: {langs.get(translated.src, "Auto-Detected").title()}',
         value=content
@@ -66,7 +67,7 @@ async def do_translation(ctx, content, dest='en'):
 def build_google_embeds(results: List[GoogleResults]):
     embeds = list()
     for r in results:
-        embed = discord.Embed(color=discord.Color.main)
+        embed = neo.Embed()
         embed.title = r.title
         embed.description = r.description
         embed.url = r.result_url
@@ -105,7 +106,7 @@ class Api(commands.Cog):
             for key, value in info.get('project_urls').items():
                 if 'doc' in key.lower() or 'issu' in key.lower():
                     found[key] = value
-        embed = discord.Embed(color=discord.Color.main).set_thumbnail(url='https://i.imgur.com/UWgCSMs.png')
+        embed = neo.Embed().set_thumbnail(url='https://i.imgur.com/UWgCSMs.png')
         embed.description = textwrap.fill(info.get('summary'), width=40)
         embed.title = f"{info.get('name')} {info['version']}"
         embed.add_field(
@@ -207,7 +208,7 @@ class Api(commands.Cog):
         await ctx.quick_menu(
             [*_gather()],
             1,
-            template=discord.Embed(color=discord.Color.main).set_author(
+            template=neo.Embed().set_author(
                 name=str(datetime.date.today()), icon_url='https://i.imgur.com/XMTZAQT.jpg'), delete_message_after=True)
 
     @fortnite.command(name='stats')
@@ -220,7 +221,7 @@ class Api(commands.Cog):
                 f'https://api.fortnitetracker.com/v1/profile/{platform}/{epic_name}',
                 headers={'TRN-Api-Key': _secrets.fortnite_key}) as resp:
             js = await resp.json()
-        embed = discord.Embed(color=discord.Color.main).set_author(
+        embed = neo.Embed().set_author(
             name=js.get('epicUserHandle'), icon_url='https://i.imgur.com/XMTZAQT.jpg')
         stats = str()
         recents = str()
