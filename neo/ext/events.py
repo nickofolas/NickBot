@@ -138,7 +138,10 @@ class Events(commands.Cog):
         await self.bot.guild_cache.refresh()
         await self.bot.logging_channels.get('guild_io').send(embed=embed)
         if guild.id == 333949691962195969:
-            [setattr(cmd, "enabled", False) for cmd in (self.bot.get_command('ui'), self.bot.get_command('av'))]
+            [setattr(cmd, "enabled", False) for cmd in (
+                self.bot.get_command('ui'),
+                self.bot.get_command('av'),
+                self.bot.get_command('em'))]
 
     @commands.Cog.listener()
     async def on_guild_remove(self, guild):

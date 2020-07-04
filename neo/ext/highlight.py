@@ -77,9 +77,13 @@ class Highlight:
             avatar_index = m.author.default_avatar.value
             hl_underline = m.content.replace(match, f'**__{match}__**') if m.id == message.id else m.content
             repl = r'<a?:\w*:\d*>'
-            context_list.append(
-                f"{conf['default_discord_users'][avatar_index]} **{m.author.name}:** "
-                f"{re.sub(repl, ':question:', hl_underline)}")
+            content = f"{conf['default_discord_users'][avatar_index]} **{m.author.name}:** " \
+                      f"{re.sub(repl, ':question:', hl_underline)}"
+            if m.embeds:
+                content += ' <:neoembed:728240626239406141>'
+            if m.attachments:
+                content += ' 🖼️'
+            context_list.append(content)
         context_list.reverse()
         while len('\n'.join(context_list)) > 2048:
             context_list = context_list[1:]

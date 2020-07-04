@@ -31,6 +31,7 @@ from humanize import apnumber
 from async_timeout import timeout
 
 from neo.config import conf
+import neo
 from neo.utils.paginator import BareBonesMenu, CSMenu
 
 CODE = {'A': '.-', 'B': '-...', 'C': '-.-.',
@@ -67,7 +68,7 @@ def upscale(inp, is_gif=False):
     with io.BytesIO() as buffer:
         if is_gif:
             frames = []
-            for frame in ImageSequence.Iterator(Image.open(io.BytesIO(inp))):
+            for frame in ImageSequence.Iterator(img):
                 h, w = frame.size
                 frame = frame.resize((h*2, w*2), Image.LANCZOS)
                 frames.append(frame)
@@ -78,6 +79,7 @@ def upscale(inp, is_gif=False):
             newsize = (h*2, w*2)
             img = img.resize(newsize)
             img.save(buffer, format='PNG')
+        del img
         return buffer.getvalue()
 
 
@@ -86,6 +88,7 @@ class Fun(commands.Cog):
 
     def __init__(self, bot):
         self.bot = bot
+        self.em_converter = commands.EmojiConverter()
 
     @commands.command(aliases=['bin'])
     async def binary(self, ctx, *, content):
@@ -159,20 +162,17 @@ class Fun(commands.Cog):
         await menu.start(ctx)
 
     async def fetch_one(self, ctx, thing: str):
-        converter = commands.EmojiConverter()
-        indexed_guilds = [self.bot.get_guild(k) for k, v in filter(lambda i: i[1]['index_emojis'] is True, self.bot.guild_cache.items())]
-        available_emojis = list()
-        for guild in indexed_guilds:
-            available_emojis.extend(guild.emojis)
-        choice = get_close_matches(thing, map(lambda e: e.name, available_emojis))[0]
-        return await converter.convert(ctx, choice)
-
+        available_emojis = list(filter(
+            lambda em: self.bot.guild_cache[em.guild.id]['index_emojis'] is True,
+            self.bot.emojis))
+        choice = get_close_matches(thing, map(lambda e: e.name, available_emojis), n=1)
+        if not choice:
+            raise commands.CommandError(f"Found no matches for `{thing}`")
+        return await self.em_converter.convert(ctx, choice[0])
 
     @commands.group(name='emoji', aliases=['em'], invoke_without_command=True)
     async def get_emoji(self, ctx, *, emoji):
-        """
-        Don't have nitro? Not a problem! Use this to get some custom emoji!
-        """
+        """Utilise custom emoji, both animated and cross-guild in a way that normally requires nitro"""
         await ctx.send(await self.fetch_one(ctx, emoji))
 
     @get_emoji.command(aliases=['r'])
@@ -201,27 +201,32 @@ class Fun(commands.Cog):
                 await ctx.message.delete()
 
     @get_emoji.command()
-    async def big(
-            self, ctx,
-            emoji: Union[discord.Emoji, discord.PartialEmoji, str]):
+    async def big(self, ctx, emoji: Union[discord.Emoji, discord.PartialEmoji, str]):
+        """Enlarges an emoji. Can work on animated emojis, but results may vary in quality"""
         i = await self.fetch_one(ctx, emoji) if \
             isinstance(emoji, str) else emoji
         extension = 'gif' if i.animated else 'png'
-        async with ctx.loading():
+        async with ctx.loading(tick=False):
             out = await self.bot.loop.run_in_executor(None, upscale, (await i.url.read()), i.animated)
-        await ctx.send(file=discord.File(io.BytesIO(out), filename=f'largeemoji.{extension}'))
+        file = discord.File(io.BytesIO(out), filename=f'largeemoji.{extension}')
+        await ctx.send(file=file, embed=neo.Embed().set_image(url=f'attachment://largeemoji.{extension}'))
 
     @get_emoji.command()
-    async def view(self, ctx):
-        """
-        View all emoji the bot has access to
-        """
-        emoji_list = [e for e in self.bot.emojis]
-        sorted_em = sorted(emoji_list, key=lambda e: e.name)
-        entries = [f"{e} - " + e.name.replace('_', r'\_') for e in sorted_em]
-        menu = CSMenu(
-            BareBonesMenu(entries, per_page=25), delete_message_after=True)
-        await menu.start(ctx)
+    async def search(self, ctx, *, query):
+        """Searches the bot's indexed emojis based on the inputted query"""
+        available_emojis = list(filter(
+            lambda em: self.bot.guild_cache[em.guild.id]['index_emojis'] is True,
+            self.bot.emojis))
+        closest_matches = get_close_matches(
+            query,
+            map(lambda em: em.name, available_emojis),
+            n=len(available_emojis))
+        await ctx.quick_menu(
+            list(map(
+                lambda em: f"{em} | [{em.name}]({em.url})",
+                [await self.em_converter.convert(ctx, em_name) for 
+                 em_name in closest_matches])),
+            10, delete_on_button=True, clear_reactions_after=True)
 
     @commands.command()
     async def owoify(self, ctx, *, message):

@@ -18,18 +18,29 @@ along with neo.  If not, see <https://www.gnu.org/licenses/>.
 from collections import namedtuple
 from contextlib import suppress
 import re
+from datetime import timedelta, datetime
+import itertools
+from functools import partial
 
+from dateutil.relativedelta import relativedelta
 from discord.ext import commands
 import discord
 
 BetterUser = namedtuple('BetterUser', 'obj')
 RedditMatch = namedtuple('RedditMatch', 'name id match')
+TimeOutput = namedtuple('TimeOutput', 'time string')
 u_conv = commands.UserConverter()
 m_conv = commands.MemberConverter()
 
 reddit_url = re.compile(r"^((https://)?(www\.|old\.|new\.)?reddit.com)?/?(?P<type>user|u|r)?/?(?P<name>[\w\-]*)(/comments/(?P<id>[\w\-\_]*))?/?")
 github_pattern = re.compile(r"^((https://)?(www\.)?github.com)?/?(?P<user>[\w\.\-]*)/?(?P<repo>[\w\-\.]*)?/?")
-
+dt_re = re.compile(r"""((?P<years>[0-9])\s?(?:years?|y))?
+                        ((?P<months>[0-9]{1,2})\s?(?:months?|mo))?
+                        ((?P<weeks>[0-9]{1,4})\s?(?:weeks?|w))?
+                        ((?P<days>[0-9]{1,5})\s?(?:days?|d))?
+                        ((?P<hours>[0-9]{1,5})\s?(?:hours?|h))?
+                        ((?P<minutes>[0-9]{1,5})\s?(?:minutes?|m))?
+                        ((?P<seconds>[0-9]{1,5})\s?(?:seconds?|s))?""", re.X)
 
 class BoolConverter(commands.Converter):
     async def convert(self, ctx, argument):
@@ -77,3 +88,12 @@ class RedditConverter(commands.Converter):
 class GitHubConverter(commands.Converter):
     async def convert(self, ctx, argument):
         return github_pattern.search(argument.strip('<>')).groupdict()
+
+class TimeConverter(commands.Converter):
+    async def convert(self, ctx, argument):
+        found = dict()
+        for match in dt_re.finditer(argument):
+            found.update(dict(filter(lambda i: i[1] is not None, match.groupdict().items())))
+        delta = relativedelta(**{k: int(v) for k, v in found.items()}) + timedelta(seconds=1)
+        return TimeOutput(time=datetime.utcnow() + delta, string=argument)
+

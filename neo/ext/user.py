@@ -18,22 +18,22 @@ along with neo.  If not, see <https://www.gnu.org/licenses/>.
 import re
 import string
 import asyncio
-import pprint
 from random import Random
 from datetime import datetime
+from time import time
 from typing import Union
 from textwrap import indent, shorten
 from contextlib import suppress
 
 import discord
 from discord.ext import commands, flags
-from humanize import naturaldelta as nd
+from humanize import naturaltime, naturaldate
 from yarl import URL
-from dateparser.search import search_dates
 
+import neo
 from neo.utils.checks import check_member_in_guild
 from neo.utils.formatters import prettify_text
-from neo.utils.converters import BoolConverter
+from neo.utils.converters import BoolConverter, TimeConverter
 
 
 class Reminder:
@@ -82,7 +82,7 @@ class User(commands.Cog):
                                            ctx.author.id)
             await self.bot.user_cache.refresh()
             return
-        embed = discord.Embed(title=f"""{ctx.author}'s Settings""", color=discord.Color.main)
+        embed = neo.Embed(title=f"""{ctx.author}'s Settings""")
         readable_settings = list()
         for k, v in self.bot.user_cache[ctx.author.id].items():
             if isinstance(v, bool):
@@ -108,8 +108,8 @@ class User(commands.Cog):
                 return f"`{index}` <:regex:718943797915943054> `{kw_full}`"
             return f"`{index}` `{kw_full}`"
         my_hl = list(filter(lambda hl: hl.user_id == ctx.author.id, self.bot.get_cog('HlMon').cache))
-        await ctx.send(embed=discord.Embed(
-            description='\n'.join(map(format_hl, enumerate(my_hl, 1))), color=discord.Color.main).set_footer(
+        await ctx.send(embed=neo.Embed(
+            description='\n'.join(map(format_hl, enumerate(my_hl, 1)))).set_footer(
             text=f'{len(my_hl)}/10 slots used').set_author(
             name=f"{ctx.author}'s highlights", icon_url=ctx.author.avatar_url_as(static_format='png')),
                        delete_after=15.0)
@@ -131,8 +131,7 @@ class User(commands.Cog):
             todo_list = 'No todos'
         await ctx.quick_menu(
             todo_list, 10,
-            template=discord.Embed(
-                color=discord.Color.main).set_author(
+            template=neo.Embed().set_author(
                     name=f"{ctx.author}'s todos ({len(todo_list) if isinstance(todo_list, list) else 0:,} items)",
                     icon_url=ctx.author.avatar_url_as(static_format='png')),
             delete_message_after=True)
@@ -172,32 +171,34 @@ class User(commands.Cog):
     # END TODOS GROUP ~
 
     @commands.group(name='remind', invoke_without_command=True)
-    async def _remind(self, ctx, *, reminder):
+    @commands.max_concurrency(1, commands.BucketType.default)
+    async def _remind(self, ctx, *, reminder: TimeConverter):
         """Add a new reminder. The first time/date found will be the one used."""
-        reminder_id = Random(datetime.utcnow()).randint(1, 1000**2)
-        async with ctx.loading():
-            try:
-                dt_string, parsed_time = (await self.bot.loop.run_in_executor(None, search_dates, reminder))[0]
-            except TypeError:
-                raise commands.CommandError("The inputted time was invalid or missing")
-            new_content = reminder.replace(dt_string, '') or '...'
-            await self.bot.conn.execute(
-                "INSERT INTO reminders (user_id, content, deadline, id, origin_jump) VALUES ($1, $2, $3, $4, $5)",
-                ctx.author.id, new_content, parsed_time, reminder_id, ctx.message.jump_url)
+        reminder_id = int(str(int(time()))[4:])
+        await self.bot.conn.execute(
+            "INSERT INTO reminders (user_id, content, deadline, id, origin_jump) VALUES ($1, $2, $3, $4, $5)",
+            ctx.author.id, reminder.string, reminder.time, reminder_id, ctx.message.jump_url)
         with suppress(UnboundLocalError):
-            Reminder(user=ctx.author, content=new_content, deadline=parsed_time, 
+            Reminder(user=ctx.author, content=reminder.string, deadline=reminder.time, 
                      bot=self.bot, conn_pool=self.bot.conn, rm_id=reminder_id, jump_origin=ctx.message.jump_url)
+        pretty_time = reminder.time.strftime('%a, %b %d, %Y at %H:%M:%S')
+        await ctx.send(f"{ctx.tick(True)} Reminder set for {pretty_time}")
 
     @_remind.command(name='list')
     async def _remind_list(self, ctx):
         """View your list of pending reminders"""
-        reminders = []
-        for remind in await self.bot.conn.fetch("SELECT * FROM reminders WHERE user_id=$1", ctx.author.id):
-            reminders.append(f"**({remind['id']}): in {nd(remind['deadline'] - datetime.utcnow())}**\n{remind['content']}")
+        def format_reminder(reminder):
+            time = reminder['deadline'].strftime(f"%a, %b %d, %Y at %H:%M:%S %Z ({naturaltime(reminder['deadline'])})")
+            return f"**{reminder['id']}: **{reminder['content']}\n{time}\n"
+        reminders = [*map(
+            format_reminder,
+            await self.bot.conn.fetch(
+                "SELECT * FROM reminders WHERE user_id=$1 ORDER BY id",
+                ctx.author.id))]
         await ctx.quick_menu(reminders or ['No reminders'], 5,
-                             template=discord.Embed(colour=discord.Color.main)
-                             .set_author(name=ctx.author,
-                                         icon_url=ctx.author.avatar_url_as(static_format='png')),
+                             template=neo.Embed().set_author(
+                                 name=ctx.author,
+                                 icon_url=ctx.author.avatar_url_as(static_format='png')),
                              delete_on_button=True, clear_reactions_after=True)
 
     @_remind.command(name='remove', aliases=['del', 'rm'])

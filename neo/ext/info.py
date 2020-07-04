@@ -282,7 +282,7 @@ class Info(commands.Cog):
     async def channels(self, ctx, guild: int = None):
         guild = self.bot.get_guild(guild) or ctx.guild
         final = list(map(self.format_channels, [c for c in neo.utils.formatters.flatten(guild.by_category()) if c]))
-        await ctx.quick_menu(neo.utils.formatters.group(final, 25), 1, clear_reactions_after=True)
+        await ctx.quick_menu(neo.utils.formatters.group(final, 25), 1, clear_reactions_after=True, delete_on_button=True)
 
     @serverinfo.command()
     @commands.guild_only()
