@@ -22,7 +22,6 @@ import random
 import textwrap
 import time
 from collections import namedtuple
-from typing import List
 
 import async_cse as cse
 import discord
@@ -34,8 +33,6 @@ import neo
 import neo.utils.errors as errors
 from neo.config import conf, _secrets
 from neo.utils.paginator import PagedEmbedMenu, CSMenu
-
-GoogleResults = namedtuple('GoogleResults', ['title', 'description', 'result_url', 'image_url'])
 
 
 def filter_posts(obj):
@@ -64,14 +61,14 @@ async def do_translation(ctx, content, dest='en'):
     await ctx.send(embed=embed)
 
 
-def build_google_embeds(results: List[GoogleResults]):
+def build_google_embeds(results, show_images=True):
     embeds = list()
     for r in results:
         embed = neo.Embed()
         embed.title = r.title
         embed.description = r.description
-        embed.url = r.result_url
-        if r.image_url:
+        embed.url = r.url
+        if show_images and r.image_url:
             embed.set_image(url=r.image_url)
         embeds.append(embed)
     return embeds
@@ -91,7 +88,7 @@ class Api(commands.Cog):
     @commands.cooldown(1, 5, commands.BucketType.channel)
     async def pypi(self, ctx, *, package_name):
         """
-        Search PyPi for the inputted python package
+        Search PyPI for the inputted python package
         """
         async with self.bot.session.get(f'https://pypi.org/pypi/{package_name}/json') as resp:
             if resp.status == 404:
@@ -99,30 +96,26 @@ class Api(commands.Cog):
             js = await resp.json()
         info = js['info']
         found = {
-            'Home Page': info.get('home_page'),
-            'Package URL': info.get('package_url')
+            'PyPI Page': info.get('package_url'),
+            'Home Page': info.get('home_page')
+
         }
-        if info.get('project_urls'):
-            for key, value in info.get('project_urls').items():
-                if 'doc' in key.lower() or 'issu' in key.lower():
+        if (p_urls := info.get('project_urls')):
+            for key, value in p_urls.items():
+                if key.lower().startswith(('doc', 'issu')):
                     found[key] = value
         embed = neo.Embed().set_thumbnail(url='https://i.imgur.com/UWgCSMs.png')
-        embed.description = textwrap.fill(info.get('summary'), width=40)
+        embed.description = textwrap.fill(info.get('summary', ''), width=40)
         embed.title = f"{info.get('name')} {info['version']}"
         embed.add_field(
             name='Info',
             value='\n'.join([f'[{k}]({v})' for k, v in found.items() if v is not None]),
         )
-        info2_dict = {
-            '⚖️': info.get('license'),
-            '<:python:596577462335307777>': info.get('requires_python')
-        }
-        info2 = str()
-        for k, v in info2_dict.items():
-            if v:
-                info2 += f'{k} {discord.utils.escape_markdown(v)}\n'
-        if info2:
-            embed.add_field(name='_ _', value=info2)
+        embed.add_field(
+            name='_ _', 
+            value=f"⚖️  {info.get('license', 'No license')}\n"
+                  f"<:python:596577462335307777> {info.get('requires_python', 'No Python version specified')}\n"
+                  f"<:pypideps:729920158193287208> {len(info.get('requires_dist', 0))} dependencies")
         embed.set_footer(text=info.get('author'))
         await ctx.send(embed=embed)
 
@@ -148,15 +141,9 @@ class Api(commands.Cog):
         embeds = list()
         async with ctx.loading(tick=False):
             keys = _secrets.gsearch_keys
-            cli = cse.Search(keys)
+            cli = cse.Search(keys, session=self.bot.session)
             res = await cli.search(query)
-            results = [GoogleResults(
-                title=result.title,
-               description=result.description,
-                result_url=result.url,
-                image_url=None) for result in res]
-            embeds = build_google_embeds(results)
-        await cli.close()
+            embeds = build_google_embeds(res, show_images=False)
         if not embeds:
             return
         source = PagedEmbedMenu(embeds)
@@ -171,15 +158,9 @@ class Api(commands.Cog):
         embeds = list()
         async with ctx.loading(tick=False):
             keys = _secrets.gimage_keys
-            cli = cse.Search(keys)
+            cli = cse.Search(keys, session=self.bot.session)
             res = await cli.search(query, image_search=True)
-            results = [GoogleResults(
-                title=result.title,
-                description=result.description,
-                result_url=result.url,
-                image_url=result.image_url) for result in res]
-            embeds = build_google_embeds(results)
-        await cli.close()
+            embeds = build_google_embeds(res)
         if not embeds:
             return
         source = PagedEmbedMenu(embeds)

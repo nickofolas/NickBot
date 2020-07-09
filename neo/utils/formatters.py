@@ -32,12 +32,15 @@ def group(iterable, page_len=50):
         iterable = iterable[page_len:]
     return pages
 
-def flatten(iterable):
-    for item in iterable:
-        if hasattr(item, '__iter__') and not isinstance(item, str):
-            yield from flatten(item)
-        else:
-            yield item
+def flatten(iterable, *, lazy=True):
+    def inner():
+        for item in iterable:
+            if hasattr(item, '__iter__') and not isinstance(item, str):
+                yield from flatten(item)
+            else:
+                yield item
+    flattened = inner()
+    return flattened if lazy else [*flattened]
 
 
 def pluralize(inp, value):
