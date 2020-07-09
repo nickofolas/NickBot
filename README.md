@@ -10,4 +10,5 @@ A Discord bot that functions as a jack of all trades
 * 30+ base commands, many of which branch off into subcommands
 * Customisation on both the guild and user level
 * Interfacing with Reddit and more
+
 Plus much more, of course. A full list of commands can be accessed using the `help` command. Note that the bot's default prefix is `n/`, but this can be customised via guild config.
