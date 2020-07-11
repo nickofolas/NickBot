@@ -124,7 +124,6 @@ class UserInfo:
                 activity = f'Streaming **{a.name}**'
             elif isinstance(a, discord.activity.Activity):
                 activity = f'{activity_type_mapping.get(a.type)} **{a.name}**'
-            # noinspection PyUnboundLocalVariable
             yield activity
 
     @property
@@ -143,7 +142,6 @@ class UserInfo:
         return tagline
 
 
-# noinspection SpellCheckingInspection
 class Info(commands.Cog):
     """Informational commands category"""
 
@@ -193,7 +191,7 @@ class Info(commands.Cog):
         target = target or ctx.author
         embed = discord.Embed(color=discord.Color.main)
         ls = sorted(
-            [p for p in ctx.channel.permissions_for(target)],
+            [*ctx.channel.permissions_for(target)],
             key=lambda x: x[1],
             reverse=True)
         for key, group in itertools.groupby(ls, lambda x: x[1]):
@@ -209,7 +207,7 @@ class Info(commands.Cog):
         await ctx.send(embed=embed)
 
     @userinfo.command(aliases=['spot'])
-    @commands.guild_only()  # TODO: Clean this up?
+    @commands.guild_only() 
     async def spotify(self, ctx, target: discord.Member = None):
         """Get info about someone's Spotify status, if they have one"""
         target = target or ctx.author

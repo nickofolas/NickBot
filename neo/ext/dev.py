@@ -79,7 +79,7 @@ async def copy_ctx(
     return new_ctx
 
 
-async def _get_results(func, *args, **kwargs):
+async def get_results(func, *args, **kwargs):
     if inspect.isasyncgenfunction(func):
         async for result in func(*args, **kwargs):
             yield result
@@ -138,7 +138,7 @@ class Dev(commands.Cog):
                 import_expression.exec(compile(wrap_code(body), "<eval>", "exec"), env)
                 _aexec = env['func']
                 with redirect_stdout(stdout):
-                    async for res in _get_results(_aexec, self.scope, self.retain):
+                    async for res in get_results(_aexec, self.scope, self.retain):
                         if res is None:
                             continue
                         self._last_result = res
@@ -203,9 +203,8 @@ class Dev(commands.Cog):
         table = tabulate(r, headers=headers, tablefmt='pretty')
         pages = [str(ctx.codeblock(content=page)) for page in group(table, 1500)]
         await ctx.quick_menu(pages, 1, delete_on_button=True, clear_reactions_after=True, timeout=300,
-                             template=discord.Embed(
-                                 color=discord.Color.main)
-                             .set_author(name=f'Returned {rows} {pluralize("row", rows)} in {dt:.2f}ms'))
+                             template=neo.Embed().set_author(
+                                 name=f'Returned {rows} {pluralize("row", rows)} in {dt:.2f}ms'))
 
     @commands.group(name='dev', invoke_without_command=True)
     async def dev_command_group(self, ctx):
@@ -288,7 +287,7 @@ class Dev(commands.Cog):
             response = await self.bot.session.get('https://magmafuck.herokuapp.com/api/v1', headers={'website': site})
             data = await response.json()
             site = data['website']
-            await ctx.send(embed=discord.Embed(colour=discord.Color.main, title=site, url=site).set_image(url=data['snapshot']))
+            await ctx.send(embed=neo.Embed(title=site, url=site).set_image(url=data['snapshot']))
 
     @flags.add_flag('-m', '--mode', choices=['r', 'l', 'u'], default='r')
     @flags.add_flag('-p', '--pull', action='store_true')

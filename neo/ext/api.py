@@ -95,27 +95,22 @@ class Api(commands.Cog):
                 raise errors.ApiError(f"404 - '{package_name}' was not found")
             js = await resp.json()
         info = js['info']
-        found = {
-            'PyPI Page': info.get('package_url'),
-            'Home Page': info.get('home_page')
-
-        }
+        found = {'PyPI Page': info.get('package_url'), 'Home Page': info.get('home_page'),
+                 'Release History': f"https://pypi.org/project/{package_name}/#history"}
         if (p_urls := info.get('project_urls')):
             for key, value in p_urls.items():
                 if key.lower().startswith(('doc', 'issu')):
                     found[key] = value
+        deps = len(info.get('requires_dist') or [])
         embed = neo.Embed().set_thumbnail(url='https://i.imgur.com/UWgCSMs.png')
         embed.description = textwrap.fill(info.get('summary', ''), width=40)
         embed.title = f"{info.get('name')} {info['version']}"
-        embed.add_field(
-            name='Info',
-            value='\n'.join([f'[{k}]({v})' for k, v in found.items() if v is not None]),
-        )
+        embed.add_field(name='Info', value='\n'.join([f'[{k}]({v})' for k, v in found.items() if v is not None]))
         embed.add_field(
             name='_ _', 
-            value=f"⚖️  {info.get('license', 'No license')}\n"
-                  f"<:python:596577462335307777> {info.get('requires_python', 'No Python version specified')}\n"
-                  f"<:pypideps:729920158193287208> {len(info.get('requires_dist', 0))} dependencies")
+            value=f"⚖️  {info.get('license') or 'No license'}\n"
+                  f"<:python:596577462335307777> {info.get('requires_python') or 'Not specified'}\n"
+                  f"<:pypideps:729920158193287208> {deps} dependenc{'y' if deps == 1 else 'ies'}")
         embed.set_footer(text=info.get('author'))
         await ctx.send(embed=embed)
 

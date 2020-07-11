@@ -66,11 +66,6 @@ def clean_bytes(line):
     return re.sub(r'\x1b[^m]*m', '', text).replace("``", "`\u200b`").strip('\n')
 
 
-def insert_return(body):
-    if isinstance(body[-1], ast.Expr):
-        body[-1] = ast.Return(body[-1].value)
-        ast.fix_missing_locations(body[-1])
-
 def insert_yield(body):
     if not isinstance(body[-1], ast.Expr):
         return

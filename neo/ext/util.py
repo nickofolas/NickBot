@@ -33,10 +33,13 @@ from discord.ext import commands, flags
 from async_timeout import timeout
 from yarl import URL
 
+import neo
 from neo.utils import paginator
 from neo.utils.converters import BetterUserConverter
 from neo.utils.formatters import group, flatten
 from neo.config import _secrets
+
+imgur_media_base = URL.build(scheme='http', host='imgur.com')
 
 
 def zulu_time(dt: datetime.datetime):
@@ -90,9 +93,8 @@ class Util(commands.Cog):
     async def ping(self, ctx):
         """Gets the bot's response time and latency"""
         start = time.perf_counter()
-        message = await ctx.send(embed=discord.Embed(
-            description=f':electric_plug: **Websocket** {round(self.bot.latency * 1000, 3)}ms',
-            color=discord.Color.main))
+        message = await ctx.send(embed=neo.Embed(
+            description=f':electric_plug: **Websocket** {round(self.bot.latency * 1000, 3)}ms'))
         end = time.perf_counter()
         duration = (end - start) * 1000
         em = copy.copy(message.embeds[0])
@@ -114,10 +116,9 @@ class Util(commands.Cog):
         else:
             permissions = discord.Permissions(1878523719)
         invite_url = discord.utils.oauth_url(self.bot.user.id, permissions)
-        embed = discord.Embed(
+        embed = neo.Embed(
             title='Invite me to your server!',
-            description=f'[`Invite Link`]({invite_url})\n**Permissions Value** {permissions.value}',
-            color=discord.Color.main
+            description=f'[`Invite Link`]({invite_url})\n**Permissions Value** {permissions.value}'
         ).set_thumbnail(url=self.bot.user.avatar_url_as(static_format='png'))
         await ctx.send(embed=embed)
 
@@ -137,8 +138,7 @@ class Util(commands.Cog):
             main_format = 'gif'
         else:
             main_format = 'png'
-        embed = discord.Embed(color=discord.Color.main)
-        embed.set_image(url=(aurl := target.avatar_url_as(format=main_format, size=new_size)))
+        (embed := neo.Embed()).set_image(url=(aurl := target.avatar_url_as(format=main_format, size=new_size)))
         embed.description = ' | '.join(f"[{fmt.upper()}]({target.avatar_url_as(format=fmt, size=new_size)})" for fmt in formats)
         actual_size = URL(str(aurl)).query.get('size', new_size)
         embed.set_footer(text=f"{target} | {actual_size}x{actual_size} px")
@@ -169,8 +169,8 @@ class Util(commands.Cog):
         async with ctx.loading(), self.bot.session.post('https://api.imgur.com/3/image',
                                                         headers=headers, data=data) as resp:
             res = await resp.json()
-            if link := res['data'].get('link'):
-                await ctx.send('<' + link + '>')
+            if (link := res['data'].get('link')) and (social := res['data'].get('id')):
+                await ctx.send(f"Image URL: <{link}>\nSocial URL: <{imgur_media_base.with_path(social)}>")
             else:
                 raise commands.CommandError('There was a problem uploading that!')
 

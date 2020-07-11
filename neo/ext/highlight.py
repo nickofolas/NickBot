@@ -259,40 +259,6 @@ class HighlightCommands(commands.Cog):
             await ctx.bot.conn.execute('DELETE FROM highlights WHERE user_id=$1', ctx.author.id)
             ctx.bot.dispatch('hl_update')
 
-    @commands.command(name='import')
-    @check_member_in_guild(292212176494657536)
-    @commands.max_concurrency(1, commands.BucketType.channel)
-    async def import_from_highlight(ctx):
-        """
-        Import your highlights from the <@292212176494657536> bot (can only be run in shared guilds)
-        Imports every highlight it can while maintaining the maximum number of slots.
-        """
-        await ctx.send('Please call your lists of highlights from <@292212176494657536>')
-        msg = await ctx.bot.wait_for('message',
-                                     check=lambda m:
-                                     m.author.id == 292212176494657536
-                                     and m.embeds and str(ctx.author.id) in
-                                     m.embeds[0].author.icon_url and m.channel.id == ctx.channel.id,
-                                     timeout=15.0)
-        e = msg.embeds[0]
-        if e.title != 'Triggers':
-            return await ctx.send('Failed to find a response with your highlights')
-        imported_highlights = e.description.splitlines()
-        added = 0
-        for new_hl in imported_highlights:
-            active = await ctx.bot.conn.fetch('SELECT kw FROM highlights WHERE user_id=$1', ctx.author.id)
-            if len(active) >= MAX_HIGHLIGHTS:
-                break
-            if new_hl in [rec['kw'] for rec in active]:
-                raise commands.CommandError('You already have a highlight with this trigger')
-            await ctx.bot.conn.execute(
-                'INSERT INTO highlights(user_id, kw, is_regex) VALUES ( $1, $2, $3 )',
-                ctx.author.id, fr"{new_hl}", False)
-            added += 1
-        ctx.bot.dispatch('hl_update')
-        await ctx.send(f'Imported {added} highlights')
-
-
 def setup(bot):
     for command in HighlightCommands(bot).get_commands():
         bot.get_command('highlight').remove_command(command.name)
