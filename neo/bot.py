@@ -42,11 +42,11 @@ async def get_prefix(bot, message):
     if bot.is_closed():
         return
     await bot.wait_until_ready()
-    prefix = 'n/'
+    prefix = ['n/']
     if message.guild:
         with suppress(KeyError):
-            prefix = bot.guild_cache[message.guild.id]['prefix']
-    return commands.when_mentioned_or(prefix)(bot, message)
+            prefix = list({*bot.guild_cache[message.guild.id]['prefixes']})
+    return commands.when_mentioned_or(*prefix)(bot, message)
 
 
 class NeoBot(commands.Bot):

@@ -133,8 +133,8 @@ class Events(commands.Cog):
             )
 
         await self.bot.conn.execute(  # Adds/updates this guild in the db using upsert syntax
-            'INSERT INTO guild_prefs (guild_id, prefix) VALUES ($1, $2) ON CONFLICT (guild_id) DO UPDATE SET prefix=$2',
-            guild.id, 'n/')
+            'INSERT INTO guild_prefs (guild_id, prefixes) VALUES ($1, $2) ON CONFLICT (guild_id) DO UPDATE SET prefixes=$2',
+            guild.id, ['n/'])
         await self.bot.guild_cache.refresh()
         await self.bot.logging_channels.get('guild_io').send(embed=embed)
         if guild.id == 333949691962195969:

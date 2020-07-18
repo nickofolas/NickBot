@@ -1,6 +1,6 @@
 exts:
   - 'neo.ext.api'
-  - 'neo.ext.user'
+  - 'neo.ext.customisation'
   - 'neo.ext.dev'
   - 'neo.ext.docs'
   - 'neo.ext.events'
