@@ -17,7 +17,6 @@ along with neo.  If not, see <https://www.gnu.org/licenses/>.
 """
 import os
 import textwrap
-import warnings
 from datetime import datetime
 from asyncio import all_tasks
 from contextlib import suppress
@@ -34,17 +33,8 @@ import neo.context
 from neo.utils.containers import Cache
 from neo.config import conf, _secrets
 
-
-def warn(*args, **kwargs):
-    pass
-
-
 logging.basicConfig(level=logging.INFO)
 
-# Ignores deprecation warnings
-warnings.warn = warn
-
-# noinspection SpellCheckingInspection
 discord.Color.pornhub = discord.Color(0xffa31a)
 discord.Color.main = discord.Color(0x84cdff)
 
@@ -57,9 +47,6 @@ async def get_prefix(bot, message):
         with suppress(KeyError):
             prefix = bot.guild_cache[message.guild.id]['prefix']
     return commands.when_mentioned_or(prefix)(bot, message)
-
-
-# Bot class itself, kinda important
 
 
 class NeoBot(commands.Bot):
@@ -81,8 +68,6 @@ class NeoBot(commands.Bot):
 
     async def ainit(self):
         self.session = aiohttp.ClientSession()
-        cn = {"user": os.getenv('DBUSER'), "password": os.getenv('DBPASS'), "database": os.getenv('DB'),
-              "host": os.getenv('DBHOST')}
         self.conn = await asyncpg.create_pool(
             user=_secrets.dbuser, password=_secrets.dbpass, database=_secrets.db, host=_secrets.dbhost)
         self.user_cache = await Cache(db_query="SELECT * FROM user_data",
@@ -109,8 +94,6 @@ class NeoBot(commands.Bot):
                 # Adds people to the user_data table whenever they execute their first command
                 await self.user_cache.refresh() # And then updates the user cache
 
-
-    # noinspection PyAttributeOutsideInit
     async def on_ready(self):
         user = self.get_user(723268667579826267)
         embed = neo.Embed(
@@ -122,7 +105,7 @@ class NeoBot(commands.Bot):
             **Users** {len(self.users)}
             """)).set_thumbnail(url=self.user.avatar_url_as(static_format='png'))
         embed.timestamp = datetime.utcnow()
-        await user.send(embed=embed)
+        await user.send(embed=embed)  # Something really needs to be done abt this
         self.logging_channels = {
             'guild_io': self.get_channel(710331034922647613)
         }

@@ -80,8 +80,7 @@ code_base = 'async def func(scope, should_retain=True):' \
             '\n  try:' \
             '\n    pass' \
             '\n  finally:' \
-            '\n    if should_retain:' \
-            '\n      scope.update(locals())' 
+            '\n    scope.update(locals())' 
 
 def wrap_code(code_input):
     code_in = import_expression.parse(code_input)

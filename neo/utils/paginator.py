@@ -17,7 +17,6 @@ along with neo.  If not, see <https://www.gnu.org/licenses/>.
 """
 import asyncio
 import contextlib
-import copy
 from datetime import datetime
 from typing import List
 
@@ -25,6 +24,7 @@ import discord
 import humanize
 from discord.ext import menus
 
+import neo
 from neo.config import conf
 
 
@@ -97,7 +97,6 @@ class CSMenu(menus.MenuPages, inherit_buttons=False):
         position=menus.Last(1), skip_if=_skip_double_triangle_buttons)
     async def go_to_last_page(self, payload):
         """go to the last page"""
-        # The call here is safe because it's guarded by skip_if
         await self.show_page(self._source.get_max_pages() - 1)
 
     @menus.button(conf['emoji_suite']['search'], position=menus.First(2), skip_if=_skip_double_triangle_buttons)
@@ -135,18 +134,11 @@ class BareBonesMenu(menus.ListPageSource):
         self.embed = embed
 
     async def format_page(self, menu, page):
-        if isinstance(page, str):
-            if self.embed:
-                embed = copy.copy(self.embed)
-                embed.description = ''.join(page)
-                return embed
-            else:
-                return discord.Embed(description=''.join(page), color=discord.Color.main)
+        join_str = '' if isinstance(page, str) else '\n'
+        if self.embed:
+            embed = self.embed.copy()
+            embed.description = join_str.join(page)
+            return embed
         else:
-            if self.embed:
-                embed = copy.copy(self.embed)
-                embed.description = '\n'.join(page)
-                return embed
-            else:
-                return discord.Embed(description='\n'.join(page), color=discord.Color.main)
+            return neo.Embed(description=join_str.join(page))
 

@@ -72,7 +72,7 @@ class Events(commands.Cog):
             if settings.get('repr_errors'):
                 error = repr(error)
             do_emojis = settings.get('error_emojis', True)
-        await ctx.propagate_to_eh(self.bot, ctx, error, do_emojis=do_emojis)  # Anything else is propagated to the
+        await ctx.propagate_error(error, do_emojis=do_emojis)  # Anything else is propagated to the
         # reaction handler
 
     @commands.Cog.listener()

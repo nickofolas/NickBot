@@ -53,7 +53,7 @@ type_dict = {
     'none': None
 }
 
-file_ext_re = re.compile(r"(~?/?(/\w)*)?\.(?P<extension>\w*)")
+file_ext_re = re.compile(r"(\~?\/?(\w/)*)?\.(?P<extension>\w*)$")
 
 ShellOut = namedtuple('ShellOut', 'stdout stderr returncode')
 
@@ -94,7 +94,6 @@ class Dev(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.scope = {}
-        self.retain = True
         self._last_result = None
 
     async def cog_check(self, ctx):
@@ -127,9 +126,7 @@ class Dev(commands.Cog):
             'message': ctx.message,
             '_': self._last_result
         }
-        env.update(globals())
-        if self.retain:
-            env.update(self.scope)
+        env.update(**globals(), **self.scope)
         stdout = io.StringIO()
         to_return = None
         final_results = list()
@@ -138,7 +135,7 @@ class Dev(commands.Cog):
                 import_expression.exec(compile(wrap_code(body), "<eval>", "exec"), env)
                 _aexec = env['func']
                 with redirect_stdout(stdout):
-                    async for res in get_results(_aexec, self.scope, self.retain):
+                    async for res in get_results(_aexec, self.scope):
                         if res is None:
                             continue
                         self._last_result = res

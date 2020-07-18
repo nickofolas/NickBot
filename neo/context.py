@@ -82,7 +82,8 @@ class Context(commands.Context):
         else:
             await self.send(**kwargs)
 
-    def tick(self, opt, label=None):
+    @staticmethod
+    def tick(opt, label=None):
         lookup = {
             True: _EMOJIS.check_button,
             False: _EMOJIS.x_button,
@@ -93,7 +94,8 @@ class Context(commands.Context):
             return f'{emoji}: {label}'
         return emoji
 
-    def toggle(self, opt):
+    @staticmethod
+    def toggle(opt):
         options = {
             True: _EMOJIS.toggleon,
             False: _EMOJIS.toggleoff,
@@ -106,11 +108,9 @@ class Context(commands.Context):
     def codeblock(**kwargs):
         return Codeblock(**kwargs)
 
-    def tab(self, repeat=1):
-        tabs = []
-        for i in range(repeat):
-            tabs.append(' \u200b')
-        return ''.join(tabs)
+    @staticmethod
+    def tab(repeat=1):
+        return ' \u200b' * repeat
 
     async def quick_menu(self, entries, per_page, *, template: discord.Embed = None, **kwargs):
         source = pages.BareBonesMenu(entries, per_page=per_page, embed=template)
@@ -138,21 +138,21 @@ class Context(commands.Context):
             with suppress(discord.NotFound):
                 await asyncio.gather(*tasks)
 
-    @staticmethod
-    async def propagate_to_eh(bot, ctx, error, do_emojis=True):
+    async def propagate_error(self, error, do_emojis=True):
         if do_emojis is False:
-            return await ctx.send(error)
+            return await self.send(error)
         with suppress(Exception):
-            await ctx.message.add_reaction(_EMOJIS.warning_button)
+            await self.message.add_reaction(_EMOJIS.warning_button)
             try:
-                reaction, user = await bot.wait_for(
+                reaction, user = await self.bot.wait_for(
                     'reaction_add',
-                    check=lambda r, u: r.message.id == ctx.message.id
-                    and u.id in [ctx.author.id, 680835476034551925], timeout=30.0
+                    check=lambda r, u: r.message.id == self.message.id
+                    and u.id in [self.author.id, *self.bot.owner_ids], timeout=30.0
                 )
             except asyncio.TimeoutError:
-                await ctx.message.remove_reaction(_EMOJIS.warning_button, ctx.me)
+                await self.message.remove_reaction(
+                    _EMOJIS.warning_button, self.me)
                 return
             if str(reaction.emoji) == _EMOJIS.warning_button:
-                return await ctx.send(error)
+                return await self.send(error)
 

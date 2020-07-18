@@ -88,7 +88,6 @@ async def get_repo_commit_count(session, url):
     return f"{commit_count:,}"
 
 
-# noinspection PyMethodParameters,PyUnresolvedReferences
 class Github(commands.Cog):
     def __init__(self, bot):
         self.bot = bot

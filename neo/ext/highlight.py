@@ -165,7 +165,7 @@ def guild_or_user(bot, snowflake_id):
 
 strategies = {'block': 'array_append', 'unblock': 'array_remove'}
 
-# noinspection PyMethodParameters
+
 class HighlightCommands(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
