@@ -146,6 +146,7 @@ class Api(commands.Cog):
         await menu.start(ctx)
 
     @google.command(aliases=['img', 'i'])
+    @commands.is_nsfw()
     async def image(self, ctx, *, query: str):
         """
         Search Google Images for the query

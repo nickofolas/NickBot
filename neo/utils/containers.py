@@ -41,7 +41,7 @@ class TimedSet(set):
         await asyncio.sleep(self.decay_time)
         self.discard(item)
 
-class Cache(dict):
+class DbCache(dict):
     def __init__(self, *, db_query, query_params = [], pool, key):
         self.pool = pool
         self.db_query = db_query

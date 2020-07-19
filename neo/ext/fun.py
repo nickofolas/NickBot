@@ -228,6 +228,16 @@ class Fun(commands.Cog):
                  em_name in closest_matches])),
             10, delete_on_button=True, clear_reactions_after=True)
 
+    @get_emoji.command(name='create')
+    @commands.has_permissions(manage_emojis=True)
+    async def create_emoji(self, ctx, name, *, image = None):
+        image = await (await self.bot.session.get(image)).read() if image else await ctx.message.attachments[0].read()
+        async with ctx.loading():
+            try:
+                await ctx.guild.create_custom_emoji(name=name, image=image)
+            except TypeError:
+                raise commands.CommandError('Couldn\'t find a valid image to upload in the input')
+
     @commands.command()
     async def owoify(self, ctx, *, message):
         """uwuify some text"""
