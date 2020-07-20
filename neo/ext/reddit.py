@@ -26,13 +26,14 @@ import aiohttp
 from discord.ext import commands, flags
 from humanize import naturaltime as nt
 
+import neo
 from neo.utils.errors import ApiError
 from neo.utils.paginator import CSMenu, PagedEmbedMenu
-from neo.config import conf
 from neo.utils.converters import RedditConverter
 from neo.utils.formatters import group
 
 PollChoice = namedtuple('PollChoice', ['text', 'votes'])
+reddit_emojis = neo.conf['emojis']['reddit']
 
 
 class Poll:
@@ -86,12 +87,11 @@ class Submission:
             if pending:
                 desc = "**Poll pending**\n" + '\n'.join(f"➣ {opt.text}" for opt in p)
             desc += f'\n**{p.total_votes} total votes**'
-        embed = discord.Embed(
+        embed = neo.Embed(
             title=self.title,
-            description=f"<:upvote:698744205710852167> {self.upvotes:,} | :speech_balloon: {self.comments:,} "
+            description=f"{reddit_emojis['upvote']} {self.upvotes:,} | :speech_balloon: {self.comments:,} "
                         f"| 🕙 {nt(self.creation_delta)}\n{desc}",
-            url=self.full_url,
-            color=discord.Color.main
+            url=self.full_url
         ).set_image(url=self.img_url).set_author(name=self.author,
             url=f"https://www.reddit.com/user/{self.author}")
         return embed
@@ -159,6 +159,16 @@ class Redditor:
         for trophy in self.tdata.get('trophies'):
             yield trophy['data'].get('name')
 
+    @property
+    def is_cakeday(self):
+        return datetime.utcfromtimestamp(self.created).day == datetime.utcnow().day
+
+    @property
+    def display_name(self):
+        if self.subreddit.title != self.name:
+            return self.subreddit.title
+        return self.name
+
 
 def gen_listing_embeds(listing):
     for post in listing.posts:
@@ -207,14 +217,17 @@ class Reddit(commands.Cog):
         if r1.status != 200 or r2.status != 200:
             raise ApiError(f"Unable to get user (received {r1.status}, {r2.status})")
         user = Redditor(about_data=about, trophy_data=trophies)
-        tstring = textwrap.fill(' '.join([conf['trophy_emojis'].get(t, '') for t in set(user.trophies)]), 225)
-        embed = discord.Embed(
+        tstring = textwrap.fill(' '.join([reddit_emojis['trophies'].get(t, '') for t in set(user.trophies)]), 225)
+        embed = neo.Embed(
             title=user.subreddit.title if user.subreddit.title != user.name else '',
-            description=tstring,
-            color=discord.Color.main).set_author(name=user.subreddit.prefixed, url=user.subreddit.full_url)
+            description=tstring)
+        embed.set_author(
+            name=user.subreddit.prefixed,
+            url=user.subreddit.full_url,
+            icon_url='https://i.imgur.com/6OedixC.png' if user.is_cakeday else '')
         embed.set_thumbnail(url=user.icon_url.split('?', 1)[0])
         embed.add_field(
-            name='<:karma:701164781238878270> Karma',
+            name=f'{reddit_emojis["karma"]} Karma',
             value=textwrap.dedent(f"""
                 **{user.link_karma + user.comment_karma:,}** combined
                 **{user.comment_karma:,}** comment
@@ -234,7 +247,7 @@ class Reddit(commands.Cog):
         if resp.status != 200:
             raise ApiError(f'Unable to get subreddit (received {resp.status})')
         sub = Subreddit(data)
-        embed = discord.Embed(title=sub.prefixed, url=sub.full_url, color=discord.Color.main)
+        embed = neo.Embed(title=sub.prefixed, url=sub.full_url)
         embed.set_thumbnail(
             url='https://i.imgur.com/gKzmGxt.png' if sub.nsfw and not allow_nsfw_in_channel(ctx.channel)
                 else sub.icon_img or '')
@@ -254,10 +267,10 @@ class Reddit(commands.Cog):
         post = Submission(data[0]['data']['children'][0]['data'])
         embeds = [post.to_embed]
         for item in group(data[1]['data']['children'], 5):
-            embed = discord.Embed(title='Browsing top-level comments', color=discord.Color.main)
+            embed = neo.Embed(title='Browsing top-level comments')
             for comment in item:
                 embed.add_field(
-                    name=f"<:upvote:698744205710852167> {comment['data'].get('ups')} | "
+                    name=f"{reddit_emojis['upvote']} {comment['data'].get('ups')} | "
                          f"u/{comment['data'].get('author')}",
                     value=f"[🔗](https://reddit.com{comment['data'].get('permalink')}) {textwrap.shorten(comment['data'].get('body'), width=125)}",
                     inline=False)

@@ -31,7 +31,6 @@ import asyncpg
 import neo
 import neo.context
 from neo.utils.containers import DbCache
-from neo.config import conf, _secrets
 
 logging.basicConfig(level=logging.INFO)
 
@@ -61,15 +60,18 @@ class NeoBot(commands.Bot):
         self.add_check(self.global_cooldown)
         self.before_invoke(self.before)
 
-        for ext in conf.get('exts'):
+        for ext in neo.conf['exts']:
             self.load_extension(ext)
 
-        self.run(_secrets.bot_token)
+        self.run(neo.secrets.bot_token)
 
     async def ainit(self):
         self.session = aiohttp.ClientSession()
         self.conn = await asyncpg.create_pool(
-            user=_secrets.dbuser, password=_secrets.dbpass, database=_secrets.db, host=_secrets.dbhost)
+            user=neo.secrets.dbuser,
+            password=neo.secrets.dbpass,
+            database=neo.secrets.db,
+            host=neo.secrets.dbhost)
         self.user_cache = await DbCache(db_query="SELECT * FROM user_data",
                                       key='user_id', pool=self.conn)
         self.guild_cache = await DbCache(db_query="SELECT * FROM guild_prefs",

@@ -43,6 +43,7 @@ class Guild(commands.Cog):
     def cog_check(self, ctx):
         return bool(ctx.guild)
 
+    @flags.add_flag('search_depth', type=int, nargs='?', default=5)
     @flags.add_flag('-u', '--user', nargs='+')
     @flags.add_flag('-c', '--contains', nargs='+')
     @flags.add_flag('-o', '--or', action='store_true', dest='_or')
@@ -57,8 +58,8 @@ class Guild(commands.Cog):
         '-r', '--reactions',
         action='store_const',
         const=lambda m: len(m.reactions))
-    @flags.add_flag('search_depth', type=int, nargs='?', default=5)
     @has_permissions(manage_messages=True)
+    @commands.max_concurrency(1, commands.BucketType.channel)
     @flags.command(name='clear', aliases=['c'])
     async def custom(self, ctx, **args):
         """Clear messages from the channel

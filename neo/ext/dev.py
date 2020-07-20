@@ -35,7 +35,6 @@ from discord.ext import commands, flags
 from tabulate import tabulate
 
 import neo
-from neo.config import conf
 from neo.utils.formatters import pluralize, group, clean_bytes, format_exception, wrap_code
 from neo.utils.converters import CBStripConverter, BoolConverter
 
@@ -297,7 +296,7 @@ class Dev(commands.Cog):
             if flags.get('pull'):
                 await do_shell('git pull')
             mode = mode_mapping.get(flags['mode'])
-            extensions = conf.get('exts') if flags['extension'][0] == '~' else flags['extension']
+            extensions = neo.conf['exts'] if flags['extension'][0] == '~' else flags['extension']
             for ext in extensions:
                 mode(ext)
 

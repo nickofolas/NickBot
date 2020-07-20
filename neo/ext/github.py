@@ -27,11 +27,13 @@ from discord.ext import commands
 from humanize import naturaltime as nt
 from yarl import URL
 
+import neo
 from neo.utils.converters import GitHubConverter
 from neo.utils.errors import ApiError
 from neo.utils.formatters import prettify_text, from_tz
 
 path_mapping = {'repos': 'repositories'}
+gh_emojis = neo.conf['emojis']['github']
 
 
 class GHUser:
@@ -107,7 +109,7 @@ class Github(commands.Cog):
                                   color=discord.Color.main) \
                 .set_thumbnail(url=user.av_url)
             ftext = '\n'.join(f"**{prettify_text(k)}** {v}" for k, v in user.refol.items())
-            ftext += f'\n<:locationmarker:713024424240218162> {user.location}' if user.location else ''
+            ftext += f'\n{gh_emojis["location"]} {user.location}' if user.location else ''
             embed.add_field(name='Info', value=ftext)
             embed.set_footer(text=f'Created {nt(datetime.utcnow() - user.created)} | '
                                   f'Updated {nt(datetime.utcnow() - user.updated)}')
@@ -135,10 +137,10 @@ class Github(commands.Cog):
             fone_txt += f'**Forks** {repo.forks}\n'
             fone_txt += f"**Pushed** {nt(push_delta)}"
             ftwo_txt = str()
-            ftwo_txt += f'<:license:722646741106556938> {repo.license_id}\n'
-            ftwo_txt += f'<:starred:722646740720812141> {repo.gazers}\n'
-            ftwo_txt += f'<:watcher:722646741274591255>  {repo.watchers}\n'
-            ftwo_txt += f"<:commit:722646741027127378> {await get_repo_commit_count(session=ctx.bot.session, url=(repo_url + '/commits'))}"
+            ftwo_txt += f'{gh_emojis["license"]} {repo.license_id}\n'
+            ftwo_txt += f'{gh_emojis["star"]} {repo.gazers}\n'
+            ftwo_txt += f'{gh_emojis["watcher"]}  {repo.watchers}\n'
+            ftwo_txt += f"{gh_emojis['commit']} {await get_repo_commit_count(session=ctx.bot.session, url=(repo_url + '/commits'))}"
             embed.add_field(name='Info', value=fone_txt)
             embed.add_field(name='_ _', value=ftwo_txt) 
             embed.set_footer(text=f'Created {nt(create_delta)}')

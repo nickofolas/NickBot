@@ -23,10 +23,8 @@ import asyncio
 from discord.ext import commands
 import discord
 
+import neo
 import neo.utils.paginator as pages
-from .config import CONFIG
-
-_EMOJIS = CONFIG.emoji_suite
 
 
 class Codeblock:
@@ -49,8 +47,8 @@ class Context(commands.Context):
 
     async def prompt(self, message):
         emojis = {
-            _EMOJIS.check_button: True,
-            _EMOJIS.x_button: False}
+            neo.conf['emojis']['check_button']: True,
+            neo.conf['emojis']['x_button']: False}
         msg = await self.send(message)
         for e in emojis.keys():
             await msg.add_reaction(e)
@@ -85,11 +83,11 @@ class Context(commands.Context):
     @staticmethod
     def tick(opt, label=None):
         lookup = {
-            True: _EMOJIS.check_button,
-            False: _EMOJIS.x_button,
-            None: _EMOJIS.neutral_button,
+            True: neo.conf['emojis']['check_button'],
+            False: neo.conf['emojis']['x_button'],
+            None: neo.conf['emojis']['neutral_button'],
         }
-        emoji = lookup.get(opt, _EMOJIS.x_button)
+        emoji = lookup.get(opt, neo.conf['emojis']['x_button'])
         if label is not None:
             return f'{emoji}: {label}'
         return emoji
@@ -97,11 +95,11 @@ class Context(commands.Context):
     @staticmethod
     def toggle(opt):
         options = {
-            True: _EMOJIS.toggleon,
-            False: _EMOJIS.toggleoff,
-            None: _EMOJIS.toggleoff
+            True: neo.conf['emojis']['toggleon'],
+            False: neo.conf['emojis']['toggleoff'],
+            None: neo.conf['emojis']['toggleoff']
         }
-        emoji = options.get(opt, _EMOJIS.toggleoff)
+        emoji = options.get(opt, neo.conf['emojis']['toggleoff'])
         return emoji
 
     @staticmethod
@@ -119,10 +117,10 @@ class Context(commands.Context):
 
     @contextlib.asynccontextmanager
     async def loading(self, *, prop=True, tick=True, exc_ignore=None):
-        clear_reacts = self.message.remove_reaction(_EMOJIS.loading, self.me)
+        clear_reacts = self.message.remove_reaction(neo.conf['emojis']['loading'], self.me)
         tasks = [clear_reacts]
         try:
-            yield await self.message.add_reaction(_EMOJIS.loading)
+            yield await self.message.add_reaction(neo.conf['emojis']['loading'])
         except Exception as e:
             if exc_ignore and isinstance(e, exc_ignore):
                 pass
@@ -142,7 +140,7 @@ class Context(commands.Context):
         if do_emojis is False:
             return await self.send(error)
         with suppress(Exception):
-            await self.message.add_reaction(_EMOJIS.warning_button)
+            await self.message.add_reaction(neo.conf['emojis']['warning_button'])
             try:
                 reaction, user = await self.bot.wait_for(
                     'reaction_add',
@@ -151,8 +149,8 @@ class Context(commands.Context):
                 )
             except asyncio.TimeoutError:
                 await self.message.remove_reaction(
-                    _EMOJIS.warning_button, self.me)
+                    neo.conf['emojis']['warning_button'], self.me)
                 return
-            if str(reaction.emoji) == _EMOJIS.warning_button:
+            if str(reaction.emoji) == neo.conf['emojis']['warning_button']:
                 return await self.send(error)
 

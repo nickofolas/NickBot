@@ -24,8 +24,8 @@ from textwrap import shorten as shn
 import discord
 from discord.ext import commands, flags, tasks
 
+import neo
 from neo.utils.checks import check_member_in_guild
-from neo.config import conf
 from neo.utils.containers import TimedSet
 
 # Constants
@@ -77,7 +77,7 @@ class Highlight:
             avatar_index = m.author.default_avatar.value
             hl_underline = m.content.replace(match, f'**__{match}__**') if m.id == message.id else m.content
             repl = r'<a?:\w*:\d*>'
-            content = f"{conf['default_discord_users'][avatar_index]} **{m.author.name}:** " \
+            content = f"{neo.conf['emojis']['default_avs'][avatar_index]} **{m.author.name}:** " \
                       f"{re.sub(repl, ':question:', hl_underline)}"
             if m.embeds:
                 content += ' <:neoembed:728240626239406141>'
@@ -87,10 +87,9 @@ class Highlight:
         context_list.reverse()
         while len('\n'.join(context_list)) > 2048:
             context_list = context_list[1:]
-        embed = discord.Embed(
+        embed = neo.Embed(
             title=f'Highlighted in {message.guild.name}/#{message.channel.name} with "{shn(match, width=25)}"',
-            description='\n'.join(context_list) + f'\n[Jump URL]({message.jump_url})',
-            color=discord.Color.main)
+            description='\n'.join(context_list) + f'\n[Jump URL]({message.jump_url})')
         embed.timestamp = message.created_at
         return embed
 

@@ -25,11 +25,12 @@ import humanize
 from discord.ext import menus
 
 import neo
-from neo.config import conf
+
+__all__ = ['CSMenu', 'BareBonesMenu', 'PagedEmbedMenu']
 
 
 class CSMenu(menus.MenuPages, inherit_buttons=False):
-    """Subclass of menus.MenuPages to customize emojis and behavior"""
+    """Subclass of menus.MenuPages to customise emojis and behaviour"""
 
     def __init__(self, source, *, delete_on_button = False, **kwargs):
         self.delete_on_button = delete_on_button
@@ -76,30 +77,30 @@ class CSMenu(menus.MenuPages, inherit_buttons=False):
             await self.message.delete()
 
     @menus.button(
-        f'{conf["emoji_suite"]["menu_dleft"]}\ufe0f',
+        neo.conf['emojis']['menus']['menu_dleft'],
         position=menus.First(0), skip_if=_skip_double_triangle_buttons)
     async def go_to_first_page(self, payload):
         """go to the first page"""
         await self.show_page(0)
 
-    @menus.button(f'{conf["emoji_suite"]["menu_left"]}\ufe0f', position=menus.First(1), skip_if=_skip_single_arrows)
+    @menus.button(neo.conf['emojis']['menus']['menu_left'], position=menus.First(1), skip_if=_skip_single_arrows)
     async def go_to_previous_page(self, payload):
         """go to the previous page"""
         await self.show_checked_page(self.current_page - 1)
 
-    @menus.button(f'{conf["emoji_suite"]["menu_right"]}\ufe0f', position=menus.Last(), skip_if=_skip_single_arrows)
+    @menus.button(neo.conf['emojis']['menus']['menu_right'], position=menus.Last(), skip_if=_skip_single_arrows)
     async def go_to_next_page(self, payload):
         """go to the next page"""
         await self.show_checked_page(self.current_page + 1)
 
     @menus.button(
-        f'{conf["emoji_suite"]["menu_dright"]}\ufe0f',
+        neo.conf['emojis']['menus']['menu_dright'],
         position=menus.Last(1), skip_if=_skip_double_triangle_buttons)
     async def go_to_last_page(self, payload):
         """go to the last page"""
         await self.show_page(self._source.get_max_pages() - 1)
 
-    @menus.button(conf['emoji_suite']['search'], position=menus.First(2), skip_if=_skip_double_triangle_buttons)
+    @menus.button(neo.conf['emojis']['menus']['search'], position=menus.First(2), skip_if=_skip_double_triangle_buttons)
     async def number_page(self, payload):
         prompt = await self.ctx.send('Enter the number of the page you would like to go to')
         try:
@@ -112,7 +113,7 @@ class CSMenu(menus.MenuPages, inherit_buttons=False):
         except asyncio.TimeoutError:
             pass
 
-    @menus.button(f'{conf["emoji_suite"]["x_button"]}\ufe0f', position=menus.First(1))
+    @menus.button(neo.conf['emojis']['x_button'], position=menus.First(1))
     async def stop_pages(self, payload):
         """stops the pagination session."""
         self.closed_via_button = True

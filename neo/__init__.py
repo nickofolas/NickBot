@@ -17,8 +17,8 @@ along with neo.  If not, see <https://www.gnu.org/licenses/>.
 """
 import discord
 
+from .config import conf, secrets
 from .bot import NeoBot
-from .config import *
 
 class Embed(discord.Embed):
     def __init__(self, *args, **kwargs):

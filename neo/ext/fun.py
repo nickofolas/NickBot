@@ -30,7 +30,6 @@ import uwuify
 from humanize import apnumber
 from async_timeout import timeout
 
-from neo.config import conf
 import neo
 from neo.utils.paginator import BareBonesMenu, CSMenu
 
@@ -129,10 +128,9 @@ class Fun(commands.Cog):
     async def vote(self, ctx, *, poll):
         """Create an easy poll"""
         # TODO: Make the message edit itself when the reactions are updated so that it's easier to tell what the actual votes are
-        embed = discord.Embed(
+        embed = neo.Embed(
             title=' ',
-            description=f'**Cast your vote:**\n{poll}',
-            color=discord.Color.main)
+            description=f'**Cast your vote:**\n{poll}')
         embed.set_footer(
             text=f'Vote created by {ctx.author.name}',
             icon_url=ctx.author.avatar_url_as(static_format='png'))

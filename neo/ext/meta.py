@@ -29,7 +29,6 @@ import psutil
 from discord.ext import commands
 
 import neo
-from neo.config import conf, _secrets
 from neo.utils.formatters import flatten
 
 (checked_perms := ['is_owner', 'guild_only', 'dm_only', 'is_nsfw']) \
@@ -67,7 +66,7 @@ class EmbeddedHelpCommand(commands.HelpCommand):
 
     async def send_bot_help(self, mapping):
         def key(c):
-            return c.cog_name or '\u200bUncategorized'
+            return c.cog_name or '\u200bUncategorised'
 
         bot = self.context.bot
         embed = neo.Embed(title=f'{bot.user.name} Help')
@@ -163,11 +162,11 @@ class Meta(commands.Cog):
             title = f'View source for command {cmd.qualified_name}'
             url = f'https://github.com/nickofolas/neo/blob/master/{fpath}#L{first_ln}-L{last_ln}'
             desc += f'**File** {fpath}\n**Lines** {first_ln} - {last_ln} [{len(lines) - 1} total]\n\n'
-        desc += '<:starred:722646740720812141> the repository to support neo\'s development!'
+        desc += f'{neo.conf["emojis"]["github"]["star"]} the repository to support neo\'s development!'
         await ctx.send(embed=neo.Embed(title=title, description=desc, url=url))
 
     async def fetch_latest_commit(self):
-        headers = {'Authorization': f'token  {_secrets.github_token}'}
+        headers = {'Authorization': f'token  {neo.secrets.github_token}'}
         url = 'https://api.github.com/repos/nickofolas/neo/commits'
         async with self.bot.session.get(f'{url}/master', headers=headers) as resp1:
             self.last_commit_cache = await resp1.json()
@@ -200,11 +199,6 @@ class Meta(commands.Cog):
         links.extend((f'[Invite]({invite_url})', f'[`{com_id_brief}`]({com_url})'))
         embed.add_field(name='**Links**', value=' | '.join(links), inline=False)
         await ctx.send(embed=embed)
-
-    @commands.command(name='license', aliases=['copyright'])
-    async def _view_license(self, ctx):
-        """View neo's license"""
-        await ctx.send(embed=neo.Embed(description=conf['license']))
 
 
 def setup(bot):

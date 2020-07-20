@@ -27,22 +27,9 @@ import discord
 import humanize
 from discord.ext import commands
 
+import neo
 import neo.utils.formatters
-from neo.config import conf
 from neo.utils.converters import BetterUserConverter
-
-badges = {
-    'staff': '<:staff:699986149288181780>',
-    'partner': '<:partner:699986175020105888>',
-    'hypesquad': '<:events:699986130761941042>',
-    'hypesquad_balance': '<:balance:699986054022824058>',
-    'hypesquad_bravery': '<:bravery:699986078307844168>',
-    'hypesquad_brilliance': '<:brilliance:699986064164782142>',
-    'bug_hunter': '<:bug1:699986089053651196>',
-    'bug_hunter_level_2': '<:bug2:699986097694048327>',
-    'verified_bot_developer': '<:dev:699988960180568135>',
-    'early_supporter': '<:early:699986111975391302>'
-}
 
 activity_type_mapping = {
     discord.ActivityType.watching: 'Watching',
@@ -51,34 +38,28 @@ activity_type_mapping = {
     discord.ActivityType.listening: 'Listening to'
 }
 
-channel_type_map = {
-    'TextChannel': '<:text_channel:687064764421373954> ', 
-    'VoiceChannel': '<:voice_channel:687064782167212165> ',
-    'TextChannel-locked': '<:text_locked:697526634848452639> ',
-    'VoiceChannel-locked': '<:voice_locked:697526650333691986> '
-}
-
 def to_elapsed(time):
     return f'{(time.seconds // 60) % 60:>02}:{time.seconds % 60:>02}'
 
 statuses_base = namedtuple('statuses_base', 'online dnd idle offline', defaults=(0, 0, 0, 0))
+info_emojis = neo.conf['emojis']['infos']
 
 class UserInfo:
-    __slots__ = ('user', 'context', 'flags')
+    __slots__ = ('user', 'ctx', 'flags')
 
     """Wraps up a discord.Member or discord.User's user info"""
     def __init__(self, user, ctx, flags):
         self.user = user
-        self.context = ctx
+        self.ctx = ctx
         self.flags = flags
 
     @property
     def is_nitro(self):
         if self.user.is_avatar_animated():
             return True
-        elif any(g.get_member(self.user.id).premium_since for g in self.context.bot.guilds if self.user in g.members):
+        elif any(g.get_member(self.user.id).premium_since for g in self.ctx.bot.guilds if self.user in g.members):
             return True
-        elif mem := discord.utils.get(self.context.bot.get_all_members(), id=self.user.id):
+        elif mem := discord.utils.get(self.ctx.bot.get_all_members(), id=self.user.id):
             if a := discord.utils.get(mem.activities, type=discord.ActivityType.custom):
                 if a.emoji:
                     if a.emoji.is_custom_emoji():
@@ -87,15 +68,15 @@ class UserInfo:
 
     @property
     def join_pos(self):
-        if self.context.guild and isinstance(self.user, discord.Member):
-            return f'{sorted(self.context.guild.members, key=lambda m: m.joined_at).index(self.user) + 1:,}'
+        if self.ctx.guild and isinstance(self.user, discord.Member):
+            return f'{sorted(self.ctx.guild.members, key=lambda m: m.joined_at).index(self.user) + 1:,}'
         return None
 
     @property
     def user_status(self):
         if not isinstance(self.user, discord.Member):
             return ''
-        status_icon = conf['emoji_dict'][str(self.user.status)]
+        status_icon = neo.conf['emojis']['status_emojis'][str(self.user.status)]
         multi_status = [
             e[0] for e in [
                 ('Mobile', self.user.mobile_status),
@@ -116,7 +97,7 @@ class UserInfo:
             elif isinstance(a, discord.CustomActivity):
                 emoji = ''
                 if a.emoji:
-                    emoji = ':question:' if a.emoji.is_custom_emoji() and not self.context.bot.get_emoji(a.emoji.id) else a.emoji
+                    emoji = ':question:' if a.emoji.is_custom_emoji() and not self.ctx.bot.get_emoji(a.emoji.id) else a.emoji
                 activity = f'{emoji} {a.name or ""}'
             elif isinstance(a, discord.Game):
                 activity = f'Playing **{a.name}**'
@@ -130,15 +111,15 @@ class UserInfo:
     def tagline(self):
         tagline = f'{self.user} '
         if self.user.bot:
-            tagline += '<:verified1:704885163003478069><:verified2:704885180162244749> ' if 'verified_bot' in \
-                self.flags else '<:bot:699991045886312488> '
-        if self.context.guild and isinstance(self.user, discord.Member):
-            if self.user == self.context.guild.owner:
-                tagline += '<:serverowner:706224911500181546> '
+            tagline += ''.join(info_emojis[f'veribot{i}'] for i in (1, 2)) if 'verified_bot' in \
+                self.flags else info_emojis['bot']
+        if self.ctx.guild and isinstance(self.user, discord.Member):
+            if self.user == self.ctx.guild.owner:
+                tagline += info_emojis['serverowner']
             if self.user.premium_since:
-                tagline += '<:booster:705917670691700776> '
+                tagline += info_emojis['booster']
         if 'system' in self.flags:
-            tagline += f'<:system1:706565390712701019><:system2:706565410463678485> '
+            tagline += ''.join(info_emojis[f'system{i}'] for i in (1, 2))
         return tagline
 
 
@@ -156,7 +137,7 @@ class Info(commands.Cog):
         flags = [flag for flag, value in dict(user.public_flags).items() if value is True]
         user_info = UserInfo(user, ctx, flags)
         badge_list = list()
-        for i in badges.keys():
+        for i in (badges := neo.conf['emojis']['badges']).keys():
             if i in flags:
                 badge_list.append(badges[i])
         badge_list = ' '.join(badge_list) or ''
@@ -164,13 +145,12 @@ class Info(commands.Cog):
                             f"{humanize.naturaltime(datetime.utcnow() - user.joined_at)}" \
                             f"\n**Join Position **{user_info.join_pos}" \
             if isinstance(user, discord.Member) and ctx.guild else ''
-        embed = discord.Embed(
-            title=user_info.tagline,
-            colour=discord.Color.main).set_thumbnail(url=user.avatar_url_as(static_format='png').__str__())
+        embed = neo.Embed(title=user_info.tagline)
+        embed.set_thumbnail(url=user.avatar_url_as(static_format='png').__str__())
         status_display = user_info.user_status
         embed.description = textwrap.dedent(f"""
         {status_display}
-        {badge_list}{' <:nitro:707724974248427642>' if user_info.is_nitro else ''}
+        {badge_list} {info_emojis['nitro'] if user_info.is_nitro else ''}
         """)
         stats_disp = str()
         stats_disp += f'**Registered **{humanize.naturaltime(datetime.utcnow() - user.created_at)}'
@@ -189,7 +169,7 @@ class Info(commands.Cog):
     async def perms(self, ctx, target: discord.Member = None):
         """Show the allowed and denied permissions for a user"""
         target = target or ctx.author
-        embed = discord.Embed(color=discord.Color.main)
+        embed = neo.Embed()
         ls = sorted(
             [*ctx.channel.permissions_for(target)],
             key=lambda x: x[1],
@@ -241,23 +221,24 @@ class Info(commands.Cog):
     async def serverinfo(self, ctx):
         """Get info about the current server"""
         guild = ctx.guild
-        embed = discord.Embed(
-            color=discord.Color.main).set_footer(
+        embed = neo.Embed()
+        embed.set_footer(
             text=f'Created '
                  f'{humanize.naturaltime(datetime.utcnow() - guild.created_at)} | Owner: {guild.owner}')
         embed.set_author(
             name=f'{guild.name} | {guild.id}',
             icon_url=guild.icon_url_as(static_format='png'), url=guild.icon_url_as(static_format='png'))
-        stats_val = f'**Channels** <:text_channel:687064764421373954> {len(guild.text_channels)} | <:voice_channel' \
-                    f':687064782167212165> {len(guild.voice_channels)}\n'
+        stats_val = f'**Channels** {neo.conf["emojis"]["channel_indicators"]["TextChannel"]}' \
+                    f'{len(guild.text_channels)} | {neo.conf["emojis"]["channel_indicators"]["VoiceChannel"]}' \
+                    f'{len(guild.voice_channels)}\n'
         stats_val += f'**Region** {str(guild.region).title()}\n'
         stats_val += f'**Verification Level** {str(guild.verification_level).capitalize()}\n'
         stats_val += f'**Emojis** {len([emoji for emoji in guild.emojis if not emoji.animated])}/{guild.emoji_limit}\n'
         stats_val += f'**Max Upload** {round(guild.filesize_limit * 0.00000095367432)}MB'
         embed.add_field(name='**General**', value=stats_val, inline=True)
         statuses = statuses_base(**Counter([m.status.value for m in guild.members]))._asdict()
-        s_members = [f'{conf["emoji_dict"][k]}{v:,}' for k, v in statuses.items()]
-        s_members.append(f'<:bot:699991045886312488>{sum(m.bot for m in guild.members):,}')
+        s_members = [f'{neo.conf["emojis"]["status_emojis"][k]} {v:,}' for k, v in statuses.items()]
+        s_members.append(f'{info_emojis["bot"]} {sum(m.bot for m in guild.members):,}')
         embed.add_field(
             name=f'**Members ({guild.member_count:,})**',
             value='\n'.join(s_members),
@@ -265,21 +246,38 @@ class Info(commands.Cog):
         await ctx.send(embed=embed)
 
     @staticmethod
+    def by_category_v2(_guild):
+        channel_types = (discord.TextChannel, discord.VoiceChannel)
+        def key(chan):
+            if not isinstance(chan, discord.CategoryChannel):
+                return -2 + channel_types.index(type(chan))
+            return chan.position
+        top_level = sorted(filter(lambda c: not c.category, _guild.channels), key=key)
+        for ch in top_level:
+            if isinstance(ch, discord.CategoryChannel) and ch.channels:
+                yield ch, sorted(ch.channels, key=key)
+                continue
+            yield ch
+
+    @staticmethod
     def format_channels(channel):
         spacer = '\N{zwsp} _ _'
         if isinstance(channel, discord.CategoryChannel):
             return f'<:expanded:702065051036680232> **{channel.name.upper()}**'
         elif isinstance(channel, (discord.TextChannel, discord.VoiceChannel)):
-            emoji = channel_type_map[channel.__class__.__name__ + '-locked' if
-                                     channel.overwrites_for(channel.guild.default_role).read_messages 
-                                     is False else channel.__class__.__name__]
-            return f'{spacer*5} {emoji} {channel.name}'
+            suffix = ''
+            if channel.overwrites_for(channel.guild.default_role).read_messages is False:
+                suffix = '-locked'
+            if isinstance(channel, discord.TextChannel) and channel.is_nsfw():
+                suffix = '-nsfw'
+            emoji = neo.conf['emojis']['channel_indicators'][channel.__class__.__name__ + suffix]
+            return f'{spacer*5} {emoji} {discord.utils.escape_markdown(channel.name)}'
 
     @serverinfo.command()
     @commands.guild_only()
     async def channels(self, ctx, guild: int = None):
         guild = self.bot.get_guild(guild) or ctx.guild
-        final = list(map(self.format_channels, [c for c in neo.utils.formatters.flatten(guild.by_category()) if c]))
+        final = list(map(self.format_channels, neo.utils.formatters.flatten(self.by_category_v2(guild))))
         await ctx.quick_menu(neo.utils.formatters.group(final, 25), 1, clear_reactions_after=True, delete_on_button=True)
 
     @serverinfo.command()

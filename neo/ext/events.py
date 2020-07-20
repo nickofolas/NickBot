@@ -26,7 +26,7 @@ import discord
 from discord.ext import commands, tasks
 from humanize import naturaltime as nt
 
-from neo.config import conf
+import neo
 
 ignored_cmds = re.compile(r'\.+')
 
@@ -46,7 +46,7 @@ class SnipedMessage:
         return f"<SnipedMessage deleted_at={self.deleted_at!r} author={str(self.author)!r}>"
 
     def to_embed(self):
-        embed = discord.Embed(color=discord.Color.main)
+        embed = neo.Embed()
         embed.description = self.content
         embed.set_author(
             name=f"{self.author.name} - {nt(datetime.now() - self.deleted_at)}",
@@ -66,7 +66,7 @@ class Events(commands.Cog):
         if isinstance(error, (commands.CommandNotFound, commands.NotOwner)):
             return  # Ignores CommandNotFound and NotOwner because they're unnecessary
         elif isinstance(error, commands.CommandOnCooldown):
-            return await ctx.message.add_reaction(conf['emoji_suite']['alarm'])  # Handles Cooldowns uniquely
+            return await ctx.message.add_reaction(neo.conf['emojis']['alarm'])  # Handles Cooldowns uniquely
         do_emojis = True
         if settings := self.bot.user_cache.get(ctx.author.id):
             if settings.get('repr_errors'):
@@ -112,9 +112,8 @@ class Events(commands.Cog):
 
     @commands.Cog.listener()
     async def on_guild_join(self, guild):
-        embed = discord.Embed(
-            description=f'Joined guild {guild.name} [{guild.id}]',
-            color=discord.Color.main)
+        embed = neo.Embed(
+            description=f'Joined guild {guild.name} [{guild.id}]')
         embed.set_thumbnail(url=guild.icon_url_as(static_format='png'))
         embed.add_field(
             name='**Members**',  # Basic stats about the guild

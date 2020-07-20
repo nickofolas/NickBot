@@ -37,7 +37,6 @@ import neo
 from neo.utils import paginator
 from neo.utils.converters import BetterUserConverter
 from neo.utils.formatters import group, flatten
-from neo.config import _secrets
 
 imgur_media_base = URL.build(scheme='http', host='imgur.com')
 
@@ -98,7 +97,7 @@ class Util(commands.Cog):
         end = time.perf_counter()
         duration = (end - start) * 1000
         em = copy.copy(message.embeds[0])
-        em.description += f'\n<:discord:713266471945371650> **API** {duration:.3f}ms'
+        em.description += f'\n{neo["emojis"]["discordlogo"]} **API** {duration:.3f}ms'
         await asyncio.sleep(0.25)
         await message.edit(embed=em)
 
@@ -164,7 +163,7 @@ class Util(commands.Cog):
         if image is None and not ctx.message.attachments:
             raise commands.MissingRequiredArgument(Parameter(name='image', kind=Parameter.KEYWORD_ONLY))
         image = image or await ctx.message.attachments[0].read()
-        headers = {'Authorization': f"Client-ID {_secrets.imgur_id}"}
+        headers = {'Authorization': f"Client-ID {neo.secrets.imgur_id}"}
         data = {'image': image}
         async with ctx.loading(), self.bot.session.post('https://api.imgur.com/3/image',
                                                         headers=headers, data=data) as resp:
@@ -179,7 +178,7 @@ class Util(commands.Cog):
         """Shorten a link into a compact redirect"""
         resp = await self.bot.session.post('https://api.rebrandly.com/v1/links',
                                            headers={'Content-type': 'application/json',
-                                                    'apikey': _secrets.rebrandly_key},
+                                                    'apikey': neo.secrets.rebrandly_key},
                                            data=json.dumps({'destination': link}))
         if url := (await resp.json())["shortUrl"]:
             await ctx.send(f'Shortened URL: <https://{url}>')
