@@ -34,6 +34,13 @@ PendingHighlight = namedtuple('PendingHighlight', ['user', 'embed'])
 
 regex_flag = re.compile(r"--?re(gex)?")
 regex_check = re.compile(r"(?P<charmatching>(\.|\\w|\\S|\\D)(\)*)?[\*\+]|\[(a-z)?(A-­Z)?(0-9)?(_)?])|(?P<or>(\|.*){5})")
+emoji_re = re.compile(r"<a?:[a-zA-Z0-9]*:(?P<id>\d*)>", re.I)
+
+
+def clean_emojis(content, bot):
+    for e_id, match in ((match.groupdict()['id'], match) for match in emoji_re.finditer(content)):
+        content = content.replace(match.group(0), str(bot.get_emoji(int(e_id)) or ':question:'))
+    return content
 
 
 class Highlight:
@@ -71,14 +78,14 @@ class Highlight:
         return all(predicates)
 
     @staticmethod
-    async def to_embed(match, message):
+    async def to_embed(match, message, bot):
         context_list = []
         async for m in message.channel.history(limit=5):
             avatar_index = m.author.default_avatar.value
             hl_underline = m.content.replace(match, f'**__{match}__**') if m.id == message.id else m.content
             repl = r'<a?:\w*:\d*>'
             content = f"{neo.conf['emojis']['default_avs'][avatar_index]} **{m.author.name}:** " \
-                      f"{re.sub(repl, ':question:', hl_underline)}"
+                      f"{clean_emojis(hl_underline, bot)}"
             if m.embeds:
                 content += ' <:neoembed:728240626239406141>'
             if m.attachments:
@@ -117,7 +124,9 @@ class HlMon(commands.Cog):
             if match is None or hl.check_can_send(msg, self.bot) is False:
                 continue
             if len(self.queue) < 40 and self.queue.count(hl.user_id) < 5:
-                self.queue.append(PendingHighlight(self.bot.get_user(hl.user_id), (await hl.to_embed(match, msg))))
+                self.queue.append(PendingHighlight(
+                    self.bot.get_user(hl.user_id),
+                    (await hl.to_embed(match, msg, self.bot))))
 
     @commands.Cog.listener(name='on_message')
     async def update_recents(self, msg):

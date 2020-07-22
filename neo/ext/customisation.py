@@ -163,7 +163,7 @@ class Customisation(commands.Cog):
             index, hl = valtup
             kw_full = hl.kw[:175] + ' ...' if len(hl.kw) > 175 else hl.kw
             if hl.is_regex:
-                return f"`{index}` <:regex:718943797915943054> `{kw_full}`"
+                return f"`{index}` <:regex:735370786294202480> `{kw_full}`"
             return f"`{index}` `{kw_full}`"
         my_hl = list(filter(lambda hl: hl.user_id == ctx.author.id, self.bot.get_cog('HlMon').cache))
         await ctx.send(embed=neo.Embed(

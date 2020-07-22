@@ -40,6 +40,34 @@ class Codeblock:
         return f"<Codeblock content={self.content!r} lang={self.lang!r} cb_safe={self.cb_safe}>"
 
 
+class Loading:
+    def __init__(self, ctx, *, prop=True, tick=True, exc_ignore=None):
+        self.ctx = ctx
+        self.prop = prop
+        self.tick = tick
+        self.exc_ignore = exc_ignore
+        self.can_react = True
+
+    async def __aenter__(self):
+        try:
+            await self.ctx.message.add_reaction(neo.conf['emojis']['loading'])
+        except (discord.Forbidden, discord.HTTPException) as e:
+            if e.code == 90001:
+                self.can_react = False
+        return self
+
+    async def __aexit__(self, exc_type, exc, tb):
+        await self.ctx.message.remove_reaction(neo.conf['emojis']['loading'], self.ctx.me)
+        if self.exc_ignore and isinstance(exc_type, self.exc_ignore):
+            pass
+        elif self.prop and exc is not None:
+            self.ctx.bot.dispatch('command_error', self, exc)
+            return
+        if self.can_react is True:
+            if self.tick:
+                await self.ctx.message.add_reaction(self.ctx.tick(True))
+
+
 class Context(commands.Context):
 
     def __init__(self, **kwargs):
@@ -115,26 +143,8 @@ class Context(commands.Context):
         menu = pages.CSMenu(source, **kwargs)
         await menu.start(self)
 
-    @contextlib.asynccontextmanager
-    async def loading(self, *, prop=True, tick=True, exc_ignore=None):
-        clear_reacts = self.message.remove_reaction(neo.conf['emojis']['loading'], self.me)
-        tasks = [clear_reacts]
-        try:
-            yield await self.message.add_reaction(neo.conf['emojis']['loading'])
-        except Exception as e:
-            if exc_ignore and isinstance(e, exc_ignore):
-                pass
-            elif isinstance(e, (discord.Forbidden, discord.HTTPException)):
-                yield False
-                return
-            else:
-                if prop:
-                    self.bot.dispatch('command_error', self, e)
-        else:
-            tasks.append(self.message.add_reaction(self.tick(True))) if tick else None
-        finally:
-            with suppress(discord.NotFound):
-                await asyncio.gather(*tasks)
+    def loading(self, **kwargs):
+        return Loading(self, **kwargs)
 
     async def propagate_error(self, error, do_emojis=True):
         if do_emojis is False:

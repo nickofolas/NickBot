@@ -97,7 +97,7 @@ class Util(commands.Cog):
         end = time.perf_counter()
         duration = (end - start) * 1000
         em = copy.copy(message.embeds[0])
-        em.description += f'\n{neo["emojis"]["discordlogo"]} **API** {duration:.3f}ms'
+        em.description += f'\n{neo.conf["emojis"]["discordlogo"]} **API** {duration:.3f}ms'
         await asyncio.sleep(0.25)
         await message.edit(embed=em)
 

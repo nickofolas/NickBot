@@ -68,6 +68,8 @@ class Events(commands.Cog):
         elif isinstance(error, commands.CommandOnCooldown):
             return await ctx.message.add_reaction(neo.conf['emojis']['alarm'])  # Handles Cooldowns uniquely
         do_emojis = True
+        if hasattr(error, 'original'):
+            error = error.original
         if settings := self.bot.user_cache.get(ctx.author.id):
             if settings.get('repr_errors'):
                 error = repr(error)
