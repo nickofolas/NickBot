@@ -286,6 +286,27 @@ class Info(commands.Cog):
         """Returns a list of all roles in the guild"""
         await ctx.quick_menu(list(reversed([r.mention for r in ctx.guild.roles[1:]])), 20, delete_message_after=True)
 
+    @commands.command(name='resolve')
+    async def _resolve_invite(self, ctx, *, guild_invite):
+        """Resolves information from a guild invite code/URL"""
+        async with ctx.loading():
+            guild = (invite := await self.bot.fetch_invite(guild_invite)).guild
+        features_pprint = ', '.join(
+            map(neo.utils.formatters.prettify_text, guild.features or ['None'])).title().replace('Url', 'URL')
+        online = invite.approximate_presence_count
+        total = invite.approximate_member_count
+        desc = f"**{online:,} ({online/total * 100:.0f}%) of {total:,} members online**"
+        if guild.description:
+            desc += f"\n{textwrap.fill(guild.description, width=45)}"
+        embed = neo.Embed(description=desc, title=guild.name)
+        embed.set_thumbnail(url=guild.icon_url_as(static_format='png'))
+        embed.set_footer(text=f'Created {humanize.naturaltime(guild.created_at)} | ID: {guild.id}')
+        other_ = f'**Verification Level** {str(guild.verification_level).title()}'
+        other_ += f"\n**Features** {textwrap.fill(features_pprint, width=45)}"
+        other_ += f"\n**Invite URL** {invite}"
+        embed.add_field(name='Info', value=other_)
+        await ctx.send(embed=embed)
+
 
 def setup(bot):
     bot.add_cog(Info(bot))

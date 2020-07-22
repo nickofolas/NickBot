@@ -32,9 +32,10 @@ __all__ = ['CSMenu', 'BareBonesMenu', 'PagedEmbedMenu']
 class CSMenu(menus.MenuPages, inherit_buttons=False):
     """Subclass of menus.MenuPages to customise emojis and behaviour"""
 
-    def __init__(self, source, *, delete_on_button = False, **kwargs):
+    def __init__(self, source, *, delete_on_button = False, footer_extra: str = None, **kwargs):
         self.delete_on_button = delete_on_button
         self.closed_via_button = False
+        self.footer_extra = footer_extra
         super().__init__(source, **kwargs)
 
     def should_add_reactions(self):
@@ -50,7 +51,7 @@ class CSMenu(menus.MenuPages, inherit_buttons=False):
         max_pages = self._source.get_max_pages()
         if max_pages is None:
             return True
-        return max_pages == 1
+        return max_pages <= 1
 
     def reaction_check(self, payload):
         """Just extends the default reaction_check to use owner_ids"""
@@ -67,9 +68,15 @@ class CSMenu(menus.MenuPages, inherit_buttons=False):
         elif isinstance(value, str):
             return {'content': f'{value}\nPage {self.current_page + 1}/{self._source.get_max_pages()}', 'embed': None}
         elif isinstance(value, discord.Embed):
+            text = f'Page {self.current_page + 1}/{self._source.get_max_pages()}' if \
+                self._source.get_max_pages() > 1 else ''
+            if self.footer_extra:
+                if not text:
+                    text = self.footer_extra
+                else:
+                    text += f' | {self.footer_extra}'
             return {'embed': value.set_footer(
-                text=f'Page {self.current_page + 1}/{self._source.get_max_pages()}' if
-                self._source.get_max_pages() > 1 else ''),
+                text=text),
                     'content': None}
 
     async def finalize(self):

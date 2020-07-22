@@ -101,25 +101,13 @@ async def format_exception(ctx, error):
                          clear_reactions_after=True, timeout=300)
 
 
-def bar_make(
-        value: int, gap: int, *,
-        fill: str = '█', empty: str = ' ',
-        point: bool = False, length: int = 10):
+def bar_make(value, gap, *, length=10, point=False, fill='█', empty=' '):
     bar = ''
-
-    percentage = (value/gap) * length
-
-    if point:
-        for i in range(0, length + 1):
-            if i == round(percentage):
-                bar += fill
-            else:
-                bar += empty
-        return bar
-
-    for i in range(1, length + 1):
-        if i <= percentage:
-            bar += fill
-        else:
-            bar += empty
+    scaled_value = (value / gap) * length
+    for i in range(1, (length + 1)):
+        check = ((i == round(scaled_value)) if point else (i <= scaled_value))
+        bar += (fill if check else empty)
+    if point and (bar.count(fill) == 0):
+        bar = fill + bar[1:]
     return bar
+

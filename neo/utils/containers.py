@@ -29,6 +29,8 @@ class TimedSet(set):
         self.loop = loop or asyncio.get_event_loop()
         self.running = {}
         super().__init__(*args, **kwargs)
+        for item in self:
+            self.add(item)
 
     def add(self, item):
         with suppress(KeyError):

@@ -143,6 +143,7 @@ class Events(commands.Cog):
                 self.bot.get_command('ui'),
                 self.bot.get_command('av'),
                 self.bot.get_command('em'))]
+            commands.is_nsfw()(self.bot.get_command('g img'))
 
     @commands.Cog.listener()
     async def on_guild_remove(self, guild):

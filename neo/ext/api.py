@@ -101,6 +101,7 @@ class Api(commands.Cog):
                 if key.lower().startswith(('doc', 'issu')):
                     found[key] = value
         deps = len(info.get('requires_dist') or [])
+        py_required = discord.utils.escape_markdown(info.get('requires_python') or 'Not specified')
         embed = neo.Embed().set_thumbnail(url='https://i.imgur.com/UWgCSMs.png')
         embed.description = textwrap.fill(info.get('summary', ''), width=40)
         embed.title = f"{info.get('name')} {info['version']}"
@@ -108,7 +109,7 @@ class Api(commands.Cog):
         embed.add_field(
             name='_ _', 
             value=f"⚖️  {info.get('license') or 'No license'}\n"
-                  f"<:python:596577462335307777> {info.get('requires_python') or 'Not specified'}\n"
+                  f"<:python:596577462335307777> {py_required}\n"
                   f"<:pypideps:729920158193287208> {deps} dependenc{'y' if deps == 1 else 'ies'}")
         embed.set_footer(text=info.get('author'))
         await ctx.send(embed=embed)
@@ -144,22 +145,29 @@ class Api(commands.Cog):
         menu = CSMenu(source, delete_on_button=True, clear_reactions_after=True)
         await menu.start(ctx)
 
-    @google.command(aliases=['img', 'i'])
-    @commands.is_nsfw()
-    async def image(self, ctx, *, query: str):
+
+    @flags.add_flag('-ss', '--safesearch', action='store_true')
+    @flags.add_flag('query', nargs='*')
+    @google.command(aliases=['img', 'i'], cls=flags.FlagCommand)
+    async def image(self, ctx, **flags):
         """
         Search Google Images for the query
         """
+        safesearch = True
+        if ctx.channel.nsfw:
+            safesearch = flags['safesearch']
         embeds = list()
         async with ctx.loading(tick=False):
             keys = neo.secrets.gimage_keys
             cli = cse.Search(keys, session=self.bot.session)
-            res = await cli.search(query, image_search=True)
+            res = await cli.search(' '.join(flags['query']), image_search=True,
+                                   safesearch=safesearch)
             embeds = build_google_embeds(res)
         if not embeds:
             return
         source = PagedEmbedMenu(embeds)
-        menu = CSMenu(source, delete_on_button=True, clear_reactions_after=True)
+        menu = CSMenu(source, delete_on_button=True,
+                      footer_extra=f'Safesearch: {safesearch}', clear_reactions_after=True)
         await menu.start(ctx)
 
     @commands.group(aliases=['fn'], invoke_without_command=True)
