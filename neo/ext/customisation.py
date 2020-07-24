@@ -140,7 +140,7 @@ class Customisation(commands.Cog):
 
     @_prefix.command(name='add', aliases=['remove'])
     @is_owner_or_administrator()
-    async def _modify_guild_prefixes(self, ctx, *, prefix):
+    async def _modify_guild_prefixes(self, ctx, prefix):
         """Use `add`|`remove` aliases respectively to edit the list of guild prefixes."""
         current_prefixes = set(self.bot.guild_cache[ctx.guild.id]['prefixes'])
         strategy_map = {'add': current_prefixes.add, 'remove': current_prefixes.discard}

@@ -41,32 +41,35 @@ class Codeblock:
 
 
 class Loading:
-    def __init__(self, ctx, *, prop=True, tick=True, exc_ignore=None):
-        self.ctx = ctx
+    def __init__(self, context, *, prop=True, tick=True, exc_ignore=None):
+        self._ctx = context
         self.prop = prop
         self.tick = tick
         self.exc_ignore = exc_ignore
         self.can_react = True
 
+    async def finalise(self):
+        if self.can_react is True:
+            if self.tick:
+                await self._ctx.message.add_reaction(self._ctx.tick(True))
+
     async def __aenter__(self):
         try:
-            await self.ctx.message.add_reaction(neo.conf['emojis']['loading'])
+            await self._ctx.message.add_reaction(neo.conf['emojis']['loading'])
         except (discord.Forbidden, discord.HTTPException) as e:
             if e.code == 90001:
                 self.can_react = False
         return self
 
     async def __aexit__(self, exc_type, exc, tb):
-        await self.ctx.message.remove_reaction(neo.conf['emojis']['loading'], self.ctx.me)
-        if self.exc_ignore and isinstance(exc_type, self.exc_ignore):
-            pass
-        elif self.prop and exc is not None:
-            self.ctx.bot.dispatch('command_error', self, exc)
-            return
-        if self.can_react is True:
-            if self.tick:
-                await self.ctx.message.add_reaction(self.ctx.tick(True))
-
+        await self._ctx.message.remove_reaction(neo.conf['emojis']['loading'], self._ctx.me)
+        if self.exc_ignore and isinstance(exc, self.exc_ignore):
+            await self.finalise()
+            return True
+        if self.prop and exc is not None:
+            self._ctx.bot.dispatch('command_error', self._ctx, exc)
+            return True
+        await self.finalise()
 
 class Context(commands.Context):
 

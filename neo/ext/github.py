@@ -134,12 +134,12 @@ class Github(commands.Cog):
             fone_txt = str()
             fone_txt += f'**Owner** {repo.owner.name}\n'
             fone_txt += f'**Language** {repo.language}\n'
-            fone_txt += f'**Forks** {repo.forks}\n'
+            fone_txt += f'**Forks** {repo.forks:,}\n'
             fone_txt += f"**Pushed** {nt(push_delta)}"
             ftwo_txt = str()
             ftwo_txt += f'{gh_emojis["license"]} {repo.license_id}\n'
-            ftwo_txt += f'{gh_emojis["star"]} {repo.gazers}\n'
-            ftwo_txt += f'{gh_emojis["watcher"]}  {repo.watchers}\n'
+            ftwo_txt += f'{gh_emojis["star"]} {repo.gazers:,}\n'
+            ftwo_txt += f'{gh_emojis["watcher"]}  {repo.watchers:,}\n'
             ftwo_txt += f"{gh_emojis['commit']} {await get_repo_commit_count(session=ctx.bot.session, url=(repo_url + '/commits'))}"
             embed.add_field(name='Info', value=fone_txt)
             embed.add_field(name='_ _', value=ftwo_txt) 

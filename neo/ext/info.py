@@ -301,9 +301,9 @@ class Info(commands.Cog):
         embed = neo.Embed(description=desc, title=guild.name)
         embed.set_thumbnail(url=guild.icon_url_as(static_format='png'))
         embed.set_footer(text=f'Created {humanize.naturaltime(guild.created_at)} | ID: {guild.id}')
-        other_ = f'**Verification Level** {str(guild.verification_level).title()}'
-        other_ += f"\n**Features** {textwrap.fill(features_pprint, width=45)}"
-        other_ += f"\n**Invite URL** {invite}"
+        other_ = f"**Invite URL** {invite}"
+        other_ += f'\n**Verification Level** {str(guild.verification_level).title()}'
+        other_ += f"\n**Features** {textwrap.fill(features_pprint, width=45)}" 
         embed.add_field(name='Info', value=other_)
         await ctx.send(embed=embed)
 

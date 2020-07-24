@@ -36,6 +36,7 @@ class CSMenu(menus.MenuPages, inherit_buttons=False):
         self.delete_on_button = delete_on_button
         self.closed_via_button = False
         self.footer_extra = footer_extra
+        self.is_searching = False
         super().__init__(source, **kwargs)
 
     def should_add_reactions(self):
@@ -79,6 +80,11 @@ class CSMenu(menus.MenuPages, inherit_buttons=False):
                 text=text),
                     'content': None}
 
+    async def update(self, payload):
+        if self.is_searching:
+            return
+        await super().update(payload)
+
     async def finalize(self):
         if self.closed_via_button is True and self.delete_on_button is True:
             await self.message.delete()
@@ -109,16 +115,20 @@ class CSMenu(menus.MenuPages, inherit_buttons=False):
 
     @menus.button(neo.conf['emojis']['menus']['search'], position=menus.First(2), skip_if=_skip_double_triangle_buttons)
     async def number_page(self, payload):
+        self.is_searching = True
         prompt = await self.ctx.send('Enter the number of the page you would like to go to')
         try:
             msg = await self.bot.wait_for('message', check=lambda m: m.author.id == self._author_id, timeout=10.0)
-            ind = int(msg.content)
-            await self.show_checked_page(ind - 1)
             with contextlib.suppress(Exception):
-                await prompt.delete()
+                ind = int(msg.content)
+                await self.show_checked_page(ind - 1)
                 await msg.delete()
         except asyncio.TimeoutError:
             pass
+        finally:
+            with contextlib.suppress(Exception):
+                await prompt.delete()
+            self.is_searching = False
 
     @menus.button(neo.conf['emojis']['x_button'], position=menus.First(1))
     async def stop_pages(self, payload):

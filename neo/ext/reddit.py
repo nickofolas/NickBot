@@ -159,7 +159,6 @@ class Redditor:
         for trophy in self.tdata.get('trophies'):
             yield trophy['data'].get('name')
 
-    @property
     def is_cakeday(self):
         return datetime.utcfromtimestamp(self.created).day == datetime.utcnow().day
 
@@ -181,7 +180,6 @@ def allow_nsfw_in_channel(channel):
         return True
 
 
-# noinspection PyMethodParameters,PyUnresolvedReferences
 class Reddit(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
@@ -224,7 +222,7 @@ class Reddit(commands.Cog):
         embed.set_author(
             name=user.subreddit.prefixed,
             url=user.subreddit.full_url,
-            icon_url='https://i.imgur.com/6OedixC.png' if user.is_cakeday else '')
+            icon_url='https://i.imgur.com/6OedixC.png' if user.is_cakeday() else '')
         embed.set_thumbnail(url=user.icon_url.split('?', 1)[0])
         embed.add_field(
             name=f'{reddit_emojis["karma"]} Karma',
