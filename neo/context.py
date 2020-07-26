@@ -36,8 +36,8 @@ class Codeblock:
     def __str__(self):
         return f"```{self.lang}\n{self.content}\n```"
 
-    def __repr__(self):
-        return f"<Codeblock content={self.content!r} lang={self.lang!r} cb_safe={self.cb_safe}>"
+    def __repr__(self): # That format is a bit nicer
+        return "<Codeblock content={0.content!r} lang={0.lang!r} cb_safe={0.cb_safe}>".format(self)
 
 
 class Loading:
@@ -71,11 +71,9 @@ class Loading:
             return True
         await self.finalise()
 
+
 class Context(commands.Context):
-
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-
+    # Deleted useless init, I guess
     async def prompt(self, message):
         emojis = {
             neo.conf['emojis']['check_button']: True,
@@ -119,9 +117,9 @@ class Context(commands.Context):
             None: neo.conf['emojis']['neutral_button'],
         }
         emoji = lookup.get(opt, neo.conf['emojis']['x_button'])
-        if label is not None:
-            return f'{emoji}: {label}'
-        return emoji
+        if label is None: # Negating the condition when handling both cases
+            return emoji
+        return f'{emoji}: {label}'
 
     @staticmethod
     def toggle(opt):
@@ -161,9 +159,7 @@ class Context(commands.Context):
                     and u.id in [self.author.id, *self.bot.owner_ids], timeout=30.0
                 )
             except asyncio.TimeoutError:
-                await self.message.remove_reaction(
-                    neo.conf['emojis']['warning_button'], self.me)
-                return
+                return await self.message.remove_reaction(neo.conf['emojis']['warning_button'], self.me)
             if str(reaction.emoji) == neo.conf['emojis']['warning_button']:
                 return await self.send(error)
 

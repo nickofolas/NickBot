@@ -112,9 +112,10 @@ class NeoBot(commands.Bot):
             'guild_io': self.get_channel(710331034922647613)
         }
 
-    async def close(self):
-        [task.cancel() for task in all_tasks(loop=self.loop)]
-        await self.session.close()
-        await self.conn.close()
+    async def close(self): # wrapping all of them into a try except to let it die in peace
+        with suppress(Exception):
+            [task.cancel() for task in all_tasks(loop=self.loop)]
+            await self.session.close()
+            await self.conn.close()
         await super().close()
 
