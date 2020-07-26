@@ -35,7 +35,7 @@ from neo.utils.paginator import PagedEmbedMenu, CSMenu
 
 
 def filter_posts(obj):
-    checks = list()
+    checks = [] 
     if p := obj.get('preview'):
         if p2 := p.get('reddit_video_preview'):
             checks.append(p2.get('is_gif') is False)
@@ -61,12 +61,9 @@ async def do_translation(ctx, content, dest='en'):
 
 
 def build_google_embeds(results, show_images=True):
-    embeds = list()
+    embeds = []  # faster
     for r in results:
-        embed = neo.Embed()
-        embed.title = r.title
-        embed.description = r.description
-        embed.url = r.url
+        embed = neo.Embed(title=r.title, description=r.description, url=r.url)  # use the constructor
         if show_images and r.image_url:
             embed.set_image(url=r.image_url)
         embeds.append(embed)
@@ -133,7 +130,7 @@ class Api(commands.Cog):
         """
         Search Google for the query
         """
-        embeds = list()
+        embeds = []
         async with ctx.loading(tick=False):
             keys = neo.secrets.gsearch_keys
             cli = cse.Search(keys, session=self.bot.session)
@@ -156,7 +153,7 @@ class Api(commands.Cog):
         safesearch = True
         if ctx.channel.nsfw:
             safesearch = flags['safesearch']
-        embeds = list()
+        embeds = [] 
         async with ctx.loading(tick=False):
             keys = neo.secrets.gimage_keys
             cli = cse.Search(keys, session=self.bot.session)
