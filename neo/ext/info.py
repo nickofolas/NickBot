@@ -275,10 +275,15 @@ class Info(commands.Cog):
 
     @serverinfo.command()
     @commands.guild_only()
-    async def channels(self, ctx, guild: int = None):
-        guild = self.bot.get_guild(guild) or ctx.guild
-        final = list(map(self.format_channels, neo.utils.formatters.flatten(self.by_category_v2(guild))))
-        await ctx.quick_menu(neo.utils.formatters.group(final, 25), 1, clear_reactions_after=True, delete_on_button=True)
+    async def channels(self, ctx):
+        """Lists out the guild's channels in an order that mirrors that of the Discord UI"""
+        final = list(map(
+            self.format_channels,
+            neo.utils.formatters.flatten(self.by_category_v2(ctx.guild))))
+        await ctx.quick_menu(
+            neo.utils.formatters.group(final, 25),
+            1, clear_reactions_after=True,
+            delete_on_button=True)
 
     @serverinfo.command()
     @commands.guild_only()
@@ -291,21 +296,21 @@ class Info(commands.Cog):
         """Resolves information from a guild invite code/URL"""
         async with ctx.loading():
             guild = (invite := await self.bot.fetch_invite(guild_invite)).guild
-        features_pprint = ', '.join(
-            map(neo.utils.formatters.prettify_text, guild.features or ['None'])).title().replace('Url', 'URL')
-        online = invite.approximate_presence_count
-        total = invite.approximate_member_count
-        desc = f"**{online:,} ({online/total * 100:.0f}%) of {total:,} members online**"
-        if guild.description:
-            desc += f"\n{textwrap.fill(guild.description, width=45)}"
-        embed = neo.Embed(description=desc, title=guild.name)
-        embed.set_thumbnail(url=guild.icon_url_as(static_format='png'))
-        embed.set_footer(text=f'Created {humanize.naturaltime(guild.created_at)} | ID: {guild.id}')
-        other_ = f"**Invite URL** {invite}"
-        other_ += f'\n**Verification Level** {str(guild.verification_level).title()}'
-        other_ += f"\n**Features** {textwrap.fill(features_pprint, width=45)}" 
-        embed.add_field(name='Info', value=other_)
-        await ctx.send(embed=embed)
+            features_pprint = ', '.join(
+                map(neo.utils.formatters.prettify_text, guild.features or ['None'])).title().replace('Url', 'URL')
+            online = invite.approximate_presence_count
+            total = invite.approximate_member_count
+            desc = f"**{online:,} ({online/total * 100:.0f}%) of {total:,} members online**"
+            if guild.description:
+                desc += f"\n{textwrap.fill(guild.description, width=45)}"
+            embed = neo.Embed(description=desc, title=guild.name)
+            embed.set_thumbnail(url=guild.icon_url_as(static_format='png'))
+            embed.set_footer(text=f'Created {humanize.naturaltime(guild.created_at)} | ID: {guild.id}')
+            other_ = f"**Invite URL** {invite}"
+            other_ += f'\n**Verification Level** {str(guild.verification_level).title()}'
+            other_ += f"\n**Features** {textwrap.fill(features_pprint, width=45)}" 
+            embed.add_field(name='Info', value=other_)
+            await ctx.send(embed=embed)
 
 
 def setup(bot):

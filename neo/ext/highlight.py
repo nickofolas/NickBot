@@ -33,10 +33,24 @@ MAX_HIGHLIGHTS = 10
 PendingHighlight = namedtuple('PendingHighlight', ['user', 'embed'])
 
 regex_flag = re.compile(r"--?re(gex)?")
-regex_check = re.compile(r"(?P<charmatching>(\.|\\w|\\S|\\D)(\)*)?[\*\+]|\[(a-z)?(A-­Z)?(0-9)?(_)?])|(?P<or>(\|.*){5})")
+excessive_or = re.compile(r"(?<!\\)\|")
+excessive_escapes = re.compile(r"(?<!\\)\\s|\\d|\\w", re.I)
+regex_check = re.compile(r"""(?P<uncontrolled>[\*\+])|
+                             (?<!\\)\{\d*(\,\s?\d*)?\}|
+                             (?<!\\)\.""", re.I | re.X)
 emoji_re = re.compile(r"<a?:[a-zA-Z0-9]*:(?P<id>\d*)>", re.I)
 
 
+def check_regex(content):
+    if (match := regex_check.search(content)):
+        d = regex_check.search(content).groupdict()
+        if d.get('uncontrolled'):
+            raise ValueError(f'Uncontrolled repetition match found (`{match.group(0)}`)')
+        else:
+            raise ValueError(f'Found disallowed pattern in `{match.group(0)}`')
+    if (f := [*filter(lambda pat: len(pat.findall(content)) > 5, (excessive_or, excessive_escapes))]):
+        raise ValueError(f'Excessive escapes/`|` chars ({[*map(lambda p: p.findall(content), f)]})')
+    
 def clean_emojis(content, bot):
     for e_id, match in ((match.groupdict()['id'], match) for match in emoji_re.finditer(content)):
         content = content.replace(match.group(0), str(bot.get_emoji(int(e_id)) or ':question:'))
@@ -163,11 +177,6 @@ def index_check(command_input):
     return True
 
 
-def check_regex(kw):
-    if s := regex_check.search(kw):
-        d = s.groupdict()
-        raise commands.CommandError(f"Disallowed regex character(s) {set(i for i in d.values() if i)}")
-
 def guild_or_user(bot, snowflake_id):
     return f'**User** {bot.get_user(snowflake_id)}' if bot.get_user(snowflake_id) else f'**Guild** {bot.get_guild(snowflake_id)}'
 
@@ -183,6 +192,10 @@ class HighlightCommands(commands.Cog):
         """
         Add a new highlight! When a highlighted word is used, you'll get notified!
         If the --regex flag is passed, the highlight will be compiled as a regex
+        __Regex highlights__ have some character restrictions to prevent abuse:
+        - No more than 5 unescaped `|` or `\s`, `\d`, or `\w` (case insensitive)
+        - Unescaped use of the `.` catch-all character is disallowed
+        - Unescaped use of `{n}`, `{n,m}`, `*`, or `+` to match multiple characters is disallowed
         """
         highlight_words = regex_flag.sub('', re.sub(fr"{ctx.prefix}h(igh)?l(ight)? add", '', ctx.message.content)).strip()
         with_regex = bool(regex_flag.search(ctx.message.content))
