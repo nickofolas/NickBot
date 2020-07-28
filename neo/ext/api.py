@@ -63,7 +63,7 @@ async def do_translation(ctx, content, dest='en'):
 def build_google_embeds(results, show_images=True):
     embeds = []  # faster
     for r in results:
-        embed = neo.Embed(title=r.title, description=r.description, url=r.url)  # use the constructor
+        embed = neo.Embed(title=r.title, description=r.description, url=r.url)
         if show_images and r.image_url:
             embed.set_image(url=r.image_url)
         embeds.append(embed)

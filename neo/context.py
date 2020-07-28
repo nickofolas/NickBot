@@ -73,7 +73,6 @@ class Loading:
 
 
 class Context(commands.Context):
-    # Deleted useless init, I guess
     async def prompt(self, message):
         emojis = {
             neo.conf['emojis']['check_button']: True,

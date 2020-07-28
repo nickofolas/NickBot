@@ -43,7 +43,7 @@ async def get_prefix(bot, message):
     await bot.wait_until_ready()
     prefix = ['n/']
     if message.guild:
-        with suppress(KeyError):
+        with suppress(KeyError):  # Not sure why this *would* happen but I guess it could
             prefix = list({*bot.guild_cache[message.guild.id]['prefixes']})
     return commands.when_mentioned_or(*prefix)(bot, message)
 

@@ -40,7 +40,7 @@ dt_re = re.compile(r"""((?P<years>[0-9])\s?(?:years?|y))?
                         ((?P<days>[0-9]{1,5})\s?(?:days?|d))?
                         ((?P<hours>[0-9]{1,5})\s?(?:hours?|h))?
                         ((?P<minutes>[0-9]{1,5})\s?(?:minutes?|m))?
-                        ((?P<seconds>[0-9]{1,5})\s?(?:seconds?|s))?""", re.X | re.I)
+                        ((?P<seconds>[0-9]{1,5})\s?(?:seconds?|s))?""", re.X)
 
 class BoolConverter(commands.Converter):
     async def convert(self, ctx, argument):

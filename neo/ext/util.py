@@ -180,8 +180,10 @@ class Util(commands.Cog):
                                            headers={'Content-type': 'application/json',
                                                     'apikey': neo.secrets.rebrandly_key},
                                            data=json.dumps({'destination': link}))
-        if url := (await resp.json())["shortUrl"]:
+        if url := (await resp.json()).get("shortUrl"):
             await ctx.send(f'Shortened URL: <https://{url}>')
+        else:
+            raise commands.CommandError('Couldn\'t shorten your link')
 
     @commands.command(name='ocr')
     @commands.max_concurrency(1, commands.BucketType.channel)

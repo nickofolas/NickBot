@@ -115,7 +115,7 @@ class Github(commands.Cog):
                                   f'Updated {nt(datetime.utcnow() - user.updated)}')
             await ctx.send(embed=embed)
 
-    @commands.command(name='repo')
+    @commands.command(name='repo', usage='<repo owner>/<repo name>')
     async def git_repo(ctx, *, repo: GitHubConverter):
         """Fetch data on a github repository
         MUST be a public repository"""

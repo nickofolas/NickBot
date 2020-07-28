@@ -35,7 +35,8 @@ from discord.ext import commands, flags
 from tabulate import tabulate
 
 import neo
-from neo.utils.formatters import pluralize, group, clean_bytes, format_exception, wrap_code
+from neo.utils.eval_backend import NeoEval, clear_intersection, format_exception
+from neo.utils.formatters import pluralize, group, clean_bytes
 from neo.utils.converters import CBStripConverter, BoolConverter
 
 status_dict = {
@@ -78,15 +79,6 @@ async def copy_ctx(
     return new_ctx
 
 
-async def get_results(func, *args, **kwargs):
-    if inspect.isasyncgenfunction(func):
-        async for result in func(*args, **kwargs):
-            yield result
-    else:
-        yield await func(*args, **kwargs) or ''
-
-
-# noinspection PyBroadException
 class Dev(commands.Cog):
     """Commands made to assist with bot development"""
 
@@ -125,16 +117,15 @@ class Dev(commands.Cog):
             'message': ctx.message,
             '_': self._last_result
         }
+        clear_intersection(globals(), self.scope)
         env.update(**globals(), **self.scope)
         stdout = io.StringIO()
         to_return = None
-        final_results = list()
+        final_results = []
         async with ctx.loading():
             try:
-                import_expression.exec(compile(wrap_code(body), "<eval>", "exec"), env)
-                _aexec = env['func']
                 with redirect_stdout(stdout):
-                    async for res in get_results(_aexec, self.scope):
+                    async for res in NeoEval(code=body, context=env, scope=self.scope):
                         if res is None:
                             continue
                         self._last_result = res
@@ -142,11 +133,10 @@ class Dev(commands.Cog):
                             res = repr(res)
                         final_results.append(res)
             except Exception as e:
-                await format_exception(ctx, e)
-                return
+                to_return = format_exception(e)
             else:
                 value = stdout.getvalue() or '' 
-                to_return = f'{value}' + '\n'.join(final_results)
+                to_return = value + '\n'.join(final_results)
         if to_return:
             pages = group(to_return, 1500)
             pages = [str(ctx.codeblock(content=page, lang='py')) for page in pages]

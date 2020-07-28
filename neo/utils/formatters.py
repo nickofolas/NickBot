@@ -66,41 +66,6 @@ def clean_bytes(line):
     return re.sub(r'\x1b[^m]*m', '', text).replace("``", "`\u200b`").strip('\n')
 
 
-def insert_yield(body):
-    if not isinstance(body[-1], ast.Expr):
-        return
-    if not isinstance(body[-1].value, ast.Yield):
-        yield_st = ast.Yield(body[-1].value)
-        ast.copy_location(yield_st, body[-1])
-        yield_expr = ast.Expr(yield_st)
-        ast.copy_location(yield_expr, body[-1])
-        body[-1] = yield_expr
-
-code_base = 'async def func(scope, should_retain=True):' \
-            '\n  try:' \
-            '\n    pass' \
-            '\n  finally:' \
-            '\n    scope.update(locals())' 
-
-def wrap_code(code_input):
-    code_in = import_expression.parse(code_input)
-    base = import_expression.parse(code_base)
-    try_block = base.body[-1].body[-1].body
-    try_block.extend(code_in.body)
-    ast.fix_missing_locations(base)
-    insert_yield(try_block)
-    return base
-
-
-async def format_exception(ctx, error):
-    fmtd_exc = ''.join(traceback.format_exception(type(error), error, error.__traceback__))
-    formatted = ''.join(re.sub(r'File ".+",', 'File "<eval>"', fmtd_exc))
-    pages = group(formatted, 1500)
-    cb_pages = [str(ctx.codeblock(content=page, lang='py')) for page in pages]
-    await ctx.quick_menu(cb_pages, 1, delete_on_button=True,
-                         clear_reactions_after=True, timeout=300)
-
-
 def bar_make(value, gap, *, length=10, point=False, fill='█', empty=' '):
     bar = ''
     scaled_value = (value / gap) * length
