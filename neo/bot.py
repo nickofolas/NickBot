@@ -56,7 +56,7 @@ class NeoBot(commands.Bot):
                          allowed_mentions=discord.AllowedMentions(everyone=False, users=False, roles=False))
         self.snipes = {}
         self.loop.create_task(self.ainit())
-        self._cd = commands.CooldownMapping.from_cooldown(1.0, 2.5, commands.BucketType.user)
+        self._cd = commands.CooldownMapping.from_cooldown(2.0, 2.5, commands.BucketType.user)
         self.add_check(self.global_cooldown)
         self.before_invoke(self.before)
 

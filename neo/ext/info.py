@@ -26,6 +26,7 @@ from collections import Counter, namedtuple
 import discord
 import humanize
 from discord.ext import commands
+from dateutil.relativedelta import relativedelta
 
 import neo
 import neo.utils.formatters
@@ -197,11 +198,11 @@ class Info(commands.Cog):
             bar_len = 5 if ctx.author.is_on_mobile() else 25
             bar = neo.utils.formatters.bar_make(
                 val.seconds, ac.duration.seconds, fill='◉', empty='─', point=True, length=bar_len)
-            fields = [{'name': '**Song Title**',
+            fields = [{'name': '**Title**',
                 'value': f'[{discord.utils.escape_markdown(ac.title)}](https://open.spotify.com/track/{ac.track_id})'},
-                {'name': f'**Song {neo.utils.formatters.pluralize("Artist", ac.artists)}**',
+                {'name': f'**{neo.utils.formatters.pluralize("Artist", ac.artists)}**',
                 'value': ', '.join(ac.artists)},
-                {'name': '**Album Name**',
+                {'name': '**Album**',
                 'value': discord.utils.escape_markdown(ac.album)},
                 {'name': '**Song Progress**',
                 'value': f'`{to_elapsed(val)}` {bar} `{to_elapsed(ac.duration)}`',
@@ -213,6 +214,53 @@ class Info(commands.Cog):
             return await ctx.send(embed=e)
         else:
             await ctx.send("A Spotify status couldn't be detected!")
+
+    @userinfo.command(aliases=['spotex'])
+    @commands.guild_only()
+    async def spotify_experimental(self, ctx, target: discord.Member = None):
+        """An alternative view for the userinfo spotify command
+        This command is experimental and subject to change or removal"""
+        target = target or ctx.author
+        if ac := discord.utils.find(lambda a: isinstance(a, discord.Spotify), target.activities):
+            _len = 5 if ctx.author.is_on_mobile() else 17
+            album = textwrap.fill(discord.utils.escape_markdown(ac.album), width=42.5)
+            artist = neo.utils.formatters.pluralize('Artist', ac.artists)
+            artists = textwrap.fill(', '.join(ac.artists), width=42.5)
+            val = (datetime.utcnow() - ac.start)
+            bar = neo.utils.formatters.bar_make(
+                val.seconds, ac.duration.seconds, fill='◉', empty='─', point=True, length=_len)
+            e = discord.Embed(
+                color=0x1db954,
+                title=f'`{to_elapsed(val)}` {bar} `{to_elapsed(ac.duration)}`',
+                description=f"**Album** {album}\n**{artist}** {artists}")
+            e.set_thumbnail(url=ac.album_cover_url)
+            e.set_author(name=ac.title[:256],
+                         icon_url='https://i.imgur.com/PA3vvdN.png',
+                         url=f'https://open.spotify.com/track/{ac.track_id}')  # yarl maybe?
+            return await ctx.send(embed=e)
+        else:
+            await ctx.send('Couldn\'t detect a Spotify status')
+
+    @userinfo.command(aliases=['rpc', 'richpres'])
+    @commands.guild_only()
+    async def rich_presence(self, ctx, target: discord.Member = None):
+        """Returns an embed mimicking a user's rich presence
+        This command is experimental and subject to change or removal"""
+        target = target or ctx.author
+        if ac := discord.utils.find(
+                lambda a: bool(a.assets) is True,
+                filter(lambda a: hasattr(a, 'assets'), target.activities)):
+            elapsed = relativedelta(seconds=(datetime.utcnow() - ac.start).total_seconds()).normalized()
+            elapsed_formatted = []
+            for unit in ('days', 'hours', 'minutes', 'seconds'):
+                elapsed_formatted.append(f'{getattr(elapsed, unit):>02}')
+            embed = neo.Embed(
+                description=f"{ac.details}\n{ac.state}\n{':'.join(elapsed_formatted)} elapsed")
+            embed.set_author(icon_url=ac.small_image_url or '', name=ac.name)
+            embed.set_thumbnail(url=ac.large_image_url or '')
+            return await ctx.send(embed=embed)
+        else:
+            await ctx.send('Couldn\'t find a valid rich presence')
 
     @commands.group(
         aliases=['guild', 'guildinfo', 'server'],

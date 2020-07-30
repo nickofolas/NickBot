@@ -52,8 +52,9 @@ def check_regex(content):
         raise ValueError(f'Excessive escapes/`|` chars ({[*map(lambda p: p.findall(content), f)]})')
     
 def clean_emojis(content, bot):
-    for e_id, match in ((match.groupdict()['id'], match) for match in emoji_re.finditer(content)):
-        content = content.replace(match.group(0), str(bot.get_emoji(int(e_id)) or ':question:'))
+    for match_str in emoji_re.findall(content):
+        emoji_id = int(emoji_re.match(match_str).groupdict()['id'])
+        content = content.replace(match_str, str(bot.get_emoji(emoji_id) or ':question:'))
     return content
 
 

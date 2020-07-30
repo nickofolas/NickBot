@@ -151,7 +151,7 @@ class Api(commands.Cog):
         Search Google Images for the query
         """
         safesearch = True
-        if ctx.channel.nsfw:
+        if isinstance(ctx.channel, discord.DMChannel) or ctx.channel.nsfw:
             safesearch = flags['safesearch']
         embeds = [] 
         async with ctx.loading(tick=False):
