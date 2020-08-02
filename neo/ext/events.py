@@ -133,7 +133,7 @@ class Events(commands.Cog):
                 value=action.user
             )
 
-        await self.bot.conn.execute(  # Adds/updates this guild in the db using upsert syntax
+        await self.bot.pool.execute(  # Adds/updates this guild in the db using upsert syntax
             'INSERT INTO guild_prefs (guild_id, prefixes) VALUES ($1, $2) ON CONFLICT (guild_id) DO UPDATE SET prefixes=$2',
             guild.id, ['n/'])
         await self.bot.guild_cache.refresh()
@@ -147,7 +147,7 @@ class Events(commands.Cog):
 
     @commands.Cog.listener()
     async def on_guild_remove(self, guild):
-        await self.bot.conn.execute('DELETE FROM guild_prefs WHERE guild_id=$1', guild.id)
+        await self.bot.pool.execute('DELETE FROM guild_prefs WHERE guild_id=$1', guild.id)
         # Removes guild from database
         embed = discord.Embed(
             description=f'Removed from guild {guild.name} [{guild.id}]',

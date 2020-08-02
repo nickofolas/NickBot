@@ -24,11 +24,12 @@ import discord
 from discord.ext import commands
 
 # TODO: rtfs to search dpy source
+# TODO: use own code :mmlul:
 
 
 # Using code provided by Rapptz under the MIT License
-# Copyright ©︎ 2015 Rapptz
-# R. Danny licensing:
+# Copyright ©︎ 2020 Rapptz
+# R. Danny source:
 # https://github.com/Rapptz/RoboDanny
 
 def finder(text, collection, *, key=None, lazy=True):

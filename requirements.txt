@@ -1,9 +1,10 @@
 git+https://github.com/Rapptz/discord.py@master
 git+https://github.com/Rapptz/discord-ext-menus
 
+yarl==1.4.2
 aiohttp
 humanize
-dateutil
+python-dateutil
 tabulate
 Pillow
 uwuify

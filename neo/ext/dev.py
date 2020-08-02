@@ -168,9 +168,9 @@ class Dev(commands.Cog):
         """Run SQL statements"""
         is_multistatement = query.count(';') > 1
         if is_multistatement:
-            strategy = self.bot.conn.execute
+            strategy = self.bot.pool.execute
         else:
-            strategy = self.bot.conn.fetch
+            strategy = self.bot.pool.fetch
 
         start = time.perf_counter()
         results = await strategy(query)
@@ -261,7 +261,7 @@ class Dev(commands.Cog):
 
     @commands.command(aliases=['die', 'kys'])
     async def reboot(self, ctx):
-        """Kills all of the bot's processes"""
+        """Kills the bot"""
         response = await ctx.prompt('Are you sure you want to reboot?')
         if response:
             await self.bot.close()

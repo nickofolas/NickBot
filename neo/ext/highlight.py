@@ -38,7 +38,7 @@ excessive_escapes = re.compile(r"(?<!\\)\\s|\\d|\\w", re.I)
 regex_check = re.compile(r"""(?P<uncontrolled>[\*\+])|
                              (?<!\\)\{\d*(\,\s?\d*)?\}|
                              (?<!\\)\.""", re.I | re.X)
-emoji_re = re.compile(r"<a?:[a-zA-Z0-9]*:(?P<id>\d*)>", re.I)
+emoji_re = re.compile(r"<a?:[a-zA-Z0-9_]*:(?P<id>\d*)>", re.I)
 
 
 def check_regex(content):
@@ -52,11 +52,11 @@ def check_regex(content):
         raise ValueError(f'Excessive escapes/`|` chars ({[*map(lambda p: p.findall(content), f)]})')
     
 def clean_emojis(content, bot):
-    for match_str in emoji_re.findall(content):
-        emoji_id = int(emoji_re.match(match_str).groupdict()['id'])
-        content = content.replace(match_str, str(bot.get_emoji(emoji_id) or ':question:'))
-    return content
-
+    new_content = content
+    for match in emoji_re.finditer(content):
+        if not bot.get_emoji(int(match.groupdict()['id'])):
+            new_content = content.replace(match.group(0), ':question:')
+    return new_content
 
 class Highlight:
     def __init__(self, user_id, kw, is_regex = True):
@@ -153,7 +153,7 @@ class HlMon(commands.Cog):
     @commands.Cog.listener(name='on_hl_update')
     async def update_highlight_cache(self):
         await self.bot.wait_until_ready()
-        self.cache = [Highlight(**dict(record)) for record in await self.bot.conn.fetch("SELECT * FROM highlights")]
+        self.cache = [Highlight(**dict(record)) for record in await self.bot.pool.fetch("SELECT * FROM highlights")]
 
     @tasks.loop(seconds=10)
     async def do_highlights(self):
@@ -204,12 +204,12 @@ class HighlightCommands(commands.Cog):
             check_regex(highlight_words)
         if len(highlight_words) < 3:
             raise commands.CommandError('Highlights must be more than 2 characters long')
-        active = await ctx.bot.conn.fetch('SELECT kw FROM highlights WHERE user_id=$1', ctx.author.id)
+        active = await ctx.bot.pool.fetch('SELECT kw FROM highlights WHERE user_id=$1', ctx.author.id)
         if len(active) >= MAX_HIGHLIGHTS:
             raise commands.CommandError(f'You may only have {MAX_HIGHLIGHTS} highlights at a time')
         if highlight_words in [rec['kw'] for rec in active]:
             raise commands.CommandError('You already have a highlight with this trigger')
-        await ctx.bot.conn.execute(
+        await ctx.bot.pool.execute(
             'INSERT INTO highlights(user_id, kw, is_regex) VALUES ( $1, $2, $3 )',
             ctx.author.id, fr"{highlight_words}", with_regex)
         ctx.bot.dispatch('hl_update')
@@ -232,7 +232,7 @@ class HighlightCommands(commands.Cog):
         except:
             blocked = int(snowflake)
         async with ctx.loading():
-            await ctx.bot.conn.execute(f"UPDATE user_data SET hl_blocks = {strategy}(hl_blocks, $1) WHERE "
+            await ctx.bot.pool.execute(f"UPDATE user_data SET hl_blocks = {strategy}(hl_blocks, $1) WHERE "
                                        "user_id=$2", blocked, ctx.author.id)
             await ctx.bot.user_cache.refresh()
 
@@ -252,7 +252,7 @@ class HighlightCommands(commands.Cog):
         strategy = 'array_append' if flags.get('add') else 'array_remove'
         snowflake = (flags.get('add') or flags.get('remove'))[0]
         async with ctx.loading():
-            await ctx.bot.conn.execute(f"UPDATE user_data SET hl_whitelist = {strategy}(hl_whitelist, $1) WHERE "
+            await ctx.bot.pool.execute(f"UPDATE user_data SET hl_whitelist = {strategy}(hl_whitelist, $1) WHERE "
                                        "user_id=$2", int(snowflake), ctx.author.id)
             await ctx.bot.user_cache.refresh()
 
@@ -264,9 +264,9 @@ class HighlightCommands(commands.Cog):
         if not highlight_index:
             raise commands.CommandError('Use the index of a highlight (found in your list of highlights) to remove it')
         fetched = [rec['kw'] for rec in
-                   await ctx.bot.conn.fetch("SELECT kw from highlights WHERE user_id=$1", ctx.author.id)]
+                   await ctx.bot.pool.fetch("SELECT kw from highlights WHERE user_id=$1", ctx.author.id)]
         for num in highlight_index:
-            await ctx.bot.conn.execute('DELETE FROM highlights WHERE user_id=$1 AND kw=$2',
+            await ctx.bot.pool.execute('DELETE FROM highlights WHERE user_id=$1 AND kw=$2',
                                        ctx.author.id, fetched[num - 1])
         ctx.bot.dispatch('hl_update')
         await ctx.message.add_reaction(ctx.tick(True))
@@ -278,7 +278,7 @@ class HighlightCommands(commands.Cog):
         """
         confirm = await ctx.prompt('Are you sure you want to clear all highlights?')
         if confirm:
-            await ctx.bot.conn.execute('DELETE FROM highlights WHERE user_id=$1', ctx.author.id)
+            await ctx.bot.pool.execute('DELETE FROM highlights WHERE user_id=$1', ctx.author.id)
             ctx.bot.dispatch('hl_update')
 
 def setup(bot):

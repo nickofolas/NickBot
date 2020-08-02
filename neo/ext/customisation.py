@@ -78,7 +78,7 @@ class Customisation(commands.Cog):
             if setting_name not in keys:
                 raise commands.CommandError(f"New setting must be one of {', '.join(keys)}")
             async with ctx.loading():
-               await self.bot.conn.execute(f"UPDATE user_data SET {setting_name}=$1 WHERE user_id=$2", new_setting,
+               await self.bot.pool.execute(f"UPDATE user_data SET {setting_name}=$1 WHERE user_id=$2", new_setting,
                                            ctx.author.id)
             await self.bot.user_cache.refresh()
             return
@@ -104,7 +104,7 @@ class Customisation(commands.Cog):
             if setting_name not in keys:
                 raise commands.CommandError(f"New setting must be one of {', '.join(keys)}")
             async with ctx.loading():
-               await self.bot.conn.execute(f"UPDATE guild_prefs SET {setting_name}=$1 WHERE guild_id=$2", new_setting,
+               await self.bot.pool.execute(f"UPDATE guild_prefs SET {setting_name}=$1 WHERE guild_id=$2", new_setting,
                                            ctx.guild.id)
             await self.bot.guild_cache.refresh()
             return
@@ -149,7 +149,7 @@ class Customisation(commands.Cog):
             if strat == current_prefixes.discard and len(current_prefixes) == 1:
                 raise commands.CommandError('A guild must always have at least one prefix')
             strat(prefix)
-            await self.bot.conn.execute(
+            await self.bot.pool.execute(
                 'UPDATE guild_prefs SET prefixes=$1 WHERE guild_id=$2',
                 current_prefixes, ctx.guild.id)
             await self.bot.guild_cache.refresh()
@@ -179,18 +179,19 @@ class Customisation(commands.Cog):
         """
         Base todo command, run with no arguments to see a list of all your active todos
         """
-        todo_list = []
-        fetched = [(rec['content'], rec['jump_url']) for rec in
-                   await self.bot.conn.fetch("SELECT content, jump_url from todo WHERE user_id=$1 ORDER BY created_at ASC",
-                                             ctx.author.id)]
-        for count, value in enumerate(fetched, 1):
-            todo_list.append(f'[`{count}`]({value[1]}) {value[0]}')
-        if not todo_list:
-            todo_list = 'No todos'
+        query = """
+        WITH enumerated AS (
+        SELECT row_number() OVER (ORDER BY created_at ASC) AS rnum,
+        todo.content AS cont, todo.jump_url AS jump FROM todo WHERE user_id=$1)
+
+        SELECT FORMAT('[`%s`](%s) %s', enumerated.rnum, 
+        enumerated.jump, enumerated.cont) f FROM enumerated
+        """
+        todos = [r['f'] for r in await self.bot.pool.fetch(query, ctx.author.id)]
         await ctx.quick_menu(
-            todo_list, 10,
+            todos, 5, 
             template=neo.Embed().set_author(
-                    name=f"{ctx.author}'s todos ({len(todo_list) if isinstance(todo_list, list) else 0:,} items)",
+                    name=f"{ctx.author}'s todos ({len(todos):,} items)",
                     icon_url=ctx.author.avatar_url_as(static_format='png')),
             delete_message_after=True)
 
@@ -198,10 +199,14 @@ class Customisation(commands.Cog):
     async def create_todo(self, ctx, *, content: str):
         """
         Add an item to your todo list
+        Note: content over a length of 375 characters will be automatically truncated to 375 characters.
         """
-        await self.bot.conn.execute('INSERT INTO todo (user_id, content, jump_url, created_at) VALUES ($1, $2, $3, $4)',
-            ctx.author.id, content, ctx.message.jump_url, datetime.utcnow())
-        await ctx.message.add_reaction(ctx.tick(True))
+        query = 'INSERT INTO todo (user_id, content, jump_url, created_at) ' \
+                'VALUES ($1, $2, $3, $4) RETURNING content'
+        new = await self.bot.pool.fetchval(
+            query, ctx.author.id, shorten(content, width=375),
+            ctx.message.jump_url, datetime.utcnow())
+        await ctx.send(f'`Created a new todo:`\n{new}')
 
     @todo_rw.command(name='remove', aliases=['rm', 'delete', 'del', 'yeet'])
     async def remove_todo(self, ctx, todo_index: commands.Greedy[int]):
@@ -210,12 +215,18 @@ class Customisation(commands.Cog):
         """
         if not todo_index:
             raise commands.CommandError('Use the index of a todo (found in your list of todos) to remove it')
-        fetched = [rec['content'] for rec in
-                   await self.bot.conn.fetch("SELECT content from todo WHERE user_id=$1 ORDER BY created_at ASC", ctx.author.id)]
-        for num in todo_index:
-            await self.bot.conn.execute('DELETE FROM todo WHERE user_id=$1 AND content=$2',
-                                        ctx.author.id, fetched[num - 1])
-        await ctx.message.add_reaction(ctx.tick(True))
+        query = """
+        WITH enumerated AS (
+        SELECT todo.content,row_number() OVER (ORDER BY created_at ASC) AS rnum FROM todo WHERE user_id=$1
+        )
+
+        DELETE FROM todo WHERE content IN (
+        SELECT enumerated.content FROM enumerated WHERE enumerated.rnum=ANY($2::bigint[])
+        ) RETURNING content
+        """
+        deleted = await self.bot.pool.fetch(query, ctx.author.id, todo_index)
+        await ctx.send('Successfully deleted the following todos:\n{}'.format(
+            '\n'.join(f" - {record['content']}" for record in deleted)))
 
     @todo_rw.command(name='clear')
     async def clear_todos(self, ctx):
@@ -233,14 +244,14 @@ class Customisation(commands.Cog):
     async def _remind(self, ctx, *, reminder: TimeConverter):
         """Add a new reminder. The first time/date found will be the one used."""
         reminder_id = int(str(int(time()))[4:])
-        await self.bot.conn.execute(
+        await self.bot.pool.execute(
             "INSERT INTO reminders (user_id, content, deadline, id, origin_jump) VALUES ($1, $2, $3, $4, $5)",
             ctx.author.id, reminder.string, reminder.time, reminder_id, ctx.message.jump_url)
         with suppress(UnboundLocalError):
             Reminder(user=ctx.author, content=reminder.string, deadline=reminder.time, 
-                     bot=self.bot, conn_pool=self.bot.conn, rm_id=reminder_id, jump_origin=ctx.message.jump_url)
+                     bot=self.bot, conn_pool=self.bot.pool, rm_id=reminder_id, jump_origin=ctx.message.jump_url)
         pretty_time = reminder.time.strftime('%a, %b %d, %Y at %H:%M:%S')
-        await ctx.send(f"{ctx.tick(True)} Reminder set for {pretty_time}")
+        await ctx.send(f"{ctx.tick(True)} Reminder set for {pretty_time} with ID `{reminder_id}`")
 
     @_remind.command(name='list')
     async def _remind_list(self, ctx):
@@ -250,7 +261,7 @@ class Customisation(commands.Cog):
             return f"**{reminder['id']}: **{reminder['content']}\n{time}\n"
         reminders = [*map(
             format_reminder,
-            await self.bot.conn.fetch(
+            await self.bot.pool.fetch(
                 "SELECT * FROM reminders WHERE user_id=$1 ORDER BY id",
                 ctx.author.id))]
         await ctx.quick_menu(reminders or ['No reminders'], 5,
@@ -263,16 +274,17 @@ class Customisation(commands.Cog):
     async def _remind_remove(self, ctx, items: commands.Greedy[int]):
         """Remove one, or many reminders by their unique ID"""
         running = [*filter(lambda task: task.get_name().startswith("REMINDER"), asyncio.all_tasks(self.bot.loop))]
-        async with ctx.loading():
-            for reminder_id in items:
-                [task.cancel() for task in running if task.get_name().endswith(str(reminder_id))]
-                await self.bot.conn.execute("DELETE FROM reminders WHERE id=$1 and user_id=$2", reminder_id, ctx.author.id)
+        [task.cancel() for task in running if task.get_name().endswith(tuple(map(str, items)))]
+        deleted = await self.bot.pool.fetch(
+            "DELETE FROM reminders WHERE id=ANY($1::bigint[]) AND user_id=$2 RETURNING content",
+            items, ctx.author.id)
+        await ctx.send('Cancelled reminders:\n{}'.format('\n'.join(f" - {r['content']}" for r in deleted)))
 
     async def _create_first_reminders(self):
         await self.bot.wait_until_ready()
-        for record in await self.bot.conn.fetch("SELECT * FROM reminders"):
+        for record in await self.bot.pool.fetch("SELECT * FROM reminders"):
             Reminder(user=self.bot.get_user(record['user_id']), content=record['content'],
-                deadline=record['deadline'], bot=self.bot, conn_pool=self.bot.conn,
+                deadline=record['deadline'], bot=self.bot, conn_pool=self.bot.pool,
                 rm_id=record['id'], jump_origin=record['origin_jump'])
 
     def cog_unload(self):

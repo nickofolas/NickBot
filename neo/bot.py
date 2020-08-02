@@ -57,7 +57,7 @@ class NeoBot(commands.Bot):
         self.snipes = {}
         self.loop.create_task(self.ainit())
         self._cd = commands.CooldownMapping.from_cooldown(2.0, 2.5, commands.BucketType.user)
-        self.add_check(self.global_cooldown)
+        self.add_check(self.global_cooldown, call_once=True)
         self.before_invoke(self.before)
 
         for ext in neo.conf['exts']:
@@ -67,22 +67,20 @@ class NeoBot(commands.Bot):
 
     async def ainit(self):
         self.session = aiohttp.ClientSession()
-        self.conn = await asyncpg.create_pool(
+        self.pool = await asyncpg.create_pool(
             user=neo.secrets.dbuser,
             password=neo.secrets.dbpass,
             database=neo.secrets.db,
             host=neo.secrets.dbhost)
         self.user_cache = await DbCache(db_query="SELECT * FROM user_data",
-                                      key='user_id', pool=self.conn)
+                                      key='user_id', pool=self.pool)
         self.guild_cache = await DbCache(db_query="SELECT * FROM guild_prefs",
-                                   key='guild_id', pool=self.conn)
+                                   key='guild_id', pool=self.pool)
 
     async def get_context(self, message, *, cls=neo.context.Context):
         return await super().get_context(message, cls=cls)
 
     async def global_cooldown(self, ctx):
-        if ctx.invoked_with == self.help_command.command_attrs.get('name', 'help'):
-            return True
         bucket = self._cd.get_bucket(ctx.message)
         retry_after = bucket.update_rate_limit()
         if retry_after:
@@ -92,7 +90,7 @@ class NeoBot(commands.Bot):
     async def before(self, ctx):
         if not self.user_cache.get(ctx.author.id):
             with suppress(asyncpg.exceptions.UniqueViolationError):
-                await self.conn.execute('INSERT INTO user_data (user_id) VALUES ($1)', ctx.author.id)
+                await self.pool.execute('INSERT INTO user_data (user_id) VALUES ($1)', ctx.author.id)
                 # Adds people to the user_data table whenever they execute their first command
                 await self.user_cache.refresh() # And then updates the user cache
 

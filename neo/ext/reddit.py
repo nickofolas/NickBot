@@ -215,7 +215,7 @@ class Reddit(commands.Cog):
         if r1.status != 200 or r2.status != 200:
             raise ApiError(f"Unable to get user (received {r1.status}, {r2.status})")
         user = Redditor(about_data=about, trophy_data=trophies)
-        tstring = textwrap.fill(' '.join([reddit_emojis['trophies'].get(t, '') for t in set(user.trophies)]), 225)
+        tstring = textwrap.fill(' '.join(sorted(reddit_emojis['trophies'].get(t, '') for t in set(user.trophies))), 225)
         embed = neo.Embed(
             title=user.subreddit.title if user.subreddit.title != user.name else '',
             description=tstring)
@@ -270,7 +270,8 @@ class Reddit(commands.Cog):
                 embed.add_field(
                     name=f"{reddit_emojis['upvote']} {comment['data'].get('ups')} | "
                          f"u/{comment['data'].get('author')}",
-                    value=f"[🔗](https://reddit.com{comment['data'].get('permalink')}) {textwrap.shorten(comment['data'].get('body'), width=125)}",
+                    value=f"[🔗](https://reddit.com{comment['data'].get('permalink')})"
+                          f"{textwrap.shorten(comment['data'].get('body', ''), width=125)}",
                     inline=False)
             embeds.append(embed)
         source = PagedEmbedMenu(embeds)

@@ -234,7 +234,7 @@ class Info(commands.Cog):
                 title=f'`{to_elapsed(val)}` {bar} `{to_elapsed(ac.duration)}`',
                 description=f"**Album** {album}\n**{artist}** {artists}")
             e.set_thumbnail(url=ac.album_cover_url)
-            e.set_author(name=ac.title[:256],
+            e.set_author(name=textwrap.fill(ac.title[:256], width=42.5),
                          icon_url='https://i.imgur.com/PA3vvdN.png',
                          url=f'https://open.spotify.com/track/{ac.track_id}')  # yarl maybe?
             return await ctx.send(embed=e)
@@ -250,12 +250,16 @@ class Info(commands.Cog):
         if ac := discord.utils.find(
                 lambda a: bool(a.assets) is True,
                 filter(lambda a: hasattr(a, 'assets'), target.activities)):
-            elapsed = relativedelta(seconds=(datetime.utcnow() - ac.start).total_seconds()).normalized()
-            elapsed_formatted = []
-            for unit in ('days', 'hours', 'minutes', 'seconds'):
-                elapsed_formatted.append(f'{getattr(elapsed, unit):>02}')
-            embed = neo.Embed(
-                description=f"{ac.details}\n{ac.state}\n{':'.join(elapsed_formatted)} elapsed")
+            description = []
+            for attr in (ac.details, ac.state):
+                if attr: description.append(attr)
+            if ac.start:
+                elapsed = relativedelta(seconds=(datetime.utcnow() - ac.start).total_seconds()).normalized()
+                elapsed_formatted = []
+                for unit in ('days', 'hours', 'minutes', 'seconds'):
+                    elapsed_formatted.append(f'{getattr(elapsed, unit):>02}')
+                description.append(f"{':'.join(elapsed_formatted)} elapsed")
+            embed = neo.Embed(description='\n'.join(description))
             embed.set_author(icon_url=ac.small_image_url or '', name=ac.name)
             embed.set_thumbnail(url=ac.large_image_url or '')
             return await ctx.send(embed=embed)
