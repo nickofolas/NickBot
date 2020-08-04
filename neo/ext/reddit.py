@@ -242,6 +242,10 @@ class Reddit(commands.Cog):
                 ctx.bot.session.get(f"https://www.reddit.com/r/{subreddit.name}/about.json",
                                     allow_redirects=False) as resp:
             data = (await resp.json())['data']
+        if resp.status == 403:
+            embed=neo.Embed(title=f'r/{subreddit.name} is private')
+            embed.set_thumbnail(url='https://i.imgur.com/HiRDhBT.png')
+            return await ctx.send(embed=embed)
         if resp.status != 200:
             raise ApiError(f'Unable to get subreddit (received {resp.status})')
         sub = Subreddit(data)

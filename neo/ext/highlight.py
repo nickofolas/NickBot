@@ -202,8 +202,8 @@ class HighlightCommands(commands.Cog):
         with_regex = bool(regex_flag.search(ctx.message.content))
         if with_regex:
             check_regex(highlight_words)
-        if len(highlight_words) < 3:
-            raise commands.CommandError('Highlights must be more than 2 characters long')
+        if len(highlight_words) < 2:
+            raise commands.CommandError('Highlights must be more than 1 character long')
         active = await ctx.bot.pool.fetch('SELECT kw FROM highlights WHERE user_id=$1', ctx.author.id)
         if len(active) >= MAX_HIGHLIGHTS:
             raise commands.CommandError(f'You may only have {MAX_HIGHLIGHTS} highlights at a time')

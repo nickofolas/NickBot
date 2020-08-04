@@ -21,7 +21,7 @@ import re
 import textwrap
 from datetime import datetime
 from typing import Union
-from collections import Counter, namedtuple
+from collections import Counter, namedtuple, deque
 
 import discord
 import humanize
@@ -298,18 +298,17 @@ class Info(commands.Cog):
         await ctx.send(embed=embed)
 
     @staticmethod
-    def by_category_v2(_guild):
-        channel_types = (discord.TextChannel, discord.VoiceChannel)
-        def key(chan):
-            if not isinstance(chan, discord.CategoryChannel):
-                return -2 + channel_types.index(type(chan))
-            return chan.position
-        top_level = sorted(filter(lambda c: not c.category, _guild.channels), key=key)
-        for ch in top_level:
-            if isinstance(ch, discord.CategoryChannel) and ch.channels:
-                yield ch, sorted(ch.channels, key=key)
-                continue
-            yield ch
+    def by_category_v2(g):
+        def sep_text_voice(channel_group):
+            sep = deque(sorted(channel_group, key=(lambda c: c.position)))
+            sep.rotate((- len([c for c in sep if isinstance(c, discord.VoiceChannel)])))
+            return sep
+        top_non_cat = filter(
+            (lambda c: ((not c.category) and (not isinstance(c, discord.CategoryChannel)))),
+            g.channels)
+        (yield sep_text_voice(top_non_cat))
+        for ch in sorted(g.categories, key=(lambda c: c.position)):
+            (yield (ch, sep_text_voice(ch.channels)))
 
     @staticmethod
     def format_channels(channel):

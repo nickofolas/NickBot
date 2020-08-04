@@ -77,7 +77,7 @@ class CSMenu(menus.MenuPages, inherit_buttons=False):
             return
         await super().update(payload)
 
-    async def finalize(self):
+    async def finalize(self, *args, **kwargs):
         if self.closed_via_button is True and self.delete_on_button is True:
             await self.message.delete()
 

@@ -187,26 +187,25 @@ class Customisation(commands.Cog):
         SELECT FORMAT('[`%s`](%s) %s', enumerated.rnum, 
         enumerated.jump, enumerated.cont) f FROM enumerated
         """
-        todos = [r['f'] for r in await self.bot.pool.fetch(query, ctx.author.id)]
+        todos = [shorten(r['f'], width=175) for r in await self.bot.pool.fetch(query, ctx.author.id)]
         await ctx.quick_menu(
-            todos, 5, 
+            todos, 10, 
             template=neo.Embed().set_author(
                     name=f"{ctx.author}'s todos ({len(todos):,} items)",
                     icon_url=ctx.author.avatar_url_as(static_format='png')),
-            delete_message_after=True)
+            delete_on_button=True, clear_reactions_after=True)
 
     @todo_rw.command(name='add')
     async def create_todo(self, ctx, *, content: str):
         """
         Add an item to your todo list
-        Note: content over a length of 375 characters will be automatically truncated to 375 characters.
         """
         query = 'INSERT INTO todo (user_id, content, jump_url, created_at) ' \
                 'VALUES ($1, $2, $3, $4) RETURNING content'
         new = await self.bot.pool.fetchval(
-            query, ctx.author.id, shorten(content, width=375),
+            query, ctx.author.id, content,
             ctx.message.jump_url, datetime.utcnow())
-        await ctx.send(f'`Created a new todo:`\n{new}')
+        await ctx.send(f'`Created a new todo:`\n{new}', delete_after=5)
 
     @todo_rw.command(name='remove', aliases=['rm', 'delete', 'del', 'yeet'])
     async def remove_todo(self, ctx, todo_index: commands.Greedy[int]):
@@ -225,8 +224,28 @@ class Customisation(commands.Cog):
         ) RETURNING content
         """
         deleted = await self.bot.pool.fetch(query, ctx.author.id, todo_index)
+        shown = [f" - {shorten(record['content'], width=175)}" for record in deleted]
+        extra = f'\n *+ {len(shown[5:])} more*' if len(shown[5:]) else ''
         await ctx.send('Successfully deleted the following todos:\n{}'.format(
-            '\n'.join(f" - {record['content']}" for record in deleted)))
+            '\n'.join(shown[:5]) + extra))
+
+    @todo_rw.command(name='show', aliases=['view'])
+    async def view_todo(self, ctx, todo_index: int):
+        query = """
+        WITH enumerated AS (
+        SELECT todo.content, todo.created_at,
+        row_number() OVER (ORDER BY created_at ASC) as rnum FROM todo WHERE user_id=$1)
+
+        SELECT * FROM enumerated WHERE enumerated.rnum=$2"""
+        todo = await self.bot.pool.fetchrow(query, ctx.author.id, todo_index)
+        embed = neo.Embed(description=todo['content'])
+        embed.set_footer(
+            text='Created on {}'.format(
+                todo['created_at'].strftime('%a, %b %d, %Y at %X UTC')))
+        embed.set_author(
+            name=f'Viewing todo #{todo_index}',
+            icon_url=ctx.author.avatar_url_as(static_format='png'))
+        await ctx.send(embed=embed)
 
     @todo_rw.command(name='clear')
     async def clear_todos(self, ctx):
@@ -270,15 +289,28 @@ class Customisation(commands.Cog):
                                  icon_url=ctx.author.avatar_url_as(static_format='png')),
                              delete_on_button=True, clear_reactions_after=True)
 
+    def get_running_reminders(self):
+        yield from filter(lambda task: task.get_name().startswith("REMINDER"), asyncio.all_tasks(self.bot.loop))
+
     @_remind.command(name='remove', aliases=['del', 'rm'])
     async def _remind_remove(self, ctx, items: commands.Greedy[int]):
         """Remove one, or many reminders by their unique ID"""
-        running = [*filter(lambda task: task.get_name().startswith("REMINDER"), asyncio.all_tasks(self.bot.loop))]
+        running = [*self.get_running_reminders()]
         [task.cancel() for task in running if task.get_name().endswith(tuple(map(str, items)))]
         deleted = await self.bot.pool.fetch(
             "DELETE FROM reminders WHERE id=ANY($1::bigint[]) AND user_id=$2 RETURNING content",
             items, ctx.author.id)
         await ctx.send('Cancelled reminders:\n{}'.format('\n'.join(f" - {r['content']}" for r in deleted)))
+
+    @_remind.command(name='clear')
+    async def _remind_clear(self, ctx):
+        """Cancels all of your active reminders"""
+        confirm = await ctx.prompt('Are you sure you want to cancel all reminders?')
+        if confirm:
+            cancelled = await self.bot.pool.fetch(
+                'DELETE FROM reminders WHERE user_id=$1 RETURNING id', ctx.author.id)
+            [task.cancel() for task in self.get_running_reminders() if 
+             task.get_name().endswith((*map(lambda r: str(r['id']), cancelled),))]
 
     async def _create_first_reminders(self):
         await self.bot.wait_until_ready()
@@ -288,8 +320,7 @@ class Customisation(commands.Cog):
                 rm_id=record['id'], jump_origin=record['origin_jump'])
 
     def cog_unload(self):
-        running = [*filter(lambda task: task.get_name().startswith("REMINDER"), asyncio.all_tasks(self.bot.loop))]
-        [task.cancel() for task in running]
+        [task.cancel() for task in self.get_running_reminders()]
 
 
 def setup(bot):
