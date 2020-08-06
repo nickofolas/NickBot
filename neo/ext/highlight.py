@@ -25,7 +25,6 @@ import discord
 from discord.ext import commands, flags, tasks
 
 import neo
-from neo.utils.checks import check_member_in_guild
 from neo.utils.containers import TimedSet
 
 # Constants

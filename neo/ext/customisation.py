@@ -31,7 +31,7 @@ from humanize import naturaltime, naturaldate
 from yarl import URL
 
 import neo
-from neo.utils.checks import check_member_in_guild, is_owner_or_administrator
+from neo.utils.checks import is_owner_or_administrator
 from neo.utils.formatters import prettify_text
 from neo.utils.converters import BoolConverter, TimeConverter
 

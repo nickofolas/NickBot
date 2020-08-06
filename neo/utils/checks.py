@@ -38,8 +38,3 @@ def exclude_channels(guild_id: Union[list, int]):
 
     return commands.check(predicate)
 
-
-def check_member_in_guild(user_id: int):
-    def predicate(ctx):
-        return user_id in [m.id for m in ctx.guild.members]
-    return commands.check(predicate)
