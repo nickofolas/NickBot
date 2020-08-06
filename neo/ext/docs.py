@@ -90,11 +90,6 @@ class SphinxObjectFileReader:
 class Docs(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self._rtfm_cache = dict()
-        self.bot.loop.create_task(self.rtfm_lookup_table_append(
-                'dpy', 'https://discordpy.readthedocs.io/en/latest'))
-        self.bot.loop.create_task(self.rtfm_lookup_table_append(
-            'python', 'https://docs.python.org/3'))
 
     def parse_object_inv(self, stream, url):
         # key: URL
@@ -163,27 +158,24 @@ class Docs(commands.Cog):
         page_types = {
             'dpy': 'https://discordpy.readthedocs.io/en/latest',
             'python': 'https://docs.python.org/3',
+            'praw': 'https://praw.readthedocs.io/en/latest',
+            'asyncpg': 'https://magicstack.github.io/asyncpg/current',
+            'aiohttp': 'https://aiohttp.readthedocs.io/en/latest'
         }
 
         if key not in page_types.keys():
-            page_types[key] = f'https://{key}.readthedocs.io/en/latest'
+            raise commands.CommandError('Invalid RTFM destination provided')
+            #page_types[key] = f'https://{key}.readthedocs.io/en/latest'
 
         if not hasattr(self, '_rtfm_cache'):
-            await ctx.trigger_typing()
-            self._rtfm_cache = dict()
-            await self.rtfm_lookup_table_append('dpy', 'https://discordpy.readthedocs.io/en/latest')
-            await self.rtfm_lookup_table_append('python', 'https://docs.python.org/3')
+            async with ctx.loading():
+                self._rtfm_cache = dict()
+                for k, v in page_types.items():
+                    await self.rtfm_lookup_table_append(k, v)
 
-        try:
-            cache = list(self._rtfm_cache[key].items())
-            if obj is None:
-                return await ctx.safe_send(page_types[key])
-        except KeyError:
-            async with ctx.loading(tick=False):
-                await self.rtfm_lookup_table_append(key, f'https://{key}.readthedocs.io/en/latest')
-                cache = list(self._rtfm_cache[key].items())
-                if obj is None:
-                    return await ctx.safe_send(page_types[key])
+        cache = list(self._rtfm_cache[key].items())
+        if obj is None:
+            return await ctx.safe_send(page_types[key])
 
         obj = re.sub(r'^(?:discord\.(?:ext\.)?)?(?:commands\.)?(.+)', r'\1', obj)
 

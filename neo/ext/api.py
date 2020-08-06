@@ -106,7 +106,7 @@ class Api(commands.Cog):
         embed.add_field(
             name='_ _', 
             value=f"⚖️  {info.get('license') or 'No license'}\n"
-                  f"<:python:596577462335307777> {py_required}\n"
+                  f"<:python:740421337759219762> {py_required}\n"
                   f"<:pypideps:729920158193287208> {deps} dependenc{'y' if deps == 1 else 'ies'}")
         embed.set_footer(text=info.get('author'))
         await ctx.send(embed=embed)
