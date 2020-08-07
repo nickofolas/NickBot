@@ -37,6 +37,7 @@ import neo
 from neo.utils import paginator
 from neo.utils.converters import BetterUserConverter
 from neo.utils.formatters import group, flatten
+from neo.utils.checks import snipe_check
 
 imgur_media_base = URL.build(scheme='http', host='imgur.com')
 
@@ -66,6 +67,7 @@ class Util(commands.Cog):
     @flags.add_flag('target_channel', nargs='?', type=int)
     @flags.add_flag('-e', '--edits', action='store_true')
     @flags.add_flag('-a', '--all', action='store_true')
+    @snipe_check()
     @flags.command(name='snipe')
     async def snipe(self, ctx, **flags):
         """

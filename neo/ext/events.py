@@ -81,6 +81,8 @@ class Events(commands.Cog):
     async def on_message_edit(self, before, after):
         if after.content == before.content:
             return
+        if self.bot.guild_cache[after.guild.id]['snipes'] is False:
+            return
         if not self.bot.snipes.get(after.channel.id):  # Creates the snipes cache
             self.bot.snipes[after.channel.id] = {'deleted': collections.deque(list(), 100),
                                                  'edited': collections.deque(list(), 100)}
@@ -98,6 +100,8 @@ class Events(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message_delete(self, message):
+        if self.bot.guild_cache[after.guild.id]['snipes'] is False:
+            return
         if not self.bot.snipes.get(message.channel.id):  # Creates the snipes cache
             self.bot.snipes[message.channel.id] = {'deleted': collections.deque(list(), 100),
                                                    'edited': collections.deque(list(), 100)}

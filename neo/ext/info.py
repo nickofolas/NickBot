@@ -188,38 +188,9 @@ class Info(commands.Cog):
         await ctx.send(embed=embed)
 
     @userinfo.command(aliases=['spot'])
-    @commands.guild_only() 
-    async def spotify(self, ctx, target: discord.Member = None):
-        """Get info about someone's Spotify status, if they have one"""
-        target = target or ctx.author
-        if ac := discord.utils.find(lambda a: isinstance(a, discord.Spotify), target.activities):
-            val = (datetime.utcnow() - ac.start)
-            e = discord.Embed(color=0x1db954).set_thumbnail(url=ac.album_cover_url)
-            bar_len = 5 if ctx.author.is_on_mobile() else 25
-            bar = neo.utils.formatters.bar_make(
-                val.seconds, ac.duration.seconds, fill='◉', empty='─', point=True, length=bar_len)
-            fields = [{'name': '**Title**',
-                'value': f'[{discord.utils.escape_markdown(ac.title)}](https://open.spotify.com/track/{ac.track_id})'},
-                {'name': f'**{neo.utils.formatters.pluralize("Artist", ac.artists)}**',
-                'value': ', '.join(ac.artists)},
-                {'name': '**Album**',
-                'value': discord.utils.escape_markdown(ac.album)},
-                {'name': '**Song Progress**',
-                'value': f'`{to_elapsed(val)}` {bar} `{to_elapsed(ac.duration)}`',
-                'inline': False}]
-            e.set_author(
-                name=target.display_name,
-                icon_url='https://i.imgur.com/PA3vvdN.png')
-            [e.add_field(**field) for field in fields]
-            return await ctx.send(embed=e)
-        else:
-            await ctx.send("A Spotify status couldn't be detected!")
-
-    @userinfo.command(aliases=['spotex'])
     @commands.guild_only()
-    async def spotify_experimental(self, ctx, target: discord.Member = None):
-        """An alternative view for the userinfo spotify command
-        This command is experimental and subject to change or removal"""
+    async def spotify(self, ctx, target: discord.Member = None):
+        """Displays information about a Member's Spotify status, is they have one"""
         target = target or ctx.author
         if ac := discord.utils.find(lambda a: isinstance(a, discord.Spotify), target.activities):
             _len = 5 if ctx.author.is_on_mobile() else 17
@@ -244,8 +215,7 @@ class Info(commands.Cog):
     @userinfo.command(aliases=['rpc', 'richpres'])
     @commands.guild_only()
     async def rich_presence(self, ctx, target: discord.Member = None):
-        """Returns an embed mimicking a user's rich presence
-        This command is experimental and subject to change or removal"""
+        """Returns an embed mimicking a user's rich presence"""
         target = target or ctx.author
         if ac := discord.utils.find(
                 lambda a: bool(a.assets) is True,
@@ -259,7 +229,7 @@ class Info(commands.Cog):
                 for unit in ('days', 'hours', 'minutes', 'seconds'):
                     elapsed_formatted.append(f'{getattr(elapsed, unit):>02}')
                 description.append(f"{':'.join(elapsed_formatted)} elapsed")
-            embed = neo.Embed(description='\n'.join(description))
+            embed = neo.Embed(description=discord.utils.escape_markdown('\n'.join(description)))
             embed.set_author(icon_url=ac.small_image_url or '', name=ac.name)
             embed.set_thumbnail(url=ac.large_image_url or '')
             return await ctx.send(embed=embed)

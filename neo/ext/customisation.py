@@ -83,7 +83,7 @@ class Customisation(commands.Cog):
             await self.bot.user_cache.refresh()
             return
         embed = neo.Embed(title=f"""{ctx.author}'s Settings""")
-        readable_settings = list()
+        readable_settings = []
         for k, v in self.bot.user_cache[ctx.author.id].items():
             if isinstance(v, bool):
                 readable_settings.append(f'{ctx.toggle(v)} **{discord.utils.escape_markdown(k)}**')
@@ -109,7 +109,7 @@ class Customisation(commands.Cog):
             await self.bot.guild_cache.refresh()
             return
         embed = neo.Embed(title=f"""{ctx.guild}'s Settings""")
-        readable_settings = list()
+        readable_settings = []
         for k, v in self.bot.guild_cache[ctx.guild.id].items():
             if isinstance(v, bool):
                 readable_settings.append(f'{ctx.toggle(v)} **{discord.utils.escape_markdown(k)}**')
@@ -240,8 +240,7 @@ class Customisation(commands.Cog):
         todo = await self.bot.pool.fetchrow(query, ctx.author.id, todo_index)
         embed = neo.Embed(description=todo['content'])
         embed.set_footer(
-            text='Created on {}'.format(
-                todo['created_at'].strftime('%a, %b %d, %Y at %X UTC')))
+            text=f"Created on {todo['created_at']:%a, %b, %d, %Y at %X UTC}")
         embed.set_author(
             name=f'Viewing todo #{todo_index}',
             icon_url=ctx.author.avatar_url_as(static_format='png'))

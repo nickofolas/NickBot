@@ -105,7 +105,7 @@ class Dev(commands.Cog):
             pages = [str(ctx.codeblock(content=page, lang=hl_lang)) + f"\n`Return code {shellout.returncode}`" for page in pages]
         await ctx.quick_menu(pages, 1, delete_on_button=True, clear_reactions_after=True, timeout=1800)
 
-    @commands.command(name='eval')
+    @commands.command(name='eval', aliases=['e'])
     async def eval_(self, ctx, *, body: CBStripConverter):
         """Runs code that you input to the command"""
         env = {
@@ -124,14 +124,13 @@ class Dev(commands.Cog):
         final_results = []
         async with ctx.loading():
             try:
-                with redirect_stdout(stdout):
-                    async for res in NeoEval(code=body, context=env, scope=self.scope):
-                        if res is None:
-                            continue
-                        self._last_result = res
-                        if not isinstance(res, str):
-                            res = repr(res)
-                        final_results.append(res)
+                async for res in NeoEval(code=body, context=env, scope=self.scope):
+                    if res is None:
+                        continue
+                    self._last_result = res
+                    if not isinstance(res, str):
+                        res = repr(res)
+                    final_results.append(res)
             except Exception as e:
                 to_return = format_exception(e)
             else:
