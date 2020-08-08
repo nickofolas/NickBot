@@ -113,10 +113,8 @@ class Customisation(commands.Cog):
         for k, v in self.bot.guild_cache[ctx.guild.id].items():
             if isinstance(v, bool):
                 readable_settings.append(f'{ctx.toggle(v)} **{discord.utils.escape_markdown(k)}**')
-            elif isinstance(v, (list, str)) or v is None:
-                continue
             else:
-                readable_settings.append(f'**{discord.utils.escape_markdown(k)}** `{v}`')
+                continue
         embed.description = '\n'.join(readable_settings)
         await ctx.send(embed=embed.set_thumbnail(url=ctx.guild.icon_url_as(static_format='png')))
 

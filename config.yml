@@ -12,6 +12,7 @@ exts:
   - 'neo.ext.github'
   - 'neo.ext.reddit'
   - 'neo.ext.highlight'
+  - 'neo.ext.starboard'
 emojis:
   menus:
     'menu_right': '<:aright:735370889838854185>'
