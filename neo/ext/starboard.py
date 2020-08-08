@@ -62,7 +62,7 @@ class StarredMessage:
         if self.stars < self.bot.guild_cache[self.guild_id]['starboard_star_requirement']:
             await self.terminate()
             return
-        await self.sent_msg.edit(content=f'Stars: {self.stars}')
+        await self.sent_msg.edit(content=f'⭐ {self.stars}')
         await self.bot.pool.execute(
             'UPDATE starboard_msgs SET stars=$1 WHERE message_id=$2',
             self.stars, self.message_id)
@@ -88,6 +88,7 @@ class Starboard(commands.Cog):
     @commands.group(name='starboard', invoke_without_command=True)
     @is_owner_or_administrator()
     async def starboard_config(self, ctx):
+        """View starboard settings"""
         _config = self.bot.guild_cache[ctx.guild.id]
         if _config['starboard'] is False:
             raise commands.CommandError(
@@ -106,6 +107,8 @@ class Starboard(commands.Cog):
     @starboard_config.command(name='set')
     @is_owner_or_administrator()
     async def set_starboard_config(self, ctx, setting, *, new_value: Union[discord.TextChannel, int]):
+        """Manage starboard settings
+        Valid options: `limit`, `channel`"""
         setting = setting.lower()
         if setting not in (options := ('limit', 'channel')):
             raise commands.CommandError('setting must be one of {}'.format(options))
@@ -138,6 +141,7 @@ class Starboard(commands.Cog):
         predicates.append(guild['starboard'] is True)
         predicates.append(str(payload.emoji) == '⭐')
         predicates.append(guild['starboard_channel_id'] is not None)
+        predicates.append(payload.channel_id != guild['starboard_channel_id'])
         return all(predicates), guild
 
     @commands.Cog.listener()
@@ -161,10 +165,11 @@ class Starboard(commands.Cog):
                 for attach in message.attachments:
                     embed.add_field(
                         name='Attachment',
-                        value=attach.url)
-            embed.add_field(name='Jump', value=f'[URL]({message.jump_url})')
+                        value=f'[URL]({attach.url})')
+                embed.set_image(url=message.attachments[-1].url)
+            embed.add_field(name='Jump', value=f'[URL]({message.jump_url})', inline=False)
             sent = await self.bot.get_channel(guild['starboard_channel_id']).send(
-                f'Stars: {stars}',
+                f'⭐ {stars}',
                 embed=embed)
             self.starred.add(await StarredMessage(
                 self.bot, message_id = message.id,
@@ -189,6 +194,14 @@ class Starboard(commands.Cog):
         if (star := discord.utils.get(self.starred, message_id=payload.message_id)):
             await star.terminate()
             self.starred.discard(star)
+
+    @commands.Cog.listener()
+    async def on_raw_bulk_message_delete(self, payload):
+        for msg_id in payload.message_ids:
+            if (star := discord.utils.get(self.starred, message_id=msg_id)):
+                await star.terminate()
+                self.starred.discard(star)
+
 
     async def initialise_stars(self):
         await self.bot.wait_until_ready()
