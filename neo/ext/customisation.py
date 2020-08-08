@@ -143,7 +143,7 @@ class Customisation(commands.Cog):
         current_prefixes = set(self.bot.guild_cache[ctx.guild.id]['prefixes'])
         strategy_map = {'add': current_prefixes.add, 'remove': current_prefixes.discard}
         async with ctx.loading():
-            strat = strategy_map[ctx.subcommand_passed]
+            strat = strategy_map[ctx.invoked_with]
             if strat == current_prefixes.discard and len(current_prefixes) == 1:
                 raise commands.CommandError('A guild must always have at least one prefix')
             strat(prefix)

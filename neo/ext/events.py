@@ -100,7 +100,7 @@ class Events(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message_delete(self, message):
-        if self.bot.guild_cache[after.guild.id]['snipes'] is False:
+        if self.bot.guild_cache[message.guild.id]['snipes'] is False:
             return
         if not self.bot.snipes.get(message.channel.id):  # Creates the snipes cache
             self.bot.snipes[message.channel.id] = {'deleted': collections.deque(list(), 100),

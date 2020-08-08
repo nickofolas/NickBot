@@ -224,7 +224,7 @@ class HighlightCommands(commands.Cog):
                 blocked = ["No blocked users or guilds"]
             await ctx.quick_menu(blocked, 10, delete_message_after=True)
             return
-        strategy = strategies.get(ctx.subcommand_passed)
+        strategy = strategies.get(ctx.invoked_with)
         snowflake = user_or_guild
         try:
             blocked = (await commands.UserConverter().convert(ctx, snowflake)).id
