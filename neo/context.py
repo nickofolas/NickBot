@@ -36,7 +36,7 @@ class Codeblock:
     def __str__(self):
         return f"```{self.lang}\n{self.content}\n```"
 
-    def __repr__(self): # That format is a bit nicer
+    def __repr__(self):
         return "<Codeblock content={0.content!r} lang={0.lang!r} cb_safe={0.cb_safe}>".format(self)
 
 
@@ -155,7 +155,7 @@ class Context(commands.Context):
                 reaction, user = await self.bot.wait_for(
                     'reaction_add',
                     check=lambda r, u: r.message.id == self.message.id
-                    and u.id in [self.author.id, *self.bot.owner_ids], timeout=30.0
+                    and u.id in {self.author.id, *self.bot.owner_ids}, timeout=30.0
                 )
             except asyncio.TimeoutError:
                 return await self.message.remove_reaction(neo.conf['emojis']['warning_button'], self.me)
