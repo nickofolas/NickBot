@@ -25,7 +25,6 @@ import logging
 from discord.ext import commands
 import discord
 import aiohttp
-import async_cleverbot as ac
 import asyncpg
 
 import neo
