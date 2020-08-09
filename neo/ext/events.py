@@ -54,7 +54,6 @@ class SnipedMessage:
         return embed
 
 
-# noinspection PyCallingNonCallable
 class Events(commands.Cog):
     """Contains the listeners for the bot"""
 
@@ -79,16 +78,13 @@ class Events(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message_edit(self, before, after):
-        if after.content == before.content:
-            return
-        if self.bot.guild_cache[after.guild.id]['snipes'] is False:
-            return
+        if after.content == before.content or not after.guild: return
+        if self.bot.guild_cache[after.guild.id]['snipes'] is False: return
         if not self.bot.snipes.get(after.channel.id):  # Creates the snipes cache
             self.bot.snipes[after.channel.id] = {'deleted': collections.deque(list(), 100),
                                                  'edited': collections.deque(list(), 100)}
         if usr := self.bot.user_cache.get(after.author.id):
-            if not usr['can_snipe']:
-                return
+            if not usr['can_snipe']: return
         if after.content and not after.author.bot:  # Updates the snipes edit cache
             now = datetime.now()
             self.bot.snipes[after.channel.id]['edited'].append(
@@ -100,14 +96,13 @@ class Events(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message_delete(self, message):
-        if self.bot.guild_cache[message.guild.id]['snipes'] is False:
-            return
+        if not message.guild: return
+        if self.bot.guild_cache[message.guild.id]['snipes'] is False: return
         if not self.bot.snipes.get(message.channel.id):  # Creates the snipes cache
             self.bot.snipes[message.channel.id] = {'deleted': collections.deque(list(), 100),
                                                    'edited': collections.deque(list(), 100)}
         if usr := self.bot.user_cache.get(message.author.id):
-            if not usr['can_snipe']:
-                return
+            if not usr['can_snipe']: return
         if message.content and not message.author.bot:  # Updates the snipes deleted cache
             now = datetime.now()
             self.bot.snipes[message.channel.id]['deleted'].append(

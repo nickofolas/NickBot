@@ -81,6 +81,7 @@ class Starboard(commands.Cog):
         self.bot.loop.create_task(self.initialise_stars())
 
     async def cog_check(self, ctx):
+        if not ctx.guild: raise commands.CommandError('This category is restricted to guilds')
         if not self.bot.guild_cache[ctx.guild.id]['starboard']:
             raise commands.CommandError('Starboard is not enabled in this guild')
         return True
@@ -107,8 +108,10 @@ class Starboard(commands.Cog):
     @starboard_config.command(name='set')
     @is_owner_or_administrator()
     async def set_starboard_config(self, ctx, setting, *, new_value: Union[discord.TextChannel, int]):
-        """Manage starboard settings
-        Valid options: `limit`, `channel`"""
+        """
+        Manage starboard settings
+        Valid options: `limit`, `channel`
+        """
         setting = setting.lower()
         if setting not in (options := ('limit', 'channel')):
             raise commands.CommandError('setting must be one of {}'.format(options))
@@ -117,6 +120,7 @@ class Starboard(commands.Cog):
             new_value = new_value.id
             setting = 'starboard_channel_id'
         elif isinstance(new_value, int):
+            new_value = max(1, new_value) # Disallow values below zero
             setting = 'starboard_star_requirement'
         await self.bot.pool.execute(query.format(setting), new_value, ctx.guild.id)
         await self.bot.guild_cache.refresh()
@@ -130,12 +134,14 @@ class Starboard(commands.Cog):
         try:
             stars = len([*filter(
                 lambda u: u.id != message.author.id,
-                [u async for u in discord.utils.get(message.reactions, emoji='⭐').users()])])
+                [u async for u in discord.utils.get(
+                    message.reactions, emoji='⭐').users()])])
         except:
             stars = 0
         return message, stars
 
     def check_star_config(self, payload):
+        if not payload.guild_id: return False, None
         predicates = []
         guild = self.bot.guild_cache[payload.guild_id]
         predicates.append(guild['starboard'] is True)

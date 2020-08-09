@@ -1,7 +1,7 @@
 git+https://github.com/Rapptz/discord.py@master
 git+https://github.com/Rapptz/discord-ext-menus
 
-yarl==1.4.2
+yarl
 aiohttp
 humanize
 python-dateutil
