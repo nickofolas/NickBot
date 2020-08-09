@@ -57,7 +57,7 @@ class Loading:
         try:
             await self._ctx.message.add_reaction(neo.conf['emojis']['loading'])
         except (discord.Forbidden, discord.HTTPException) as e:
-            if e.code == 90001:
+            if e.code == 90001:  # Reaction blocked, so we can't react
                 self.can_react = False
         return self
 
@@ -73,7 +73,7 @@ class Loading:
 
 
 class Context(commands.Context):
-    async def prompt(self, message):
+    async def prompt(self, message):  # This may be better used as a context manager or something
         emojis = {
             neo.conf['emojis']['check_button']: True,
             neo.conf['emojis']['x_button']: False}
@@ -91,7 +91,7 @@ class Context(commands.Context):
             await msg.edit(content='Cancelled!')
             return False
 
-    async def safe_send(self, content=None, **kwargs):
+    async def safe_send(self, content=None, **kwargs):  # Kill this please it needs to die
         if content:
             if match := re.search(re.compile(r'([a-zA-Z0-9]{24}\.[a-zA-Z0-9]{6}\.[a-zA-Z0-9_\-]{27}|mfa\.['
                                              r'a-zA-Z0-9_\-]{84})'), content):
@@ -135,7 +135,7 @@ class Context(commands.Context):
         return Codeblock(**kwargs)
 
     @staticmethod
-    def tab(repeat=1):
+    def tab(repeat=1):  # For the love of all that is good please get rid of this
         return ' \u200b' * repeat
 
     async def quick_menu(self, entries, per_page, *, template: discord.Embed = None, **kwargs):

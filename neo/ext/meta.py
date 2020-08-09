@@ -145,6 +145,7 @@ class Meta(commands.Cog):
 
     @commands.command(aliases=['src'])
     async def source(self, ctx, *, cmd=None):
+        """Show source for a command or the entire bot"""
         desc = str()
         cmd = self.bot.get_command(cmd) if cmd else None
         if not cmd:
