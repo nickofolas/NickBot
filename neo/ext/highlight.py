@@ -197,7 +197,8 @@ class HighlightCommands(commands.Cog):
         - Unescaped use of the `.` catch-all character is disallowed
         - Unescaped use of `{n}`, `{n,m}`, `*`, or `+` to match multiple characters is disallowed
         """
-        highlight_words = regex_flag.sub('', re.sub(fr"{ctx.prefix}h(igh)?l(ight)? add", '', ctx.message.content)).strip()
+        cleaned_invocation = re.sub(fr"{re.escape(ctx.prefix)}h(igh)?l(ight)? add", '', ctx.message.content)
+        highlight_words = regex_flag.sub('', cleaned_invocation).strip()
         with_regex = bool(regex_flag.search(ctx.message.content))
         if with_regex:
             check_regex(highlight_words)
