@@ -80,6 +80,10 @@ class Api(commands.Cog):
     async def reddit_group(self, ctx):
         """Collection of commands made to interact with Reddit"""
 
+    @commands.group(name='github', aliases=['gh'], invoke_without_command=True)
+    async def git_group(self, ctx):
+        """Collection of commands made to interact with GitHub"""
+
     @commands.command()
     @commands.cooldown(1, 5, commands.BucketType.channel)
     async def pypi(self, ctx, *, package_name):
@@ -226,10 +230,6 @@ class Api(commands.Cog):
                 value=f'```{recents}```'
             )
         await ctx.send(embed=embed)
-
-    @commands.group(name='github', aliases=['gh'], invoke_without_command=True)
-    async def git_group(self, ctx):
-        """Collection of commands made to interact with GitHub"""
 
 
 def setup(bot):

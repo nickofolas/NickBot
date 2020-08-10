@@ -146,7 +146,7 @@ class Meta(commands.Cog):
     @commands.command(aliases=['src'])
     async def source(self, ctx, *, cmd=None):
         """Show source for a command or the entire bot"""
-        desc = str()
+        desc = ''
         cmd = self.bot.get_command(cmd) if cmd else None
         if not cmd:
             title = 'View full source'
@@ -162,8 +162,7 @@ class Meta(commands.Cog):
             last_ln = first_ln + (len(lines) - 1)
             title = f'View source for command {cmd.qualified_name}'
             url = f'https://github.com/nickofolas/neo/blob/master/{fpath}#L{first_ln}-L{last_ln}'
-            desc += f'**File** {fpath}\n**Lines** {first_ln} - {last_ln} [{len(lines) - 1} total]\n\n'
-        desc += f'{neo.conf["emojis"]["github"]["star"]} the repository to support neo\'s development!'
+            desc += f'**File** {fpath}\n**Lines** {first_ln} - {last_ln} [{len(lines) - 1} total]'
         await ctx.send(embed=neo.Embed(title=title, description=desc, url=url))
 
     async def fetch_latest_commit(self):

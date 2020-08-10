@@ -20,7 +20,6 @@ from contextlib import suppress
 from datetime import datetime
 from string import ascii_letters
 from random import choice
-import urllib.parse
 
 import discord
 from discord.ext import commands
@@ -37,7 +36,8 @@ gh_emojis = neo.conf['emojis']['github']
 
 
 class GHUser:
-    __slots__ = ('data', 'name', 'url', 'bio', 'av_url', 'location', 'user_id', 'created', 'updated',
+    __slots__ = ('data', 'name', 'url', 'bio', 'av_url',
+                 'location', 'user_id', 'created', 'updated',
                  'refol')
 
     def __init__(self, data):
@@ -45,7 +45,8 @@ class GHUser:
         self.name = data.get('login')
         self.url = data.get('html_url')
         self.bio = data.get('bio')
-        self.av_url = URL(data.get('avatar_url')).update_query(f'{choice(ascii_letters)}={choice(ascii_letters)}')
+        self.av_url = URL(data.get('avatar_url'))\
+            .update_query(f'{choice(ascii_letters)}={choice(ascii_letters)}')
         # ^ This looks unnecessary, but it helps bypass discord's caching the avatar images
         self.location = data.get('location')
         self.user_id = data.get('id')
@@ -85,8 +86,7 @@ async def get_repo_commit_count(session, url):
         commit_count = len(await resp.json())
     last_page = resp.links.get('last')
     if last_page:
-        qs = URL(last_page['url']).query_string
-        commit_count = int(dict(urllib.parse.parse_qsl(qs))['page'])
+        commit_count = int(URL(last_page['url']).query['page'])
     return f"{commit_count:,}"
 
 
@@ -102,7 +102,7 @@ class Github(commands.Cog):
             if resp.status != 200:
                 raise ApiError(f'Received {resp.status}')
             json = await resp.json()
-        with suppress(UnboundLocalError):
+        with suppress(UnboundLocalError):  # I'm not lazy shut up
             user = GHUser(json)
             embed = discord.Embed(title=f'{user.name} ({user.user_id})',
                                   description=textwrap.fill(user.bio, width=40) if user.bio else None, url=user.url,
