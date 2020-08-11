@@ -16,6 +16,7 @@ You should have received a copy of the GNU Affero General Public License
 along with neo.  If not, see <https://www.gnu.org/licenses/>.
 """
 from typing import Union
+from contextlib import suppress
 
 import discord
 from discord.ext import commands
@@ -37,7 +38,11 @@ class StarredMessage:
 
     async def __ainit__(self):
         self.message = await self.get_message()
-        self.sent_msg = await self.starboard_channel.fetch_message(self.sent_msg_id)
+        try:
+            self.sent_msg = await self.starboard_channel.fetch_message(self.sent_msg_id)
+        except discord.NotFound:
+            await self.terminate()
+            return None
         await self.bot.pool.execute(
             'INSERT INTO starboard_msgs (message_id, channel_id, '
             'guild_id, stars, sent_msg_id) VALUES ($1, $2, $3, $4, $5)'
@@ -68,10 +73,11 @@ class StarredMessage:
             self.stars, self.message_id)
 
     async def terminate(self):
-        await self.sent_msg.delete()
-        await self.bot.pool.execute(
-            'DELETE FROM starboard_msgs WHERE message_id=$1',
-            self.message_id)
+        with suppress(Exception):
+            await self.sent_msg.delete()
+            await self.bot.pool.execute(
+                'DELETE FROM starboard_msgs WHERE message_id=$1',
+                self.message_id)
 
 
 class Starboard(commands.Cog):

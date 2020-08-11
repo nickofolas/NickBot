@@ -61,7 +61,7 @@ class Reminder:
             target = self.user
         send_content = f"**{self.user.mention} - <{self.jump_origin}>**\n" + indent(self.content, '> ')
         await target.send(send_content, allowed_mentions=discord.AllowedMentions(users=[self.user]))
-        await self.conn_pool.execute('DELETE FROM reminders WHERE id=$1 and user_id=$2', self.rm_id, self.user.id)
+        await self.conn_pool.execute('DELETE FROM reminders WHERE id=$1 AND user_id=$2', self.rm_id, self.user.id)
 
 class Customisation(commands.Cog):
     def __init__(self, bot):

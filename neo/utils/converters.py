@@ -24,7 +24,10 @@ from functools import partial
 
 from dateutil.relativedelta import relativedelta
 from discord.ext import commands
+import yarl
 import discord
+
+from neo.models.github import GHUser, GHRepo
 
 BetterUser = namedtuple('BetterUser', 'obj')
 RedditMatch = namedtuple('RedditMatch', 'name id match')
@@ -41,6 +44,7 @@ dt_re = re.compile(r"""((?P<years>[0-9])\s?(?:years?|y))?
                         ((?P<hours>[0-9]{1,5})\s?(?:hours?|h))?
                         ((?P<minutes>[0-9]{1,5})\s?(?:minutes?|m))?
                         ((?P<seconds>[0-9]{1,5})\s?(?:seconds?|s))?""", re.X)
+github_base = yarl.URL('https://api.github.com')
 
 class BoolConverter(commands.Converter):
     async def convert(self, ctx, argument):
@@ -88,6 +92,25 @@ class RedditConverter(commands.Converter):
 class GitHubConverter(commands.Converter):
     async def convert(self, ctx, argument):
         return github_pattern.search(argument.strip('<>')).groupdict()
+
+class ArbitraryGitHubConverter(commands.Converter):
+    async def convert(self, ctx, argument):
+        groupdict = github_pattern.match(argument.strip('<>')).groupdict()
+        if groupdict.get('repo'):
+            url = github_base / 'repos/{0}/{1}'.format(*groupdict.values())
+            model = GHRepo
+        elif groupdict.get('user'):
+            url = github_base / 'users/{}'.format(groupdict['user'])
+            model = GHUser
+        else:
+            raise commands.ConversionError('A GitHub entity could not be resolved from the given argument')
+        async with ctx.bot.session.get(url) as resp:
+            if resp.status != 200:
+                raise commands.CommandError(
+                    f'Couldn\'t find the entity (Error code {resp.status})')
+            json = await resp.json()
+        return model(json)
+
 
 class TimeConverter(commands.Converter):
     async def convert(self, ctx, argument):
