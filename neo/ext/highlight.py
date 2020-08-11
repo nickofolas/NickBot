@@ -44,11 +44,11 @@ def check_regex(content):
     if (match := regex_check.search(content)):
         d = regex_check.search(content).groupdict()
         if d.get('uncontrolled'):
-            raise ValueError(f'Uncontrolled repetition match found (`{match.group(0)}`)')
+            raise ValueError(f'Uncontrolled repetition match found [`{match.group(0)}`]')
         else:
             raise ValueError(f'Found disallowed pattern in `{match.group(0)}`')
     if (f := [*filter(lambda pat: len(pat.findall(content)) > 5, (excessive_or, excessive_escapes))]):
-        raise ValueError(f'Excessive escapes/`|` chars ({[*map(lambda p: p.findall(content), f)]})')
+        raise ValueError(f'Excessive escapes/`|` chars [{[*map(lambda p: p.findall(content), f)]})')
     
 def clean_emojis(content, bot):
     new_content = content
@@ -262,7 +262,7 @@ class HighlightCommands(commands.Cog):
         Remove one, or multiple highlights by index
         """
         if not highlight_index:
-            raise commands.CommandError('Use the index of a highlight (found in your list of highlights) to remove it')
+            raise commands.CommandError('Use the index of a highlight [found in your list of highlights] to remove it')
         fetched = [rec['kw'] for rec in
                    await ctx.bot.pool.fetch("SELECT kw from highlights WHERE user_id=$1", ctx.author.id)]
         for num in highlight_index:

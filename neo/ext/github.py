@@ -28,7 +28,7 @@ from yarl import URL
 
 import neo
 from neo.utils.converters import GitHubConverter, ArbitraryGitHubConverter
-from neo.models.github import GHUser, GHRepo
+from neo.models import GHUser, GHRepo
 from neo.utils.errors import ApiError
 from neo.utils.formatters import prettify_text
 
@@ -61,14 +61,14 @@ async def repo_callback(ctx, repo):
     fone_txt = f'**Owner** {repo.owner.name}\n'
     fone_txt += f'**Language** {repo.language}\n'
     fone_txt += f'**Forks** {repo.forks:,}\n'
-    fone_txt += f"**Pushed** {nt(datetime.utcnow() - push_delta)}"
+    fone_txt += f"**Pushed** {nt(datetime.utcnow() - repo.last_push)}"
     ftwo_txt = f'{gh_emojis["license"]} {repo.license_id}\n'
     ftwo_txt += f'{gh_emojis["star"]} {repo.gazers:,}\n'
     ftwo_txt += f'{gh_emojis["watcher"]}  {repo.watchers:,}\n'
     ftwo_txt += f"{gh_emojis['commit']} {await repo.commit_count(ctx.bot.session)}"
     embed.add_field(name='Info', value=fone_txt)
     embed.add_field(name='_ _', value=ftwo_txt) 
-    embed.set_footer(text=f'Created {nt(datetime.utcnow() - create_delta)}')
+    embed.set_footer(text=f'Created {nt(datetime.utcnow() - repo.created)}')
     await ctx.send(embed=embed)
 
 async def delegate_callbacks(ctx, entity):

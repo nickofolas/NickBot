@@ -261,7 +261,7 @@ class Info(commands.Cog):
         s_members = [f'{neo.conf["emojis"]["status_emojis"][k]} {v:,}' for k, v in statuses.items()]
         s_members.append(f'{info_emojis["bot"]} {sum(m.bot for m in guild.members):,}')
         embed.add_field(
-            name=f'**Members ({guild.member_count:,})**',
+            name=f'**Members [{guild.member_count:,}]**',
             value='\n'.join(s_members),
             inline=True)
         await ctx.send(embed=embed)
@@ -320,7 +320,7 @@ class Info(commands.Cog):
                 map(neo.utils.formatters.prettify_text, guild.features or ['None'])).title().replace('Url', 'URL')
             online = invite.approximate_presence_count
             total = invite.approximate_member_count
-            desc = f"**{online:,} ({online/total * 100:.0f}%) of {total:,} members online**"
+            desc = f"**{online:,} [{online/total * 100:.0f}%] of {total:,} members online**"
             if guild.description:
                 desc += f"\n{textwrap.fill(guild.description, width=45)}"
             embed = neo.Embed(description=desc, title=guild.name)

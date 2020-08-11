@@ -205,6 +205,14 @@ class Dev(commands.Cog):
             await m.delete()
         await ctx.message.add_reaction(ctx.tick(True))
 
+    @dev_command_group.command(name='clean')
+    async def _bulk_clean(self, ctx, amount: int = 5):
+        async with ctx.loading():
+            await ctx.channel.purge(
+                limit=amount,
+                bulk=False,
+                check=lambda m: m.author == ctx.me)
+
     @dev_command_group.command(name='source', aliases=['src'])
     async def _dev_src(self, ctx, *, obj):
         new_ctx = await copy_ctx(ctx, f'eval return inspect!.getsource({obj})')
@@ -288,7 +296,6 @@ class Dev(commands.Cog):
             extensions = neo.conf['exts'] if flags['extension'][0] == '~' else flags['extension']
             for ext in extensions:
                 mode(ext)
-
 
 def setup(bot):
     bot.add_cog(Dev(bot))

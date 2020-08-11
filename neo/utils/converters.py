@@ -27,7 +27,7 @@ from discord.ext import commands
 import yarl
 import discord
 
-from neo.models.github import GHUser, GHRepo
+from neo.models import GHUser, GHRepo
 
 RedditMatch = namedtuple('RedditMatch', 'name id match')
 TimeOutput = namedtuple('TimeOutput', 'time string')
@@ -102,11 +102,11 @@ class ArbitraryGitHubConverter(commands.Converter):
             url = github_base / 'users/{}'.format(groupdict['user'])
             model = GHUser
         else:
-            raise commands.ConversionError('A GitHub entity could not be resolved from the given argument')
+            raise commands.CommandError('A GitHub entity could not be resolved from the given argument')
         async with ctx.bot.session.get(url) as resp:
             if resp.status != 200:
                 raise commands.CommandError(
-                    f'Couldn\'t find the entity (Error code {resp.status})')
+                    f'Couldn\'t find the given entity [Error code {resp.status}]')
             json = await resp.json()
         return model(json)
 

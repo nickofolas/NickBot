@@ -197,7 +197,7 @@ class Reddit(commands.Cog):
                 params={'limit': '100', 't': flags['time']}, allow_redirects=False) as resp:
             data = await resp.json()
         if resp.status != 200:
-            raise ApiError(f'Unable to get listing (received {resp.status})')
+            raise ApiError(f'Unable to get listing [received {resp.status}]')
         embeds = [*gen_listing_embeds(SubListing(data, allow_nsfw=allow_nsfw_in_channel(ctx.channel)))]
         if not embeds:
             raise ApiError("Couldn't find any posts that matched the contextual criteria")
@@ -213,7 +213,7 @@ class Reddit(commands.Cog):
                 ctx.bot.session.get(f"https://reddit.com/user/{user.name}/trophies.json") as r2:
             about, trophies = (await r1.json(), await r2.json())
         if r1.status != 200 or r2.status != 200:
-            raise ApiError(f"Unable to get user (received {r1.status}, {r2.status})")
+            raise ApiError(f"Unable to get user [received {r1.status}, {r2.status}]")
         user = Redditor(about_data=about, trophy_data=trophies)
         tstring = textwrap.fill(' '.join(sorted(reddit_emojis['trophies'].get(t, '') for t in set(user.trophies))), 225)
         embed = neo.Embed(
@@ -247,7 +247,7 @@ class Reddit(commands.Cog):
             embed.set_thumbnail(url='https://i.imgur.com/HiRDhBT.png')
             return await ctx.send(embed=embed)
         if resp.status != 200:
-            raise ApiError(f'Unable to get subreddit (received {resp.status})')
+            raise ApiError(f'Unable to get subreddit [received {resp.status}]')
         sub = Subreddit(data)
         embed = neo.Embed(title=sub.prefixed, url=sub.full_url)
         embed.set_thumbnail(

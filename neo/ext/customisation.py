@@ -211,7 +211,7 @@ class Customisation(commands.Cog):
         Remove one, or multiple todos by index
         """
         if not todo_index:
-            raise commands.CommandError('Use the index of a todo (found in your list of todos) to remove it')
+            raise commands.CommandError('Use the index of a todo [found in your list of todos] to remove it')
         query = """
         WITH enumerated AS (
         SELECT todo.content,row_number() OVER (ORDER BY created_at ASC) AS rnum FROM todo WHERE user_id=$1

@@ -41,7 +41,6 @@ from neo.utils.checks import snipe_check
 
 imgur_media_base = URL.build(scheme='http', host='imgur.com')
 
-
 def zulu_time(dt: datetime.datetime):
     return dt.isoformat()[:-6] + 'Z'
 
@@ -139,8 +138,11 @@ class Util(commands.Cog):
             main_format = 'gif'
         else:
             main_format = 'png'
-        (embed := neo.Embed()).set_image(url=(aurl := target.avatar_url_as(format=main_format, size=new_size)))
-        embed.description = ' | '.join(f"[{fmt.upper()}]({target.avatar_url_as(format=fmt, size=new_size)})" for fmt in formats)
+        (embed := neo.Embed()).set_image(url=(aurl := target.avatar_url_as(
+            format=main_format, size=new_size)))
+        embed.description = ' | '.join(
+            f"[{fmt.upper()}]({target.avatar_url_as(format=fmt, size=new_size)})"
+            for fmt in formats)
         actual_size = URL(str(aurl)).query.get('size', new_size)
         embed.set_footer(text=f"{target} | {actual_size}x{actual_size} px")
         await ctx.send(embed=embed)
@@ -194,10 +196,13 @@ class Util(commands.Cog):
         if image_url is None and not ctx.message.attachments:
             raise commands.MissingRequiredArgument(Parameter(name='image', kind=Parameter.KEYWORD_ONLY))
         image = image_url or ctx.message.attachments[0].url
-        async with timeout(30), ctx.loading(tick=False), self.bot.session.get('https://api.tsu.sh/google/ocr', params={'q': image}) as resp:
+        async with timeout(30), \
+                ctx.loading(tick=False), \
+                self.bot.session.get(
+                    'https://api.tsu.sh/google/ocr',
+                    params={'q': image}) as resp:
             output = (await resp.json()).get('text', 'No result')
         await ctx.quick_menu(group(output, 750) or ['No result'], 1, delete_on_button=True, clear_reactions_after=True)
-
 
 def setup(bot):
     bot.add_cog(Util(bot))

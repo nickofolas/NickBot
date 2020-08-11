@@ -54,7 +54,7 @@ class NeoBot(commands.Bot):
         super().__init__(command_prefix=get_prefix, case_insensitive=True,
                          allowed_mentions=discord.AllowedMentions(everyone=False, users=False, roles=False))
         self.snipes = {}
-        self.loop.create_task(self.ainit())
+        self.loop.create_task(self.__ainit__())
         self._cd = commands.CooldownMapping.from_cooldown(2.0, 2.5, commands.BucketType.user)
         self.add_check(self.global_cooldown, call_once=True)
         self.before_invoke(self.before)
@@ -64,7 +64,7 @@ class NeoBot(commands.Bot):
 
         self.run(neo.secrets.bot_token)
 
-    async def ainit(self):
+    async def __ainit__(self):
         self.session = aiohttp.ClientSession()
         self.pool = await asyncpg.create_pool(
             user=neo.secrets.dbuser,

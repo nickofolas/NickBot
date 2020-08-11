@@ -74,10 +74,10 @@ class StarredMessage:
 
     async def terminate(self):
         with suppress(Exception):
-            await self.sent_msg.delete()
             await self.bot.pool.execute(
                 'DELETE FROM starboard_msgs WHERE message_id=$1',
                 self.message_id)
+            await self.sent_msg.delete()
 
 
 class Starboard(commands.Cog):
@@ -203,7 +203,7 @@ class Starboard(commands.Cog):
 
     @commands.Cog.listener()
     async def on_raw_message_delete(self, payload):
-        if (star := discord.utils.get(self.starred, message_id=payload.message_id)):
+        if (star := discord.utils.get(filter(None, self.starred), message_id=payload.message_id)):
             await star.terminate()
             self.starred.discard(star)
 
