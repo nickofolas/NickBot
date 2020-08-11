@@ -133,8 +133,7 @@ class Info(commands.Cog):
     @commands.group(aliases=['ui'], invoke_without_command=True)
     async def userinfo(self, ctx, *, target=None):
         """Get information about the targeted user"""
-        target = await BetterUserConverter().convert(ctx, target)
-        user = target.obj
+        user = await BetterUserConverter().convert(ctx, target)
         flags = [flag for flag, value in dict(user.public_flags).items() if value is True]
         user_info = UserInfo(user, ctx, flags)
         badge_list = list()

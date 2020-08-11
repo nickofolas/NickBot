@@ -163,7 +163,7 @@ class Starboard(commands.Cog):
         if not checked: return
         message, stars = await self.get_stars(payload)
         if payload.user_id == message.author.id: return
-        if (existing := discord.utils.get(self.starred, message_id=payload.message_id)):
+        if (existing := discord.utils.get(filter(None, self.starred), message_id=payload.message_id)):
             await existing.update(new_stars = stars)
             return
         if stars >= guild['starboard_star_requirement']:
@@ -196,7 +196,7 @@ class Starboard(commands.Cog):
         if not checked: return
         message, stars = await self.get_stars(payload)
         if payload.user_id == message.author.id: return
-        if (star := discord.utils.get(self.starred, message_id=payload.message_id)):
+        if (star := discord.utils.get(filter(None, self.starred), message_id=payload.message_id)):
             await star.update(new_stars = stars)
         if stars < guild['starboard_star_requirement']:
             self.starred.discard(star)
@@ -210,7 +210,7 @@ class Starboard(commands.Cog):
     @commands.Cog.listener()
     async def on_raw_bulk_message_delete(self, payload):
         for msg_id in payload.message_ids:
-            if (star := discord.utils.get(self.starred, message_id=msg_id)):
+            if (star := discord.utils.get(filter(None, self.starred), message_id=msg_id)):
                 await star.terminate()
                 self.starred.discard(star)
 

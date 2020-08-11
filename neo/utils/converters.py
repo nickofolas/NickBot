@@ -29,7 +29,6 @@ import discord
 
 from neo.models.github import GHUser, GHRepo
 
-BetterUser = namedtuple('BetterUser', 'obj')
 RedditMatch = namedtuple('RedditMatch', 'name id match')
 TimeOutput = namedtuple('TimeOutput', 'time string')
 u_conv = commands.UserConverter()
@@ -70,7 +69,7 @@ class BetterUserConverter(commands.Converter):
                 out = await ctx.bot.fetch_user(argument)
             except discord.HTTPException:
                 raise commands.CommandError("Invalid user provided")
-        return BetterUser(obj=out)
+        return out
 
 
 class CBStripConverter(commands.Converter):

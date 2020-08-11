@@ -129,7 +129,7 @@ class Util(commands.Cog):
     @flags.command(aliases=['av'])
     async def avatar(self, ctx, **flags):
         """Get your own, or another user's avatar"""
-        target = (await BetterUserConverter().convert(ctx, flags.get('target'))).obj
+        target = await BetterUserConverter().convert(ctx, flags.get('target'))
         new_size = constrained_round(flags['size'])
         formats = ['png', 'jpeg', 'webp', 'jpg']
         if f := flags.get('format'):
