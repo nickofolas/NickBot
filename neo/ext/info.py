@@ -283,7 +283,7 @@ class Info(commands.Cog):
     def format_channels(channel):
         spacer = '\N{zwsp} _ _'
         if isinstance(channel, discord.CategoryChannel):
-            return f'<:expanded:702065051036680232> **{channel.name.upper()}**'
+            return f'<:expanded:743229782090579968> **{channel.name.upper()}**'
         elif isinstance(channel, (discord.TextChannel, discord.VoiceChannel)):
             suffix = ''
             if channel.overwrites_for(channel.guild.default_role).read_messages is False:

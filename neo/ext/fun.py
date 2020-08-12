@@ -199,7 +199,7 @@ class Fun(commands.Cog):
                 await ctx.message.delete()
 
     @get_emoji.command()
-    async def big(self, ctx, emoji: Union[discord.Emoji, discord.PartialEmoji, str]):
+    async def big(self, ctx, emoji: Union[discord.PartialEmoji, str]):
         """Enlarges an emoji. Can work on animated emojis, but results may vary in quality"""
         i = await self.fetch_one(ctx, emoji) if \
             isinstance(emoji, str) else emoji

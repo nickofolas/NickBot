@@ -146,6 +146,8 @@ class Customisation(commands.Cog):
             strat = strategy_map[ctx.invoked_with]
             if strat == current_prefixes.discard and len(current_prefixes) == 1:
                 raise commands.CommandError('A guild must always have at least one prefix')
+            if strat == current_prefixes.add and len(current_prefixes) == 5:
+                raise commands.CommandError('A guild may have no more than 5 prefixes')
             strat(prefix)
             await self.bot.pool.execute(
                 'UPDATE guild_prefs SET prefixes=$1 WHERE guild_id=$2',

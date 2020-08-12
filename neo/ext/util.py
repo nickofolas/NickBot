@@ -15,18 +15,17 @@ GNU Affero General Public License for more details.
 You should have received a copy of the GNU Affero General Public License
 along with neo.  If not, see <https://www.gnu.org/licenses/>.
 """
-import copy
 import asyncio
 import datetime
 import json
-import os
-import pprint
 import re
 import time
 import unicodedata
+import random
 from inspect import Parameter
 from typing import Union, Optional
 from contextlib import suppress
+from collections import Counter
 
 import discord
 from discord.ext import commands, flags
@@ -97,7 +96,7 @@ class Util(commands.Cog):
             description=f':electric_plug: **Websocket** {round(self.bot.latency * 1000, 3)}ms'))
         end = time.perf_counter()
         duration = (end - start) * 1000
-        em = copy.copy(message.embeds[0])
+        em = message.embeds[0].copy()
         em.description += f'\n{neo.conf["emojis"]["discordlogo"]} **API** {duration:.3f}ms'
         await asyncio.sleep(0.25)
         await message.edit(embed=em)
@@ -203,6 +202,26 @@ class Util(commands.Cog):
                     params={'q': image}) as resp:
             output = (await resp.json()).get('text', 'No result')
         await ctx.quick_menu(group(output, 750) or ['No result'], 1, delete_on_button=True, clear_reactions_after=True)
+
+    @commands.group(name='choose', invoke_without_command=True)
+    async def random_choice(self, ctx, *options):
+        """Choose between multiple choices"""
+        if len(options) < 2:
+            raise commands.CommandError('Not enough choices provided')
+        await ctx.send(random.choice(options))
+
+    @random_choice.command(name='best')
+    async def random_choice_bestof(self, ctx, times: Optional[int], *options):
+        """Choose between multiple choices `times` times"""
+        if len(options) < 2:
+            raise commands.CommandError('Not enough choices provided')
+        times = min(10001, max(1, times or ((len(options) ** 2) + 1)))
+        choices = Counter(random.choice(options) for _ in range(times))
+        choices = sorted(choices.items(), key=lambda i: i[1], reverse=True)
+        formatted_choices = (f'{c}. `{choice.ljust(len(max(options, key=len)))}` '
+                             f'[{amt} | {amt/times * 100:.1f}%]' for 
+                             c, (choice, amt) in enumerate(choices, 1))
+        await ctx.send('\n'.join(formatted_choices))
 
 def setup(bot):
     bot.add_cog(Util(bot))
