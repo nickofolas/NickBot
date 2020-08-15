@@ -91,23 +91,6 @@ class Context(commands.Context):
             await msg.edit(content='Cancelled!')
             return False
 
-    async def safe_send(self, content=None, **kwargs):  # Kill this please it needs to die
-        if content:
-            if match := re.search(re.compile(r'([a-zA-Z0-9]{24}\.[a-zA-Z0-9]{6}\.[a-zA-Z0-9_\-]{27}|mfa\.['
-                                             r'a-zA-Z0-9_\-]{84})'), content):
-                content = content.replace(match.group(0), '[token omitted]')
-            if len(content) > 2000:
-                async with self.bot.session.post(
-                        "https://mystb.in/documents",
-                        data=content.encode('utf-8')) as post:
-                    post = await post.json()
-                    url = f"https://mystb.in/{post['key']}"
-                    await self.send(f'Output: <{url}>')
-            else:
-                return await self.send(content, **kwargs)
-        else:
-            await self.send(**kwargs)
-
     @staticmethod
     def tick(opt, label=None):
         lookup = {

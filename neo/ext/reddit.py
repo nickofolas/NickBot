@@ -27,151 +27,30 @@ from discord.ext import commands, flags
 from humanize import naturaltime as nt
 
 import neo
+from neo.models import Submission, Subreddit, Redditor, SubListing
 from neo.utils.errors import ApiError
 from neo.utils.paginator import CSMenu, PagedEmbedMenu
-from neo.utils.converters import RedditConverter
+from neo.utils.converters import RedditConverter, ArbitraryRedditConverter
 from neo.utils.formatters import group
 
-PollChoice = namedtuple('PollChoice', ['text', 'votes'])
 reddit_emojis = neo.conf['emojis']['reddit']
 
-
-class Poll:
-    def __init__(self, poll_data):
-        self.data = poll_data
-        self.deadline = datetime.fromtimestamp(poll_data.get("voting_end_timestamp") / 1000)
-        self.total_votes = poll_data.get("total_vote_count")
-
-    def __iter__(self):
-        for option in self.data['options']:
-            yield PollChoice(text=option['text'], votes=option.get('vote_count', ''))
-
-
-class Submission:
-    __slots__ = ('data', 'title', 'nsfw', 'text', 'upvotes', 'comments',
-                 'full_url', 'img_url', 'author', 'author_url', 'thumbnail', 'poll', 'created', 'creation_delta')
-    """Wraps up a Submission"""
-
-    def __init__(self, data):
-        self.data = data
-        self.title = textwrap.shorten(data.get('title'), width=252)
-        self.nsfw = data.get('over_18')
-        self.text = textwrap.shorten(data.get('selftext'), width=1500) if data.get('selftext') else ''
-        self.upvotes = data.get('ups')
-        self.comments = data.get('num_comments')
-        self.full_url = "https://www.reddit.com" + data.get('permalink')
-        self.img_url = data.get('url')
-        self.thumbnail = data.get('thumbnail')
-        self.author = data.get('author')
-        self.author_url = f"https://www.reddit.com/user/{self.author}"
-        self.created = data.get('created_utc')
-        self.creation_delta = datetime.utcnow() - datetime.utcfromtimestamp(self.created)
-        if p := data.get('poll_data'):
-            self.poll = Poll(p)
-        else:
-            self.poll = None
-
-    @property
-    def is_gif(self):
-        if p := self.data.get('preview'):
-            if p2 := p.get('reddit_video_preview'):
-                return p2.get('is_gif')
-        return False
-
-    @property
-    def to_embed(self):
-        desc = self.text
-        if p := self.poll:
-            pending = p.deadline > datetime.utcnow()
-            desc = '\n'.join(f"➣ {opt.votes} votes: {opt.text}" for opt in p)
-            if pending:
-                desc = "**Poll pending**\n" + '\n'.join(f"➣ {opt.text}" for opt in p)
-            desc += f'\n**{p.total_votes} total votes**'
-        embed = neo.Embed(
-            title=self.title,
-            description=f"{reddit_emojis['upvote']} {self.upvotes:,} | :speech_balloon: {self.comments:,} "
-                        f"| 🕙 {nt(self.creation_delta)}\n{desc}",
-            url=self.full_url
-        ).set_image(url=self.img_url).set_author(name=self.author,
-            url=f"https://www.reddit.com/user/{self.author}")
-        return embed
-
-
-class SubListing:
-    __slots__ = ('data', 'allow_nsfw')
-    """Generates a listing of posts from a Subreddit"""
-
-    def __init__(self, data, *, allow_nsfw=False):
-        self.data = data
-        self.allow_nsfw = allow_nsfw
-
-    def do_predicates(self, submission):
-        predicates = [submission.is_gif is False]
-        if not self.allow_nsfw:
-            predicates.append(submission.nsfw is False)
-        return all(predicates)
-
-    @property
-    def posts(self):
-        for post in self.data['data']['children']:
-            submission = Submission(post['data'])
-            if not self.do_predicates(submission):
-                continue
-            yield submission
-
-
-class Subreddit:
-    __slots__ = ('data', 'title', 'icon_img', 'prefixed', 'subscribers', 'pub_desc', 'full_url', 'created', 'nsfw')
-    """Wraps up a Subreddit's JSON"""
-
-    def __init__(self, data):
-        self.data = data
-        self.title = data.get('title')
-        self.icon_img = data.get('icon_img')
-        self.prefixed = data.get('display_name_prefixed')
-        self.subscribers = data.get('subscribers')
-        self.pub_desc = data.get('public_description')
-        self.full_url = "https://reddit.com" + data.get('url')
-        self.created = data.get('created_utc')
-        self.nsfw = data.get('over18', False)
-
-
-class Redditor:
-    __slots__ = ('tdata', 'adata', 'subreddit', 'is_gold', 'icon_url', 'link_karma', 'comment_karma', 'name', 'created')
-    """Wraps up a Redditor's JSON"""
-
-    def __init__(self, *, about_data, trophy_data=None):
-        about_data = about_data.get('data')
-        self.tdata = trophy_data.get('data') if trophy_data else None
-        self.adata = about_data
-        self.subreddit = Subreddit(about_data.get('subreddit'))
-        self.is_gold = about_data.get('is_gold')
-        self.icon_url = about_data.get('icon_img')
-        self.link_karma = about_data.get('link_karma')
-        self.comment_karma = about_data.get('comment_karma')
-        self.name = about_data.get('name')
-        self.created = about_data.get('created_utc')
-
-    @property
-    def trophies(self):
-        if not self.tdata:
-            return None
-        for trophy in self.tdata.get('trophies'):
-            yield trophy['data'].get('name')
-
-    def is_cakeday(self):
-        return datetime.utcfromtimestamp(self.created).day == datetime.utcnow().day
-
-    @property
-    def display_name(self):
-        if self.subreddit.title != self.name:
-            return self.subreddit.title
-        return self.name
-
-
-def gen_listing_embeds(listing):
-    for post in listing.posts:
-        yield post.to_embed
+def submission_to_embed(submission):
+    desc = submission.text
+    if p := submission.poll:
+        pending = p.deadline > datetime.utcnow()
+        desc = '\n'.join(f"➣ {opt.votes} votes: {opt.text}" for opt in p)
+        if pending:
+            desc = "**Poll pending**\n" + '\n'.join(f"➣ {opt.text}" for opt in p)
+        desc += f'\n**{p.total_votes} total votes**'
+    embed = neo.Embed(
+        title=submission.title,
+        description=f"{reddit_emojis['upvote']} {submission.upvotes:,} | :speech_balloon: {submission.comments:,} "
+                    f"| 🕙 {nt(submission.creation_delta)}\n{desc}",
+        url=submission.full_url
+    ).set_image(url=submission.img_url).set_author(name=submission.author,
+        url=f"https://www.reddit.com/user/{submission.author}")
+    return embed
 
 def allow_nsfw_in_channel(channel):
     if isinstance(channel, discord.DMChannel):
@@ -179,10 +58,76 @@ def allow_nsfw_in_channel(channel):
     elif channel.is_nsfw():
         return True
 
+async def post_callback(ctx, post):
+    embeds = [submission_to_embed(post)]
+    for item in group(post.original_json[1]['data']['children'], 5):
+        embed = neo.Embed(title='Browsing top-level comments')
+        for comment in item:
+            embed.add_field(
+                name=f"{reddit_emojis['upvote']} {comment['data'].get('ups')} | "
+                     f"u/{comment['data'].get('author')}",
+                value=f"[🔗](https://reddit.com{comment['data'].get('permalink')})"
+                      f"{textwrap.shorten(comment['data'].get('body', ''), width=125)}",
+                inline=False)
+        embeds.append(embed)
+    source = PagedEmbedMenu(embeds)
+    menu = CSMenu(source, delete_message_after=True)
+    await menu.start(ctx)
+
+async def user_callback(ctx, user):
+    tstring = textwrap.fill(' '.join(
+        sorted(reddit_emojis['trophies'].get(t, '') for t in {*user.trophies,})),
+        225)
+    embed = neo.Embed(
+        title=user.display_name,
+        description=tstring)
+    embed.set_author(
+        name=user.subreddit.prefixed,
+        url=user.subreddit.full_url,
+        icon_url='https://i.imgur.com/6OedixC.png' if user.is_cakeday() else '')
+    embed.set_thumbnail(url=user.icon_url.split('?', 1)[0])
+    embed.add_field(
+        name=f'{reddit_emojis["karma"]} Karma',
+        value=textwrap.dedent(f"""
+            **{user.link_karma + user.comment_karma:,}** combined
+            **{user.comment_karma:,}** comment
+            **{user.link_karma:,}** post
+            """))
+    embed.set_footer(text=f"Created {nt(time.time() - user.created)}")
+    await ctx.send(embed=embed)
+
+async def subreddit_callback(ctx, sub):
+    embed = neo.Embed(title=sub.prefixed, url=sub.full_url)
+    embed.set_thumbnail(
+        url='https://i.imgur.com/gKzmGxt.png' if sub.nsfw and not allow_nsfw_in_channel(ctx.channel)
+            else sub.icon_img or '')
+    embed.description = f"**Title** {sub.title}"
+    embed.description += f"\n**Subs** {sub.subscribers:,}"
+    embed.description += f"\n**Created** {nt(time.time() - sub.created)}"
+    await ctx.send(embed=embed)
+
+callback_mapping = {Submission: post_callback,
+                    Redditor: user_callback,
+                    Subreddit: subreddit_callback}
+
+async def delegate_callbacks(ctx, entity):
+    await callback_mapping[type(entity)](ctx, entity)
 
 class Reddit(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
+
+    @commands.command(name='get')
+    async def reddit_arbitrary(ctx, *, entity: ArbitraryRedditConverter):
+        """
+        Fetch information on an arbitrary Reddit entity type.
+        There are distinct entity types:
+        **Users**: denoted by prefixing the name with `u/`
+        **Subreddits**: denoted by prefixing the name with `r/`
+        **Posts**: denoted by providing a full URL to the post.
+        Additionally, a URL to a user or subreddit may be provided.
+        """
+        await delegate_callbacks(ctx, entity)
 
     @flags.add_flag('-t', '--time', choices=['hour', 'day', 'week', 'month', 'year', 'all'], default='all')
     @flags.add_flag('-s', '--sort', choices=['top', 'new', 'rising', 'hot', 'controversial', 'best'], default='hot')
@@ -197,88 +142,14 @@ class Reddit(commands.Cog):
                 params={'limit': '100', 't': flags['time']}, allow_redirects=False) as resp:
             data = await resp.json()
         if resp.status != 200:
-            raise ApiError(f'Unable to get listing [received {resp.status}]')
+            raise ApiError(f'Unable to get listing [status code {resp.status}]')
+        def gen_listing_embeds(listing):
+            for post in listing.posts:
+                yield submission_to_embed(post)
         embeds = [*gen_listing_embeds(SubListing(data, allow_nsfw=allow_nsfw_in_channel(ctx.channel)))]
         if not embeds:
             raise ApiError("Couldn't find any posts that matched the contextual criteria")
         source = PagedEmbedMenu(embeds[:flags['amount']])
-        menu = CSMenu(source, delete_message_after=True)
-        await menu.start(ctx)
-
-    @commands.command(name='user')
-    async def reddit_user(ctx, *, user: RedditConverter):
-        """Get user info on a redditor"""
-        async with ctx.loading(tick=False), \
-                ctx.bot.session.get(f"https://reddit.com/user/{user.name}/about.json") as r1, \
-                ctx.bot.session.get(f"https://reddit.com/user/{user.name}/trophies.json") as r2:
-            about, trophies = (await r1.json(), await r2.json())
-        if r1.status != 200 or r2.status != 200:
-            raise ApiError(f"Unable to get user [received {r1.status}, {r2.status}]")
-        user = Redditor(about_data=about, trophy_data=trophies)
-        tstring = textwrap.fill(' '.join(sorted(reddit_emojis['trophies'].get(t, '') for t in set(user.trophies))), 225)
-        embed = neo.Embed(
-            title=user.subreddit.title if user.subreddit.title != user.name else '',
-            description=tstring)
-        embed.set_author(
-            name=user.subreddit.prefixed,
-            url=user.subreddit.full_url,
-            icon_url='https://i.imgur.com/6OedixC.png' if user.is_cakeday() else '')
-        embed.set_thumbnail(url=user.icon_url.split('?', 1)[0])
-        embed.add_field(
-            name=f'{reddit_emojis["karma"]} Karma',
-            value=textwrap.dedent(f"""
-                **{user.link_karma + user.comment_karma:,}** combined
-                **{user.comment_karma:,}** comment
-                **{user.link_karma:,}** post
-                """))
-        embed.set_footer(text=f"Created {nt(time.time() - user.created)}")
-        await ctx.send(embed=embed)
-
-    @commands.command(name='subreddit', aliases=['sub'])
-    async def reddit_subreddit(ctx, *, subreddit: RedditConverter):
-        """Returns brief information on a subreddit"""
-        async with ctx.loading(
-                exc_ignore=(KeyError, aiohttp.ContentTypeError), tick=False), \
-                ctx.bot.session.get(f"https://www.reddit.com/r/{subreddit.name}/about.json",
-                                    allow_redirects=False) as resp:
-            data = (await resp.json())['data']
-        if resp.status == 403:
-            embed=neo.Embed(title=f'r/{subreddit.name} is private')
-            embed.set_thumbnail(url='https://i.imgur.com/HiRDhBT.png')
-            return await ctx.send(embed=embed)
-        if resp.status != 200:
-            raise ApiError(f'Unable to get subreddit [received {resp.status}]')
-        sub = Subreddit(data)
-        embed = neo.Embed(title=sub.prefixed, url=sub.full_url)
-        embed.set_thumbnail(
-            url='https://i.imgur.com/gKzmGxt.png' if sub.nsfw and not allow_nsfw_in_channel(ctx.channel)
-                else sub.icon_img or '')
-        embed.description = f"**Title** {sub.title}"
-        embed.description += f"\n**Subs** {sub.subscribers:,}"
-        embed.description += f"\n**Created** {nt(time.time() - sub.created)}"
-        await ctx.send(embed=embed)
-
-    # TODO: Improve this, I guess
-    @commands.command(name='get')
-    async def reddit_post(ctx, *, post: RedditConverter):
-        """Gets a post and all its top level comments
-        Post IDs and URLs with the ID in the path are both accepted inputs"""
-        post_id = post.id or post.match.string
-        async with ctx.loading(), ctx.bot.session.get(f"https://www.reddit.com/comments/{post_id}/.json") as resp:
-            data = await resp.json()
-        post = Submission(data[0]['data']['children'][0]['data'])
-        embeds = [post.to_embed]
-        for item in group(data[1]['data']['children'], 5):
-            embed = neo.Embed(title='Browsing top-level comments')
-            for comment in item:
-                embed.add_field(
-                    name=f"{reddit_emojis['upvote']} {comment['data'].get('ups')} | "
-                         f"u/{comment['data'].get('author')}",
-                    value=f"[🔗](https://reddit.com{comment['data'].get('permalink')})"
-                          f"{textwrap.shorten(comment['data'].get('body', ''), width=125)}",
-                    inline=False)
-            embeds.append(embed)
-        source = PagedEmbedMenu(embeds)
         menu = CSMenu(source, delete_message_after=True)
         await menu.start(ctx)
 

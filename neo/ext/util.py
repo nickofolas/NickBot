@@ -78,7 +78,9 @@ class Util(commands.Cog):
             target_channel = tc
         try:
             if flags['all']:
-                snipes = [*flatten([self.bot.snipes.get(target_channel)['deleted'], self.bot.snipes.get(target_channel)['edited']])]
+                snipes = [*flatten(
+                    [self.bot.snipes.get(target_channel)['deleted'],
+                     self.bot.snipes.get(target_channel)['edited']])]
             elif flags['edits']:
                 snipes = self.bot.snipes.get(target_channel)['edited']
             else:
@@ -149,7 +151,6 @@ class Util(commands.Cog):
     @commands.command(aliases=['charinfo'])
     async def unichar(self, ctx, *, characters: str):
         """Get information about inputted unicode characters"""
-
         def to_string(c):
             digit = f'{ord(c):X}'  # :X} means uppercase hex formatting
             name = unicodedata.name(c, 'Name not found.')

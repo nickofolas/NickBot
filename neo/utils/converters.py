@@ -18,6 +18,7 @@ along with neo.  If not, see <https://www.gnu.org/licenses/>.
 from collections import namedtuple
 from contextlib import suppress
 import re
+from asyncio import gather
 from datetime import timedelta, datetime
 import itertools
 from functools import partial
@@ -27,14 +28,14 @@ from discord.ext import commands
 import yarl
 import discord
 
-from neo.models import GHUser, GHRepo
+from neo.models import GHUser, GHRepo, Subreddit, Submission, Redditor
 
 RedditMatch = namedtuple('RedditMatch', 'name id match')
 TimeOutput = namedtuple('TimeOutput', 'time string')
 u_conv = commands.UserConverter()
 m_conv = commands.MemberConverter()
 
-reddit_url = re.compile(r"^((https://)?(www\.|old\.|new\.)?reddit.com)?/?((?P<type>user|u|r)/)?(?P<name>[\w\-]*)(/comments/(?P<id>[\w\-\_]*))?/?", re.I)
+reddit_url = re.compile(r"^((https://)?(www\.|old\.|new\.)?reddit.com)?/?((?P<type>u|r)(ser)?/)?(?P<name>[\w\-]*)(/comments/(?P<id>[\w\-\_]*))?/?", re.I)
 github_pattern = re.compile(r"^((https://)?(www\.)?github.com)?/?(?P<user>[\w\.\-]*)/?(?P<repo>[\w\-\.]*)?/?", re.I)
 dt_re = re.compile(r"""((?P<years>[0-9])\s?(?:years?|y))?
                         ((?P<months>[0-9]{1,2})\s?(?:months?|mo))?
@@ -44,6 +45,7 @@ dt_re = re.compile(r"""((?P<years>[0-9])\s?(?:years?|y))?
                         ((?P<minutes>[0-9]{1,5})\s?(?:minutes?|m))?
                         ((?P<seconds>[0-9]{1,5})\s?(?:seconds?|s))?""", re.X)
 github_base = yarl.URL('https://api.github.com')
+reddit_base = yarl.URL('https://www.reddit.com')
 
 class BoolConverter(commands.Converter):
     async def convert(self, ctx, argument):
@@ -87,6 +89,48 @@ class RedditConverter(commands.Converter):
             return RedditMatch(match.groupdict().get('name'), match.groupdict().get('id'), match)
         raise commands.CommandError(f"Invalid argument '{argument}'")
 
+class ArbitraryRedditConverter(commands.Converter):
+    async def convert(self, ctx, argument):
+        _redirects = True
+        _key_depth = None
+        groupdict = reddit_url.match(argument.strip('<>')).groupdict()
+        check_list = [k for k, v in groupdict.items() if v]
+        if len(check_list) == 1 and check_list[-1] == 'name':
+            raise commands.CommandError(
+                'A Reddit entity could not be resolved from the input.'
+                ' Make sure you use a valid model (`r/subreddit`, '
+                '`u/user`, or a submission URL)'
+            )
+        if (_type := groupdict.get('type')) != 'u':
+            if (_id := groupdict.get('id')) is not None:
+                url = reddit_base / 'comments/{}/.json'.format(_id)
+                model = Submission
+                _key_depth = (0, 'data', 'children', 0, 'data')
+            elif _type == 'r':
+                url = reddit_base / 'r/{}/about.json'.format(groupdict.get('name'))
+                model = Subreddit
+                _redirects = False
+                _key_depth = ('data',)
+            async with ctx.bot.session.get(url, allow_redirects=_redirects) as resp:
+                if resp.status != 200:
+                    raise commands.CommandError('Couldn\'t fetch entity [status code {}]'\
+                                                .format(resp.status))
+                json = await resp.json()
+            _json = json
+            for key in _key_depth:
+                json = json.__getitem__(key)
+            return model(json, original = _json)
+        elif _type == 'u':
+            name = groupdict.get('name')
+            about_url = reddit_base / 'u/{}/about.json'.format(name)
+            troph_url = reddit_base / 'u/{}/trophies.json'.format(name)
+            resps = await gather(*map(ctx.bot.session.get, (about_url, troph_url)))
+            if any(r.status != 200 for r in resps):
+                raise commands.CommandError('Couldn\'t fetch user [status codes {}]'\
+                                            .format(', '.join(
+                                                map(lambda r: str(r.status), resps))))
+            about, trophies = await gather(*map(lambda resp: resp.json(), resps))
+            return Redditor(about_data=about, trophy_data=trophies)
 
 class GitHubConverter(commands.Converter):
     async def convert(self, ctx, argument):
@@ -102,7 +146,8 @@ class ArbitraryGitHubConverter(commands.Converter):
             url = github_base / 'users/{}'.format(groupdict['user'])
             model = GHUser
         else:
-            raise commands.CommandError('A GitHub entity could not be resolved from the given argument')
+            raise commands.CommandError(
+                'A GitHub entity could not be resolved from the given argument')
         async with ctx.bot.session.get(url) as resp:
             if resp.status != 200:
                 raise commands.CommandError(

@@ -23,6 +23,7 @@ import zlib
 import discord
 from discord.ext import commands
 
+import neo
 # TODO: rtfs to search dpy source
 # TODO: use own code :mmlul:
 
@@ -194,13 +195,12 @@ class Docs(commands.Cog):
 
         matches = finder(obj, cache, key=lambda t: t[0], lazy=False)[:8]
 
-        e = discord.Embed(colour=discord.Color.main)
+        e = neo.Embed()
         if len(matches) == 0:
             return await ctx.send(
-                embed=discord.Embed(
+                embed=neo.Embed(
                     title='',
-                    description='No results :(',
-                    color=discord.Color.main))
+                    description='No results :(')
 
         e.description = '\n'.join(f'[`{key}`]({url})' for key, url in matches)
         await ctx.send(embed=e)
@@ -232,18 +232,6 @@ class Docs(commands.Cog):
         y_n = await ctx.prompt('Are you sure you want to dump the RTFM cache?')
         if y_n is True:
             self._rtfm_cache.clear()
-
-    @rtfm.command(name='cache')
-    @commands.is_owner()
-    async def view_rtfm_cache(self, ctx):
-        """View all currently cached documentations for rtfm"""
-        cached_docs = '\n'.join([k for k in self._rtfm_cache.keys()]) \
-            or 'No cached docs'
-        await ctx.safe_send(
-            embed=discord.Embed(
-                description=cached_docs,
-                color=discord.Color.main))
-
 
 def setup(bot):
     bot.add_cog(Docs(bot))

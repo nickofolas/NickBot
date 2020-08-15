@@ -33,34 +33,7 @@ from async_timeout import timeout
 import neo
 from neo.utils.paginator import BareBonesMenu, CSMenu
 
-CODE = {'A': '.-', 'B': '-...', 'C': '-.-.',
-        'D': '-..', 'E': '.', 'F': '..-.',
-        'G': '--.', 'H': '....', 'I': '..',
-        'J': '.---', 'K': '-.-', 'L': '.-..',
-        'M': '--', 'N': '-.', 'O': '---',
-        'P': '.--.', 'Q': '--.-', 'R': '.-.',
-        'S': '...', 'T': '-', 'U': '..-',
-        'V': '...-', 'W': '.--', 'X': '-..-',
-        'Y': '-.--', 'Z': '-..',
-
-        '0': '-----', '1': '.----', '2': '..---',
-        '3': '...--', '4': '....-', '5': '.....',
-        '6': '-....', '7': '--...', '8': '---..',
-        '9': '----.'
-        }
-
-CODE_REVERSED = {value: key for key, value in CODE.items()}
-
 NUM_EMOJIS = {str(num): f":{apnumber(num)}:" for num in range(10)}
-
-
-def to_morse(s):
-    return ' '.join(CODE.get(i.upper(), i) for i in s)
-
-
-def from_morse(s):
-    return ''.join(CODE_REVERSED.get(i, i) for i in s.split())
-
 
 def upscale(inp, is_gif=False):
     img = Image.open(io.BytesIO(inp))
@@ -88,27 +61,6 @@ class Fun(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.em_converter = commands.EmojiConverter()
-
-    @commands.command(aliases=['bin'])
-    async def binary(self, ctx, *, content):
-        """Convert stuff to and from binary"""
-        try:
-            n = int(content, 2)
-            await ctx.safe_send(
-                '**Converted from binary: **'
-                + n.to_bytes((n.bit_length() + 7) // 8, 'big').decode())
-        except Exception:
-            await ctx.safe_send(str(bin(int.from_bytes(content.encode(), 'big'))))
-
-    @commands.command()
-    async def morse(self, ctx, *, message):
-        """Convert a message to morse code"""
-        await ctx.send(to_morse(message))
-
-    @commands.command()
-    async def demorse(self, ctx, *, morse):
-        """Convert a message from morse code"""
-        await ctx.send(from_morse(morse))
 
     @commands.command()
     @commands.cooldown(1, 15, commands.BucketType.user)
@@ -253,7 +205,7 @@ class Fun(commands.Cog):
         else:
             user = random.choice(ctx.guild.members)
         await ctx.send(
-            embed=discord.Embed(color=discord.Color.main)
+            embed=neo.Embed()
             .set_image(url=user.avatar_url_as(static_format='png', size=128)))
         try:
             async with timeout(10):
@@ -274,7 +226,8 @@ class Fun(commands.Cog):
     async def dongsize(self, ctx, *, victim: discord.Member = None):
         """Go ahead. You know you want to."""
         victim = victim or ctx.author
-        ran = 25 if victim.id in (*self.bot.owner_ids, self.bot.user.id) else random.Random(victim.id).randint(1, 15)
+        ran = 25 if victim.id in (*self.bot.owner_ids, self.bot.user.id) else \
+            random.Random(victim.id).randint(1, 15)
         dong = '8' + '='*ran + 'D'
         await ctx.safe_send(dong)
 

@@ -15,10 +15,12 @@ GNU Affero General Public License for more details.
 You should have received a copy of the GNU Affero General Public License
 along with neo.  If not, see <https://www.gnu.org/licenses/>.
 """
+import asyncio
 
 import discord
+from discord.ext import commands
 
-from .config import conf, secrets
+from .config_loader import conf, secrets
 from .bot import NeoBot
 
 
