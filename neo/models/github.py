@@ -22,6 +22,8 @@ from yarl import URL
 
 from neo.utils.formatters import from_tz
 
+__all__ = ('GHUser', 'GHRepo')
+
 class GHUser:
     __slots__ = ('data', 'name', 'url', 'bio', 'av_url',
                  'location', 'user_id', 'created', 'updated',

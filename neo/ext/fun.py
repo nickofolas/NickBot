@@ -191,8 +191,10 @@ class Fun(commands.Cog):
     @commands.command()
     async def owoify(self, ctx, *, message):
         """uwuify some text"""
-        flags = uwuify.SMILEY
-        await ctx.safe_send(uwuify.uwu(message, flags=flags))
+        kwargs = {}
+        if len(message) < 1500:
+            kwargs['flags'] = uwuify.SMILEY
+        await ctx.send(uwuify.uwu(message, **kwargs))
 
     @commands.command(aliases=['WorldHealthOrganization'])
     async def who(self, ctx):

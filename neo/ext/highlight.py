@@ -25,7 +25,7 @@ import discord
 from discord.ext import commands, flags, tasks
 
 import neo
-from neo.utils.containers import TimedSet
+from neo.types import TimedSet
 
 # Constants
 MAX_HIGHLIGHTS = 10

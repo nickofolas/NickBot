@@ -15,11 +15,11 @@ GNU Affero General Public License for more details.
 You should have received a copy of the GNU Affero General Public License
 along with neo.  If not, see <https://www.gnu.org/licenses/>.
 """
-from types import SimpleNamespace
-
 import asyncio
 from contextlib import suppress
 from collections import namedtuple
+
+__all__ = ('TimedSet', 'DbCache')
 
 PendingValue = namedtuple('PendingValue', 'item task')
 

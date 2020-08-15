@@ -19,8 +19,9 @@ from collections import namedtuple
 from datetime import datetime
 import textwrap
 
-PollChoice = namedtuple('PollChoice', ['text', 'votes'])
+__all__ = ('Poll', 'Submission', 'SubListing', 'Subreddit', 'Redditor')
 
+PollChoice = namedtuple('PollChoice', ['text', 'votes'])
 
 class Poll:
     def __init__(self, poll_data):

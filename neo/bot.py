@@ -29,7 +29,7 @@ import asyncpg
 
 import neo
 import neo.context
-from neo.utils.containers import DbCache
+from neo.types import DbCache
 
 logging.basicConfig(level=logging.INFO)
 

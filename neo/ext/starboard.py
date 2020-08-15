@@ -67,7 +67,7 @@ class StarredMessage:
         if self.stars < self.bot.guild_cache[self.guild_id]['starboard_star_requirement']:
             await self.terminate()
             return
-        await self.sent_msg.edit(content=f'⭐ {self.stars}')
+        await self.sent_msg.edit(content=f'⭐ **{self.stars}**')
         await self.bot.pool.execute(
             'UPDATE starboard_msgs SET stars=$1 WHERE message_id=$2',
             self.stars, self.message_id)
@@ -181,7 +181,7 @@ class Starboard(commands.Cog):
                 embed.set_image(url=message.attachments[-1].url)
             embed.add_field(name='Jump', value=f'[URL]({message.jump_url})', inline=False)
             sent = await self.bot.get_channel(guild['starboard_channel_id']).send(
-                f'⭐ {stars}',
+                f'⭐ **{stars}**',
                 embed=embed)
             self.starred.add(await StarredMessage(
                 self.bot, message_id = message.id,

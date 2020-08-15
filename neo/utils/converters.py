@@ -35,8 +35,13 @@ TimeOutput = namedtuple('TimeOutput', 'time string')
 u_conv = commands.UserConverter()
 m_conv = commands.MemberConverter()
 
-reddit_url = re.compile(r"^((https://)?(www\.|old\.|new\.)?reddit.com)?/?((?P<type>u|r)(ser)?/)?(?P<name>[\w\-]*)(/comments/(?P<id>[\w\-\_]*))?/?", re.I)
-github_pattern = re.compile(r"^((https://)?(www\.)?github.com)?/?(?P<user>[\w\.\-]*)/?(?P<repo>[\w\-\.]*)?/?", re.I)
+reddit_url = re.compile(
+    r"^((https://)?(www\.|old\.|new\.)?reddit.com)?/?"
+    r"((?P<type>u|r)(ser)?/)?(?P<name>[\w\-]*)(/comme"
+    r"nts/(?P<id>[\w\-\_]*))?/?", re.I)
+github_pattern = re.compile(
+    r"^((https://)?(www\.)?github.com)?/?(?P<user>[\w"
+    r"\.\-]*)/?(?P<repo>[\w\-\.]*)?/?", re.I)
 dt_re = re.compile(r"""((?P<years>[0-9])\s?(?:years?|y))?
                         ((?P<months>[0-9]{1,2})\s?(?:months?|mo))?
                         ((?P<weeks>[0-9]{1,4})\s?(?:weeks?|w))?
@@ -56,7 +61,9 @@ class BoolConverter(commands.Converter):
         elif argument.lower() in false_values:
             return False
         else:
-            raise commands.BadArgument('Input could not be converted into a true or false result')
+            raise commands.BadArgument(
+                'Input could not be converted into a true or false result'
+            )
 
 class BetterUserConverter(commands.Converter):
     async def convert(self, ctx, argument):
@@ -86,7 +93,9 @@ class CBStripConverter(commands.Converter):
 class RedditConverter(commands.Converter):
     async def convert(self, ctx, argument):
         if match := re.match(reddit_url, argument.strip('<>')):
-            return RedditMatch(match.groupdict().get('name'), match.groupdict().get('id'), match)
+            return RedditMatch(
+                match.groupdict().get('name'),
+                match.groupdict().get('id'), match)
         raise commands.CommandError(f"Invalid argument '{argument}'")
 
 class ArbitraryRedditConverter(commands.Converter):

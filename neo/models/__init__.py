@@ -15,5 +15,6 @@ GNU Affero General Public License for more details.
 You should have received a copy of the GNU Affero General Public License
 along with neo.  If not, see <https://www.gnu.org/licenses/>.
 """
-from .github import GHUser, GHRepo
-from .reddit import Poll, Submission, SubListing, Subreddit, Redditor 
+from .github import *
+from .reddit import *
+

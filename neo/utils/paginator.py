@@ -17,16 +17,13 @@ along with neo.  If not, see <https://www.gnu.org/licenses/>.
 """
 import asyncio
 import contextlib
-from datetime import datetime
-from typing import List
 
 import discord
-import humanize
 from discord.ext import menus
 
 import neo
 
-__all__ = ['CSMenu', 'BareBonesMenu', 'PagedEmbedMenu']
+__all__ = ('CSMenu', 'BareBonesMenu', 'PagedEmbedMenu')
 
 
 class CSMenu(menus.MenuPages, inherit_buttons=False):
@@ -59,7 +56,9 @@ class CSMenu(menus.MenuPages, inherit_buttons=False):
         if isinstance(value, dict):
             return value
         elif isinstance(value, str):
-            return {'content': f'{value}\nPage {self.current_page + 1}/{self._source.get_max_pages()}', 'embed': None}
+            return {
+                'content': f'{value}\nPage {self.current_page + 1}/{self._source.get_max_pages()}',
+                'embed': None}
         elif isinstance(value, discord.Embed):
             text = f'Page {self.current_page + 1}/{self._source.get_max_pages()}' if \
                 self._source.get_max_pages() > 1 else ''
@@ -130,7 +129,7 @@ class CSMenu(menus.MenuPages, inherit_buttons=False):
 
 
 class PagedEmbedMenu(menus.ListPageSource):
-    def __init__(self, embeds: List[discord.Embed]):
+    def __init__(self, embeds):
         self.embeds = embeds
         super().__init__([*range(len(embeds))], per_page=1)
 
