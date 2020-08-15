@@ -84,7 +84,7 @@ class SubListing:
     @property
     def posts(self):
         for post in self.data['data']['children']:
-            submission = Submission(post['data'])
+            submission = Submission(post['data'], original=None)
             if not self.do_predicates(submission):
                 continue
             yield submission

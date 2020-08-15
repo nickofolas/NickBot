@@ -198,9 +198,7 @@ class Docs(commands.Cog):
         e = neo.Embed()
         if len(matches) == 0:
             return await ctx.send(
-                embed=neo.Embed(
-                    title='',
-                    description='No results :(')
+                embed=neo.Embed(description='No results :('))
 
         e.description = '\n'.join(f'[`{key}`]({url})' for key, url in matches)
         await ctx.send(embed=e)
