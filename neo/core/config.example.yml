@@ -1,3 +1,4 @@
+# fill this out and then rename it to `config.yml` to use
 secret:
   bot_token: ''
   db: ''
