@@ -21,15 +21,12 @@ from ..types.namespace import ImmutablePrivateNamespace
 
 __all__ = ('conf', 'secrets')
 
-def load_public_config():
-    with open('neo/core/config.public.yml', 'r') as config:
-        return yaml.safe_load(config)
+def load_config():
+    with open('neo/core/config.yml', 'r') as config:
+        raw = yaml.safe_load(config)
+    secrets = raw['secret']
+    assets = raw['assets']
+    return assets, ImmutablePrivateNamespace(**secrets)
 
-def load_private_config():
-    with open('neo/core/config.private.yml', 'r') as config:
-        load = yaml.safe_load(config)
-    return ImmutablePrivateNamespace(**load)
-
-conf = load_public_config()
-secrets = load_private_config()
+conf, secrets = load_config()
 
