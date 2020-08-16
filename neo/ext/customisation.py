@@ -174,7 +174,7 @@ class Customisation(commands.Cog):
 
     # BEGIN TODOS GROUP ~
 
-    @commands.group(name='todo', invoke_without_command=True)
+    @commands.group(name='todo', invoke_without_command=True, ignore_extra=False)
     async def todo_rw(self, ctx):
         """
         Base todo command, run with no arguments to see a list of all your active todos
@@ -219,7 +219,7 @@ class Customisation(commands.Cog):
         SELECT todo.content,row_number() OVER (ORDER BY created_at ASC) AS rnum FROM todo WHERE user_id=$1
         )
 
-        DELETE FROM todo WHERE content IN (
+        DELETE FROM todo WHERE user_id=$1 AND content IN (
         SELECT enumerated.content FROM enumerated WHERE enumerated.rnum=ANY($2::bigint[])
         ) RETURNING content
         """

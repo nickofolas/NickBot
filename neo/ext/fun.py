@@ -230,7 +230,7 @@ class Fun(commands.Cog):
         ran = 25 if victim.id in (*self.bot.owner_ids, self.bot.user.id) else \
             random.Random(victim.id).randint(1, 15)
         dong = '8' + '='*ran + 'D'
-        await ctx.safe_send(dong)
+        await ctx.send(dong)
 
 
 def setup(bot):

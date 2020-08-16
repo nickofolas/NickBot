@@ -19,7 +19,7 @@ import re
 import asyncio
 from collections import namedtuple
 from contextlib import suppress
-from textwrap import shorten as shn
+from textwrap import shorten
 
 import discord
 from discord.ext import commands, flags, tasks
@@ -109,7 +109,7 @@ class Highlight:
         while len('\n'.join(context_list)) > 2048:
             context_list = context_list[1:]
         embed = neo.Embed(
-            title=f'Highlighted in {message.guild.name}/#{message.channel.name} with "{shn(match, width=25)}"',
+            title=f'Highlighted in {message.guild.name}/#{message.channel.name} with "{shorten(match, width=25)}"',
             description='\n'.join(context_list) + f'\n[Jump URL]({message.jump_url})')
         embed.timestamp = message.created_at
         return embed
@@ -232,8 +232,9 @@ class HighlightCommands(commands.Cog):
         except:
             blocked = int(snowflake)
         async with ctx.loading():
-            await ctx.bot.pool.execute(f"UPDATE user_data SET hl_blocks = {strategy}(hl_blocks, $1) WHERE "
-                                       "user_id=$2", blocked, ctx.author.id)
+            await ctx.bot.pool.execute(
+                f"UPDATE user_data SET hl_blocks = {strategy}(hl_blocks, $1) WHERE "
+                "user_id=$2", blocked, ctx.author.id)
             await ctx.bot.user_cache.refresh()
 
     @flags.add_flag('-a', '--add', nargs='*')
@@ -252,8 +253,9 @@ class HighlightCommands(commands.Cog):
         strategy = 'array_append' if flags.get('add') else 'array_remove'
         snowflake = (flags.get('add') or flags.get('remove'))[0]
         async with ctx.loading():
-            await ctx.bot.pool.execute(f"UPDATE user_data SET hl_whitelist = {strategy}(hl_whitelist, $1) WHERE "
-                                       "user_id=$2", int(snowflake), ctx.author.id)
+            await ctx.bot.pool.execute(
+                f"UPDATE user_data SET hl_whitelist = {strategy}(hl_whitelist, $1) WHERE "
+                "user_id=$2", int(snowflake), ctx.author.id)
             await ctx.bot.user_cache.refresh()
 
     @commands.command(name='remove', aliases=['rm', 'delete', 'del', 'yeet'])
@@ -263,13 +265,20 @@ class HighlightCommands(commands.Cog):
         """
         if not highlight_index:
             raise commands.CommandError('Use the index of a highlight [found in your list of highlights] to remove it')
-        fetched = [rec['kw'] for rec in
-                   await ctx.bot.pool.fetch("SELECT kw from highlights WHERE user_id=$1", ctx.author.id)]
-        for num in highlight_index:
-            await ctx.bot.pool.execute('DELETE FROM highlights WHERE user_id=$1 AND kw=$2',
-                                       ctx.author.id, fetched[num - 1])
+        query = """
+        WITH enumerated AS (
+        SELECT highlights.kw,row_number() OVER () AS rnum FROM highlights WHERE user_id=$1
+        )
+        DELETE FROM highlights WHERE user_id=$1 AND kw IN (
+        SELECT enumerated.kw FROM enumerated WHERE enumerated.rnum=ANY($2::bigint[])
+        ) RETURNING kw
+        """
+        deleted = await ctx.bot.pool.fetch(query, ctx.author.id, highlight_index)
+        shown = [f" - `{shorten(record['kw'], width=175)}`" for record in deleted]
+        extra = f'\n *+ {len(shown[5:])} more*' if len(shown[5:]) else ''
+        await ctx.send('Successfully deleted the following highlights:\n{}'.format(
+            '\n'.join(shown[:5]) + extra))
         ctx.bot.dispatch('hl_update')
-        await ctx.message.add_reaction(ctx.tick(True))
 
     @commands.command(name='clear', aliases=['yeetall'])
     async def clear_highlights(ctx):
