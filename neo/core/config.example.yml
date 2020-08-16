@@ -5,9 +5,9 @@ secret:
   dbpass: ''
   dbuser: ''
   fortnite_key: ''
-  gimage_keys: List of values
+  gimage_keys:  # List of values
   github_token: ''
-  gsearch_keys: List of values
+  gsearch_keys: # List of values
   imgur_id: ''
   rebrandly_key: ''
 assets:
@@ -31,7 +31,7 @@ assets:
       VoiceChannel: ''
       VoiceChannel-locked: ''
     check_button: ''
-    default_avs: List of values
+    default_avs: # List of values
     discordlogo: ''
     github:
       commit: ''
@@ -117,5 +117,5 @@ assets:
     toggleon: ''
     warning_button: ''
     x_button: ''
-  exts: List of values
+  exts: # List of values
 
