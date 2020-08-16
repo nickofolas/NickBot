@@ -221,15 +221,5 @@ class Docs(commands.Cog):
         """Gives you a documentation link for a discord.py entity"""
         await self.do_rtfm(ctx, 'dpy', obj)
 
-    @rtfm.command(name='dump')
-    @commands.is_owner()
-    async def rtfm_drop_cache(self, ctx):
-        """Dump all currently cached documentations"""
-        if not self._rtfm_cache.items():
-            raise commands.CommandError('Cache is already empty')
-        y_n = await ctx.prompt('Are you sure you want to dump the RTFM cache?')
-        if y_n is True:
-            self._rtfm_cache.clear()
-
 def setup(bot):
     bot.add_cog(Docs(bot))

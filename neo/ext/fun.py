@@ -31,7 +31,6 @@ from humanize import apnumber
 from async_timeout import timeout
 
 import neo
-from neo.utils.paginator import BareBonesMenu, CSMenu
 
 NUM_EMOJIS = {str(num): f":{apnumber(num)}:" for num in range(10)}
 
@@ -107,9 +106,9 @@ class Fun(commands.Cog):
                 + f"\n\n{item['definition']}\n\n**Example:**\n {item['example']}"
                 .replace('[', '').replace(']', ''))
         entries = sorted(menu_list)
-        source = BareBonesMenu(entries, per_page=1)
-        menu = CSMenu(source, delete_message_after=True)
-        await menu.start(ctx)
+        await ctx.paginate(
+            entries, per_page=1, delete_on_button=True,
+            clear_reactions=True)
 
     async def fetch_one(self, ctx, thing: str):
         available_emojis = list(filter(
@@ -171,7 +170,7 @@ class Fun(commands.Cog):
             query,
             map(lambda em: em.name, available_emojis),
             n=len(available_emojis))
-        await ctx.quick_menu(
+        await ctx.paginate(
             list(map(
                 lambda em: f"{em} | [{em.name}]({em.url})",
                 [await self.em_converter.convert(ctx, em_name) for 

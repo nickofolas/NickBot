@@ -15,19 +15,21 @@ GNU Affero General Public License for more details.
 You should have received a copy of the GNU Affero General Public License
 along with neo.  If not, see <https://www.gnu.org/licenses/>.
 """
+import yaml
 
-__all__ = ('ApiError', 'SubredditNotFound', 'SortError')
+from ..types.namespace import ImmutablePrivateNamespace
 
-class ApiError(Exception):
-    pass
+__all__ = ('conf', 'secrets')
 
+def load_public_config():
+    with open('neo/core/config.public.yml', 'r') as config:
+        return yaml.safe_load(config)
 
-class SubredditNotFound(ApiError):
-    def __init__(self, *args):
-        super().__init__(*args)
+def load_private_config():
+    with open('neo/core/config.private.yml', 'r') as config:
+        load = yaml.safe_load(config)
+    return ImmutablePrivateNamespace(**load)
 
-
-class SortError(ApiError):
-    def __init__(self, *args):
-        super().__init__(*args)
+conf = load_public_config()
+secrets = load_private_config()
 

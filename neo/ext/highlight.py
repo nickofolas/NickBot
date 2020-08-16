@@ -223,7 +223,7 @@ class HighlightCommands(commands.Cog):
                 blocked = [f"{guild_or_user(ctx.bot, i)} ({i})" for i in b]
             else:
                 blocked = ["No blocked users or guilds"]
-            await ctx.quick_menu(blocked, 10, delete_message_after=True)
+            await ctx.paginate(blocked, 10, delete_message_after=True)
             return
         strategy = strategies.get(ctx.invoked_with)
         snowflake = user_or_guild
@@ -247,7 +247,7 @@ class HighlightCommands(commands.Cog):
                 whitelisted = [f"{ctx.bot.get_guild(i)} ({i})" for i in b]
             else:
                 whitelisted = ["Highlight guild whitelist is empty"]
-            await ctx.quick_menu(whitelisted, 10, delete_message_after=True)
+            await ctx.paginate(whitelisted, 10, delete_message_after=True)
             return
         strategy = 'array_append' if flags.get('add') else 'array_remove'
         snowflake = (flags.get('add') or flags.get('remove'))[0]

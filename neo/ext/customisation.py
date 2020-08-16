@@ -188,7 +188,7 @@ class Customisation(commands.Cog):
         enumerated.jump, enumerated.cont) f FROM enumerated
         """
         todos = [shorten(r['f'], width=175) for r in await self.bot.pool.fetch(query, ctx.author.id)]
-        await ctx.quick_menu(
+        await ctx.paginate(
             todos, 10, 
             template=neo.Embed().set_author(
                     name=f"{ctx.author}'s todos ({len(todos):,} items)",
@@ -282,11 +282,12 @@ class Customisation(commands.Cog):
             await self.bot.pool.fetch(
                 "SELECT * FROM reminders WHERE user_id=$1 ORDER BY id",
                 ctx.author.id))]
-        await ctx.quick_menu(reminders or ['No reminders'], 5,
-                             template=neo.Embed().set_author(
-                                 name=ctx.author,
-                                 icon_url=ctx.author.avatar_url_as(static_format='png')),
-                             delete_on_button=True, clear_reactions_after=True)
+        await ctx.paginate(
+            reminders or ['No reminders'], 5,
+            template=neo.Embed().set_author(
+                name=ctx.author,
+                icon_url=ctx.author.avatar_url_as(static_format='png')),
+            delete_on_button=True, clear_reactions_after=True)
 
     def get_running_reminders(self):
         yield from filter(lambda task: task.get_name().startswith("REMINDER"), asyncio.all_tasks(self.bot.loop))

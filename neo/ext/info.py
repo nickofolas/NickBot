@@ -300,7 +300,7 @@ class Info(commands.Cog):
         final = list(map(
             self.format_channels,
             neo.utils.formatters.flatten(self.by_category_v2(ctx.guild))))
-        await ctx.quick_menu(
+        await ctx.paginate(
             neo.utils.formatters.group(final, 25),
             1, clear_reactions_after=True,
             delete_on_button=True)
@@ -309,7 +309,7 @@ class Info(commands.Cog):
     @commands.guild_only()
     async def roles(self, ctx):
         """Returns a list of all roles in the guild"""
-        await ctx.quick_menu(list(reversed([r.mention for r in ctx.guild.roles[1:]])), 20, delete_message_after=True)
+        await ctx.paginate(list(reversed([r.mention for r in ctx.guild.roles[1:]])), 20, delete_message_after=True)
 
     @commands.command(name='resolve')
     async def _resolve_invite(self, ctx, *, guild_invite):

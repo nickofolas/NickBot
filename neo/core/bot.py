@@ -28,8 +28,10 @@ import aiohttp
 import asyncpg
 
 import neo
-import neo.context
+from .context import Context
 from neo.types import DbCache
+
+__all__ = ('NeoBot',)
 
 logging.basicConfig(level=logging.INFO)
 
@@ -76,7 +78,7 @@ class NeoBot(commands.Bot):
         self.guild_cache = await DbCache(db_query="SELECT * FROM guild_prefs",
                                    key='guild_id', pool=self.pool)
 
-    async def get_context(self, message, *, cls=neo.context.Context):
+    async def get_context(self, message, *, cls=Context):
         return await super().get_context(message, cls=cls)
 
     async def global_cooldown(self, ctx):

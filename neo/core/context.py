@@ -24,8 +24,6 @@ from discord.ext import commands
 import discord
 
 import neo
-import neo.utils.paginator as pages
-
 
 class Codeblock:
     def __init__(self, *, content, lang=None, cb_safe=True):
@@ -121,10 +119,8 @@ class Context(commands.Context):
     def tab(repeat=1):  # For the love of all that is good please get rid of this
         return ' \u200b' * repeat
 
-    async def quick_menu(self, entries, per_page, *, template: discord.Embed = None, **kwargs):
-        source = pages.BareBonesMenu(entries, per_page=per_page, embed=template)
-        menu = pages.CSMenu(source, **kwargs)
-        await menu.start(self)
+    def paginate(self, *args, **kwargs):
+        return neo.utils.paginate(self, *args, **kwargs)
 
     def loading(self, **kwargs):
         return Loading(self, **kwargs)

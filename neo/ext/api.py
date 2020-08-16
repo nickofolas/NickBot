@@ -190,7 +190,7 @@ class Api(commands.Cog):
                         [f"`{g.get('vBucks'):<4}` [`{g.get('name')}`]({g.get('imageUrl')})"
                          for g in [*grp]]))
 
-        await ctx.quick_menu(
+        await ctx.paginate(
             [*_gather()],
             1,
             template=neo.Embed().set_author(

@@ -158,7 +158,7 @@ class Util(commands.Cog):
                    f'[{name}](http://www.fileformat.info/info/unicode/char/' \
                    f'{digit})'
         chars = [*map(to_string, characters)]
-        await ctx.quick_menu(chars, 10, delete_on_button=True, clear_reactions_after=True)
+        await ctx.paginate(chars, 10, delete_on_button=True, clear_reactions_after=True)
 
     @commands.command(name='imgur')
     @commands.max_concurrency(1, commands.BucketType.channel)

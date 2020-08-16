@@ -24,6 +24,9 @@ import textwrap
 
 import import_expression
 
+__all__ = ('group', 'flatten',
+           'prettify_text', 'pluralize',
+           'clean_bytes', 'from_tz', 'bar_make')
 
 def group(iterable, page_len=50):
     pages = []

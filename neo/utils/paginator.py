@@ -23,7 +23,7 @@ from discord.ext import menus
 
 import neo
 
-__all__ = ('CSMenu', 'BareBonesMenu', 'PagedEmbedMenu')
+__all__ = ('CSMenu', 'BareBonesMenu', 'PagedEmbedMenu', 'paginate')
 
 
 class CSMenu(menus.MenuPages, inherit_buttons=False):
@@ -151,3 +151,7 @@ class BareBonesMenu(menus.ListPageSource):
         else:
             return neo.Embed(description=join_str.join(page))
 
+async def paginate(ctx, entries, per_page, *, template: discord.Embed = None, **kwargs):
+    source = BareBonesMenu(entries, per_page=per_page, embed=template)
+    menu = CSMenu(source, **kwargs)
+    await menu.start(ctx)

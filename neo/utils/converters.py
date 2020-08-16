@@ -30,10 +30,15 @@ import discord
 
 from neo.models import GHUser, GHRepo, Subreddit, Submission, Redditor
 
+__all__ = ('BoolConverter', 'BetterUserConverter',
+           'CBStripConverter', 'RedditConverter',
+           'ArbitraryRedditConverter', 'GitHubConverter',
+           'ArbitraryGitHubConverter', 'TimeConverter')
+
 RedditMatch = namedtuple('RedditMatch', 'name id match')
-TimeOutput = namedtuple('TimeOutput', 'time string')
-u_conv = commands.UserConverter()
-m_conv = commands.MemberConverter()
+TimeOutput  = namedtuple('TimeOutput', 'time string')
+u_conv      = commands.UserConverter()
+m_conv      = commands.MemberConverter()
 
 reddit_url = re.compile(
     r"^((https://)?(www\.|old\.|new\.)?reddit.com)?/?"

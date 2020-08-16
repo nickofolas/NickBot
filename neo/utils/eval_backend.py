@@ -22,6 +22,8 @@ import traceback
 
 import import_expression
 
+__all__ = ('NeoEval',)
+
 def insert_yield(body):
     if not isinstance(body[-1], ast.Expr):
         return

@@ -103,7 +103,7 @@ class Dev(commands.Cog):
             output = clean_bytes(shellout.stdout) + '\n' + textwrap.indent(clean_bytes(shellout.stderr), '[stderr] ')
             pages = group(output, 1500)
             pages = [str(ctx.codeblock(content=page, lang=hl_lang)) + f"\n`Return code {shellout.returncode}`" for page in pages]
-        await ctx.quick_menu(pages, 1, delete_on_button=True, clear_reactions_after=True, timeout=1800)
+        await ctx.paginate(pages, 1, delete_on_button=True, clear_reactions_after=True, timeout=1800)
 
     @commands.command(name='eval', aliases=['e'])
     async def eval_(self, ctx, *, body: CBStripConverter):
@@ -139,7 +139,7 @@ class Dev(commands.Cog):
         if to_return:
             pages = group(to_return, 1500)
             pages = [str(ctx.codeblock(content=page, lang='py')) for page in pages]
-            await ctx.quick_menu(pages, 1, delete_on_button=True, clear_reactions_after=True, timeout=1800)
+            await ctx.paginate(pages, 1, delete_on_button=True, clear_reactions_after=True, timeout=1800)
 
     @commands.command()
     async def debug(self, ctx, *, command_string):
@@ -187,9 +187,10 @@ class Dev(commands.Cog):
         r = group(r, len(rkeys))
         table = tabulate(r, headers=headers, tablefmt='pretty')
         pages = [str(ctx.codeblock(content=page)) for page in group(table, 1500)]
-        await ctx.quick_menu(pages, 1, delete_on_button=True, clear_reactions_after=True, timeout=300,
-                             template=neo.Embed().set_author(
-                                 name=f'Returned {rows} {pluralize("row", rows)} in {dt:.2f}ms'))
+        await ctx.paginate(
+            pages, 1, delete_on_button=True, clear_reactions_after=True, timeout=300,
+            template=neo.Embed().set_author(
+                name=f'Returned {rows} {pluralize("row", rows)} in {dt:.2f}ms'))
 
     @commands.group(name='dev', invoke_without_command=True)
     async def dev_command_group(self, ctx):
