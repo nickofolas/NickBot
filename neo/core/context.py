@@ -41,9 +41,9 @@ class Codeblock:
 class Loading:
     def __init__(self, context, *, prop=True, tick=True, exc_ignore=None):
         self._ctx = context
-        self.prop = prop
-        self.tick = tick
-        self.exc_ignore = exc_ignore
+        self.prop = prop # Whether to propagate errors to bot error handler
+        self.tick = tick # Whether to display a checkmark reaction when done
+        self.exc_ignore = exc_ignore # Ignored exception types
         self.can_react = True
 
     async def finalise(self):
@@ -65,7 +65,7 @@ class Loading:
             await self.finalise()
             return True
         if self.prop and exc is not None:
-            self._ctx.bot.dispatch('command_error', self._ctx, exc)
+            self._ctx.bot.dispatch('command_error', self._ctx, exc) # Dispatch errors to handler
             return True
         await self.finalise()
 

@@ -126,7 +126,7 @@ class Util(commands.Cog):
     @flags.add_flag('target', nargs='?')
     @flags.add_flag('-s', '--size', nargs='?', type=int, default=4096)
     @flags.add_flag('-f', '--format', nargs='?')
-    @flags.command(aliases=['av'])
+    @flags.command(aliases=['av', 'avy', 'pfp'])
     async def avatar(self, ctx, **flags):
         """Get your own, or another user's avatar"""
         target = await BetterUserConverter().convert(ctx, flags.get('target'))
