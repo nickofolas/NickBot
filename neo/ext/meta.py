@@ -195,7 +195,7 @@ class Meta(commands.Cog):
         com_id_brief = self.last_commit_cache["sha"][:7]
         links = list()
         if ctx.author not in self.bot.get_guild(696739356815392779).members:
-            links.append(f'[Support](https://discord.gg/tjq68yq)')
+            links.append(f'[Support](https://discord.gg/FNzhVXs)')
         links.extend((f'[Invite]({invite_url})', f'[`{com_id_brief}`]({com_url})'))
         embed.add_field(name='**Links**', value=' | '.join(links), inline=False)
         await ctx.send(embed=embed)

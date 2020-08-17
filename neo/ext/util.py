@@ -202,7 +202,7 @@ class Util(commands.Cog):
                     'https://api.tsu.sh/google/ocr',
                     params={'q': image}) as resp:
             output = (await resp.json()).get('text', 'No result')
-        await ctx.quick_menu(group(output, 750) or ['No result'], 1, delete_on_button=True, clear_reactions_after=True)
+        await ctx.paginate(group(output, 750) or ['No result'], 1, delete_on_button=True, clear_reactions_after=True)
 
     @commands.group(name='choose', invoke_without_command=True)
     async def random_choice(self, ctx, *options):
