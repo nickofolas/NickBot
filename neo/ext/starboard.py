@@ -16,6 +16,7 @@ You should have received a copy of the GNU Affero General Public License
 along with neo.  If not, see <https://www.gnu.org/licenses/>.
 """
 from typing import Union
+import logging
 from contextlib import suppress
 
 import discord
@@ -34,21 +35,21 @@ class StarredMessage:
         self.guild_id = guild_id
         self.stars = stars
         self.sent_msg_id = sent_msg_id
-        self.starboard_channel = self.bot.get_channel(bot.guild_cache[guild_id]['starboard_channel_id'])
 
     async def __ainit__(self):
-        self.message = await self.get_message()
-        try:
-            self.sent_msg = await self.starboard_channel.fetch_message(self.sent_msg_id)
-        except discord.NotFound:
-            await self.terminate()
-            return None
         await self.bot.pool.execute(
             'INSERT INTO starboard_msgs (message_id, channel_id, '
             'guild_id, stars, sent_msg_id) VALUES ($1, $2, $3, $4, $5)'
             ' ON CONFLICT DO NOTHING',
             self.message_id, self.channel_id, self.guild_id,
             self.stars, self.sent_msg_id,)
+        starboard_channel = self.bot.get_channel(self.bot.guild_cache[self.guild_id]['starboard_channel_id'])
+        try:
+            self.sent_msg = await starboard_channel.fetch_message(self.sent_msg_id)
+        except Exception as e:
+            logging.error(f'Starboard error, ignoring {vars(self)}, {e}')
+            return None
+
         return self
 
     def __await__(self):
@@ -57,10 +58,6 @@ class StarredMessage:
     def __repr__(self):
         return '<{0.__class__.__name__} message_id={0.message_id} ' \
                'stars={0.stars} sent_msg_id={0.sent_msg_id}>'.format(self)
-
-    async def get_message(self):
-        return await self.bot.get_channel(self.channel_id)\
-            .fetch_message(self.message_id)
 
     async def update(self, *, new_stars):
         self.stars = new_stars
@@ -73,16 +70,16 @@ class StarredMessage:
             self.stars, self.message_id)
 
     async def terminate(self):
-        with suppress(Exception):
-            await self.bot.pool.execute(
-                'DELETE FROM starboard_msgs WHERE message_id=$1',
-                self.message_id)
-            await self.sent_msg.delete()
+        await self.bot.pool.execute(
+            'DELETE FROM starboard_msgs WHERE message_id=$1',
+            self.message_id)
+        await self.sent_msg.delete()
 
 
 class Starboard(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
+        self._ready = False
         self.starred = set()
         self.bot.loop.create_task(self.initialise_stars())
 
@@ -159,6 +156,7 @@ class Starboard(commands.Cog):
     @commands.Cog.listener()
     async def on_raw_reaction_add(self, payload):
         """Sends starred messages and increases their counts"""
+        if not self._ready: return
         checked, guild = self.check_star_config(payload)
         if not checked: return
         message, stars = await self.get_stars(payload)
@@ -180,9 +178,13 @@ class Starboard(commands.Cog):
                         value=f'[URL]({attach.url})')
                 embed.set_image(url=message.attachments[-1].url)
             embed.add_field(name='Jump', value=f'[URL]({message.jump_url})', inline=False)
-            sent = await self.bot.get_channel(guild['starboard_channel_id']).send(
-                f'⭐ **{stars}**',
-                embed=embed)
+            try:
+                sent = await self.bot.get_channel(guild['starboard_channel_id']).send(
+                    f'⭐ **{stars}**',
+                    embed=embed)
+            except discord.Forbidden:
+                logging.info('Ignoring starboard send 403 in guild {}'.format(guild.id))
+                return
             self.starred.add(await StarredMessage(
                 self.bot, message_id = message.id,
                 channel_id = message.channel.id,
@@ -192,6 +194,7 @@ class Starboard(commands.Cog):
     @commands.Cog.listener()
     async def on_raw_reaction_remove(self, payload):
         """Decreases and terminates starred message counts"""
+        if not self._ready: return
         checked, guild = self.check_star_config(payload)
         if not checked: return
         message, stars = await self.get_stars(payload)
@@ -203,12 +206,14 @@ class Starboard(commands.Cog):
 
     @commands.Cog.listener()
     async def on_raw_message_delete(self, payload):
+        if not self._ready: return
         if (star := discord.utils.get(filter(None, self.starred), message_id=payload.message_id)):
             await star.terminate()
             self.starred.discard(star)
 
     @commands.Cog.listener()
     async def on_raw_bulk_message_delete(self, payload):
+        if not self._ready: return
         for msg_id in payload.message_ids:
             if (star := discord.utils.get(filter(None, self.starred), message_id=msg_id)):
                 await star.terminate()
@@ -218,7 +223,13 @@ class Starboard(commands.Cog):
     async def initialise_stars(self):
         await self.bot.wait_until_ready()
         for record in await self.bot.pool.fetch('SELECT * FROM starboard_msgs'):
-            self.starred.add(await StarredMessage(self.bot, **dict(record)))
+            try:
+                self.starred.add(await StarredMessage(self.bot, **dict(record)))
+            except Exception as e:
+                logger.error(e)
+                continue
+        logging.info('Starboard ready')
+        self._ready = True
 
 
 def setup(bot):

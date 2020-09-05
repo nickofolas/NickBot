@@ -150,7 +150,7 @@ class Reddit(commands.Cog):
         if not embeds:
             raise ApiError("Couldn't find any posts that matched the contextual criteria")
         source = PagedEmbedMenu(embeds[:flags['amount']])
-        menu = CSMenu(source, delete_message_after=True)
+        menu = CSMenu(source, clear_reactions_after=True, delete_on_button=True)
         await menu.start(ctx)
 
 def setup(bot):

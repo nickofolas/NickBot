@@ -78,7 +78,6 @@ async def copy_ctx(
     new_ctx = await ctx.bot.get_context(msg, cls=neo.context.Context)
     return new_ctx
 
-
 class Dev(commands.Cog):
     """Commands made to assist with bot development"""
 
