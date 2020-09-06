@@ -25,7 +25,7 @@ import textwrap
 import inspect
 import time
 import traceback
-from contextlib import redirect_stdout
+from contextlib import redirect_stdout, suppress
 from collections import namedtuple
 from typing import Union
 
@@ -296,6 +296,20 @@ class Dev(commands.Cog):
             extensions = neo.conf['exts'] if flags['extension'][0] == '~' else flags['extension']
             for ext in extensions:
                 mode(ext)
+
+    @commands.command(name='blacklist', aliases=['bl'])
+    async def _toggle_blacklist(self, ctx, target: Union[discord.Member, discord.User, int]):
+        target = target.id if not isinstance(target, int) else target
+        async with ctx.loading():
+            if not (_u := self.bot.user_cache.get(target)):
+                with suppress(Exception):
+                    await self.bot.pool.execute('INSERT INTO user_data (user_id) VALUES ($1)', target)
+                _blacklisted = False
+            else:
+                _blacklisted = _u['_blacklisted']
+            await self.bot.pool.execute('UPDATE user_data SET _blacklisted=$1 WHERE user_id=$2',
+                                        not _blacklisted, target)
+            await self.bot.user_cache.refresh()
 
 def setup(bot):
     bot.add_cog(Dev(bot))

@@ -62,7 +62,9 @@ class Events(commands.Cog):
 
     @commands.Cog.listener()
     async def on_command_error(self, ctx, error):
-        if isinstance(error, (commands.CommandNotFound, commands.NotOwner)):
+        if isinstance(error, (commands.CommandNotFound,
+                              commands.NotOwner,
+                              neo.utils.errors.Blacklisted)):
             return  # Ignores CommandNotFound and NotOwner because they're unnecessary
         elif isinstance(error, commands.CommandOnCooldown):
             return await ctx.message.add_reaction(neo.conf['emojis']['alarm'])  # Handles Cooldowns uniquely

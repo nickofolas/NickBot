@@ -59,6 +59,7 @@ class NeoBot(commands.Bot):
         self.loop.create_task(self.__ainit__())
         self._cd = commands.CooldownMapping.from_cooldown(2.0, 2.5, commands.BucketType.user)
         self.add_check(self.global_cooldown, call_once=True)
+        self.add_check(self.check_blacklist)
         self.before_invoke(self.before)
 
         for ext in neo.conf['exts']:
@@ -80,6 +81,11 @@ class NeoBot(commands.Bot):
 
     async def get_context(self, message, *, cls=Context):
         return await super().get_context(message, cls=cls)
+
+    def check_blacklist(self, ctx):
+        if self.user_cache.get(ctx.author.id)['_blacklisted'] is True:
+            raise neo.utils.error.Blacklisted()
+        else: return True
 
     async def global_cooldown(self, ctx):
         bucket = self._cd.get_bucket(ctx.message)

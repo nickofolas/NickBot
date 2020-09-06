@@ -35,7 +35,6 @@ from neo.utils.checks import is_owner_or_administrator
 from neo.utils.formatters import prettify_text
 from neo.utils.converters import BoolConverter, TimeConverter
 
-
 class Reminder:
     def __init__(self, *, user, bot, content, deadline, conn_pool, rm_id, jump_origin):
         self.user = user
@@ -74,7 +73,9 @@ class Customisation(commands.Cog):
     async def user_settings(self, ctx, setting_name=None, *, new_setting: Union[BoolConverter, str] = None):
         """View and edit boolean user settings"""
         if setting_name is not None and new_setting is not None:
-            keys = self.bot.user_cache.get(ctx.author.id).keys()
+            keys = [*filter(
+                lambda k: not k.startswith('_'), 
+                self.bot.user_cache.get(ctx.author.id).keys())]
             if setting_name not in keys:
                 raise commands.CommandError(f"New setting must be one of {', '.join(keys)}")
             async with ctx.loading():
@@ -85,6 +86,7 @@ class Customisation(commands.Cog):
         embed = neo.Embed(title=f"""{ctx.author}'s Settings""")
         readable_settings = []
         for k, v in self.bot.user_cache[ctx.author.id].items():
+            if k.startswith('_'): continue
             if isinstance(v, bool):
                 readable_settings.append(f'{ctx.toggle(v)} **{discord.utils.escape_markdown(k)}**')
             elif isinstance(v, (list, str)) or v is None:
