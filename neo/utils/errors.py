@@ -16,7 +16,7 @@ You should have received a copy of the GNU Affero General Public License
 along with neo.  If not, see <https://www.gnu.org/licenses/>.
 """
 
-__all__ = ('ApiError', 'SubredditNotFound', 'SortError')
+__all__ = ('ApiError', 'SubredditNotFound', 'SortError', 'Blacklisted')
 
 class ApiError(Exception):
     pass

@@ -176,7 +176,7 @@ class Docs(commands.Cog):
 
         cache = list(self._rtfm_cache[key].items())
         if obj is None:
-            return await ctx.safe_send(page_types[key])
+            return await ctx.send(page_types[key])
 
         obj = re.sub(r'^(?:discord\.(?:ext\.)?)?(?:commands\.)?(.+)', r'\1', obj)
 

@@ -83,8 +83,10 @@ class NeoBot(commands.Bot):
         return await super().get_context(message, cls=cls)
 
     def check_blacklist(self, ctx):
-        if self.user_cache.get(ctx.author.id)['_blacklisted'] is True:
-            raise neo.utils.error.Blacklisted()
+        if (p := self.user_cache.get(ctx.author.id)):
+            if p['_blacklisted'] is True:
+                raise neo.utils.error.Blacklisted()
+            else: return True
         else: return True
 
     async def global_cooldown(self, ctx):
