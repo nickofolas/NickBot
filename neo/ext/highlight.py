@@ -34,7 +34,7 @@ PendingHighlight = namedtuple('PendingHighlight', ['user', 'embed'])
 regex_flag = re.compile(r"--?re(gex)?")
 excessive_or = re.compile(r"(?<!\\)\|")
 excessive_escapes = re.compile(r"(?<!\\)\\s|\\d|\\w", re.I)
-regex_check = re.compile(r"""(?P<uncontrolled>[\*\+])|
+regex_check = re.compile(r"""(?P<uncontrolled>(?<!\\)[\*\+])|
                              (?<!\\)\{\d*(\,\s?\d*)?\}|
                              (?<!\\)\.""", re.I | re.X)
 emoji_re = re.compile(r"<a?:[a-zA-Z0-9_]*:(?P<id>\d*)>", re.I)

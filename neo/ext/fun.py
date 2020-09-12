@@ -91,14 +91,14 @@ class Fun(commands.Cog):
         await vote.add_reaction('<:downvote:655880259358687252>')
 
     @commands.command()
-    @commands.is_nsfw()
     async def urban(self, ctx, *, term):
         """Search urban dictionary"""
         async with self.bot.session.get(
                 'http://api.urbandictionary.com/v0/define',
                 params={'term': term}) as resp:
             js = await resp.json()
-        defs = js['list']
+        if not (defs := js['list']):
+            return await ctx.send('No results')
         menu_list = []
         for item in defs:
             menu_list.append(
@@ -108,7 +108,7 @@ class Fun(commands.Cog):
         entries = sorted(menu_list)
         await ctx.paginate(
             entries, per_page=1, delete_on_button=True,
-            clear_reactions=True)
+            clear_reactions_after=True)
 
     async def fetch_one(self, ctx, thing: str):
         available_emojis = list(filter(
