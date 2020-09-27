@@ -119,4 +119,6 @@ assets:
     warning_button: ''
     x_button: ''
   exts: # List of values
+  bot_guild_id: # Bot guild ID, this is an int
+  guild_notifs_channel: # ID of channel where guild join/leave notifications will be sent
 

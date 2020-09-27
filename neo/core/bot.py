@@ -104,19 +104,9 @@ class NeoBot(commands.Bot):
                 await self.user_cache.refresh() # And then updates the user cache
 
     async def on_ready(self):
-        user = self.get_user(723268667579826267)
-        embed = neo.Embed(
-            title='Bot is now running',
-            description=textwrap.dedent(f"""
-            **Name** {self.user}
-            **ID** {self.user.id}
-            **Guilds** {len(self.guilds)}
-            **Users** {len(self.users)}
-            """)).set_thumbnail(url=self.user.avatar_url_as(static_format='png'))
-        embed.timestamp = datetime.utcnow()
-        await user.send(embed=embed)  # Something really needs to be done abt this
+        logging.info('Received ready event')
         self.logging_channels = {
-            'guild_io': self.get_channel(710331034922647613)
+            'guild_io': self.get_channel(neo.conf['guild_notifs_channel'])
         }
 
     async def close(self): # wrapping all of them into a try except to let it die in peace
