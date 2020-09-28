@@ -98,7 +98,8 @@ class Highlight:
             avatar_index = m.author.default_avatar.value
             hl_underline = m.content.replace(match, f'**__{match}__**') if m.id == message.id else m.content
             repl = r'<a?:\w*:\d*>'
-            content = f"{neo.conf['emojis']['default_avs'][avatar_index]} **{m.author.name}:** " \
+            name = discord.utils.escape_markdown(m.author.name)
+            content = f"{neo.conf['emojis']['default_avs'][avatar_index]} **{name}:** " \
                       f"{clean_emojis(hl_underline, bot)}"
             if m.embeds:
                 content += ' <:neoembed:728240626239406141>'
