@@ -54,7 +54,8 @@ class NeoBot(commands.Bot):
 
     def __init__(self):
         super().__init__(command_prefix=get_prefix, case_insensitive=True,
-                         allowed_mentions=discord.AllowedMentions(everyone=False, users=False, roles=False))
+                         allowed_mentions=discord.AllowedMentions(everyone=False, users=False, roles=False),
+                         intents=discord.Intents.all())
         self.snipes = {}
         self.loop.create_task(self.__ainit__())
         self._cd = commands.CooldownMapping.from_cooldown(2.0, 2.5, commands.BucketType.user)
