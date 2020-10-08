@@ -103,7 +103,7 @@ class Util(commands.Cog):
         await asyncio.sleep(0.25)
         await message.edit(embed=em)
 
-    @commands.command(aliases=['inv'])
+    @commands.command(aliases=['inv'], enabled=False)
     async def invite(self, ctx, *, permissions=None):
         """Gets an invite link for the bot"""
         if permissions:

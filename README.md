@@ -1,5 +1,4 @@
 # neo
-[![Invite neo](https://img.shields.io/static/v1?label=%20&message=Invite%20neo%20to%20your%20server&color=5a5a5a&logo=data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAABMUlEQVQ4jaVRXUvDQBCc2914uVBfTMQ+aP0W/MX9Df4XH30XRIs+2FQxVptq5C5pcrFpoXRhuWNgdmZnVTK8LbBF0TbkrQcQKcimJKUAtkQmMG8wwKmxKklM7i9C6we01MQjsof5hCBLwfkU/JMj758iGj+AmfDbP4EeP0KKOdTRhcNKB6oJ0aqF0xQqPoCWArtfrzDzDOb7Db33EYwJoA8HiCZPiEJ2bUKxTpq9tGZIzyDMGEozeHAOjiKIdTX7BGuBaIJYolSrmJDrRIM4gQ4FQbwP2ksQPN+DZynk+BL08gGejLBzdlVmIcqtoq5v7oo6GKF2yi2swXlxAftGngP5lzRXSnXq3hB7VpublEGsVvMxm5cl+lU5WFarMU+tq5YcLHa0TatYXQ6cVVqv1lV/FpEyixzzFWoAAAAASUVORK5CYII=)](https://discord.com/oauth2/authorize?client_id=680863597600964679&scope=bot&permissions=1878523719)
 [![neo Support Guild](https://img.shields.io/discord/696739356815392779?color=%237289DA&label=Support%20Guild&logo=discord)](https://discord.gg/tjq68yq)
 
 A Discord bot that functions as a jack of all trades

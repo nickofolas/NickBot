@@ -75,7 +75,7 @@ async def copy_ctx(
     msg.channel = channel or ctx.channel
     msg.author = author or ctx.author
     msg.content = ctx.prefix + command_string
-    new_ctx = await ctx.bot.get_context(msg, cls=neo.context.Context)
+    new_ctx = await ctx.bot.get_context(msg)
     return new_ctx
 
 class Dev(commands.Cog):
@@ -257,20 +257,10 @@ class Dev(commands.Cog):
         new_ctx = await copy_ctx(ctx, command, author=target)
         await self.bot.invoke(new_ctx)
 
-    @sudo.command(name='in')
-    async def _in(
-            self, ctx,
-            channel: discord.TextChannel,
-            *, command):
-        new_ctx = await copy_ctx(
-            ctx, command, channel=channel)
-        await self.bot.invoke(new_ctx)
-
     @commands.command(aliases=['die', 'kys'])
     async def reboot(self, ctx):
         """Kills the bot"""
-        response = await ctx.prompt('Are you sure you want to reboot?')
-        if response:
+        if (response := await ctx.prompt('Are you sure you want to reboot?')):
             await self.bot.close()
 
     @commands.command(name='screenshot', aliases=['ss'])

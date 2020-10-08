@@ -176,7 +176,7 @@ class Meta(commands.Cog):
         """Displays info about the bot"""
         appinfo = await self.bot.application_info()
         permissions = discord.Permissions(1878523719)
-        invite_url = discord.utils.oauth_url(self.bot.user.id, permissions)
+        # invite_url = discord.utils.oauth_url(self.bot.user.id, permissions)
         mem = psutil.virtual_memory()[2]
         vi = sys.version_info
         embed = neo.Embed().set_thumbnail(url=self.bot.user.avatar_url_as(
@@ -196,7 +196,7 @@ class Meta(commands.Cog):
         links = list()
         if ctx.author not in self.bot.get_guild(neo.conf['bot_guild_id']).members:
             links.append(f'[Support](https://discord.gg/FNzhVXs)')
-        links.extend((f'[Invite]({invite_url})', f'[`{com_id_brief}`]({com_url})'))
+        links.extend((f'[`{com_id_brief}`]({com_url})',)) # f'[Invite]({invite_url})', 
         embed.add_field(name='**Links**', value=' | '.join(links), inline=False)
         await ctx.send(embed=embed)
 

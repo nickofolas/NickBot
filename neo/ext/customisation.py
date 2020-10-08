@@ -255,7 +255,7 @@ class Customisation(commands.Cog):
         """
         conf = await ctx.prompt('Are you sure you want to clear all todos?')
         if conf:
-            await self.bot.conn.execute('DELETE FROM todo WHERE user_id=$1', ctx.author.id)
+            await self.bot.pool.execute('DELETE FROM todo WHERE user_id=$1', ctx.author.id)
 
     # END TODOS GROUP ~
 

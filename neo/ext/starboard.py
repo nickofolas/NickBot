@@ -226,7 +226,7 @@ class Starboard(commands.Cog):
             try:
                 self.starred.add(await StarredMessage(self.bot, **dict(record)))
             except Exception as e:
-                logger.error(e)
+                logging.error(e)
                 continue
         logging.info('Starboard ready')
         self._ready = True

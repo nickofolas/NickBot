@@ -38,6 +38,16 @@ logging.basicConfig(level=logging.INFO)
 discord.Color.pornhub = discord.Color(0xffa31a)
 discord.Color.main = discord.Color(0x84cdff)
 
+intents = discord.Intents.none()
+[setattr(intents, name, True) for name in (
+    "members",
+    "guilds",
+    "emojis",
+    "presences",
+    "messages",
+    "reactions")
+    ]
+
 async def get_prefix(bot, message):
     if bot.is_closed():
         return
@@ -55,7 +65,7 @@ class NeoBot(commands.Bot):
     def __init__(self):
         super().__init__(command_prefix=get_prefix, case_insensitive=True,
                          allowed_mentions=discord.AllowedMentions(everyone=False, users=False, roles=False),
-                         intents=discord.Intents.all())
+                         intents=intents)
         self.snipes = {}
         self.loop.create_task(self.__ainit__())
         self._cd = commands.CooldownMapping.from_cooldown(2.0, 2.5, commands.BucketType.user)
@@ -86,7 +96,7 @@ class NeoBot(commands.Bot):
     def check_blacklist(self, ctx):
         if (p := self.user_cache.get(ctx.author.id)):
             if p['_blacklisted'] is True:
-                raise neo.utils.error.Blacklisted()
+                raise neo.utils.errors.Blacklisted()
             else: return True
         else: return True
 
