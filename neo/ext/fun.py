@@ -19,6 +19,7 @@ import string
 import random
 import io
 import asyncio
+import textwrap
 from html import unescape as us
 from typing import Union
 from difflib import get_close_matches
@@ -93,22 +94,32 @@ class Fun(commands.Cog):
     @commands.command()
     async def urban(self, ctx, *, term):
         """Search urban dictionary"""
-        async with self.bot.session.get(
-                'http://api.urbandictionary.com/v0/define',
-                params={'term': term}) as resp:
+        async with self.bot.session.get('http://api.urbandictionary.com/v0/define', params={'term': term}) as resp:
             js = await resp.json()
+
         if not (defs := js['list']):
             return await ctx.send('No results')
+
         menu_list = []
         for item in defs:
-            menu_list.append(
-                f"[Link]({item['permalink']})"
-                + f"\n\n{item['definition']}\n\n**Example:**\n {item['example']}"
-                .replace('[', '').replace(']', ''))
-        entries = sorted(menu_list)
+
+            entry = f"""
+            **[{item['word']}]({item['permalink']})**
+            \N{THUMBS UP SIGN} {item['thumbs_up']:,d} \N{THUMBS DOWN SIGN} {item['thumbs_down']:,d} 
+
+            ***Definition:*** {item['definition']}
+
+            **Example:**
+            {item['example']}
+            """
+            menu_list.append(textwrap.dedent(entry))
+        
         await ctx.paginate(
-            entries, per_page=1, delete_on_button=True,
-            clear_reactions_after=True)
+            entries=sorted(menu_list), 
+            per_page=1, 
+            delete_on_button=True, 
+            clear_reactions_after=True
+        )
 
     async def fetch_one(self, ctx, thing: str):
         available_emojis = list(filter(
