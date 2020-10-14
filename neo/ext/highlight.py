@@ -197,6 +197,8 @@ class HighlightCommands(commands.Cog):
         - No more than 5 unescaped `|` or `\s`, `\d`, or `\w` (case insensitive)
         - Unescaped use of the `.` catch-all character is disallowed
         - Unescaped use of `{n}`, `{n,m}`, `*`, or `+` to match multiple characters is disallowed
+
+        Currently regex highlights use the [`re.I`](https://docs.python.org/3/library/re.html#re.I) flag
         """
         cleaned_invocation = re.sub(fr"{re.escape(ctx.prefix)}h(igh)?l(ight)? add ", '', ctx.message.content)
         highlight_words = regex_flag.sub('', cleaned_invocation).strip()
