@@ -66,13 +66,13 @@ class UserInfo:
                     if a.emoji.is_custom_emoji():
                         return True
         return False
-    """
+
     @property
     def join_pos(self):
         if self.ctx.guild and isinstance(self.user, discord.Member):
             return f'{sorted(self.ctx.guild.members, key=lambda m: m.joined_at).index(self.user) + 1:,}'
         return None
-    """
+
     @property
     def user_status(self):
         if not isinstance(self.user, discord.Member):
