@@ -21,6 +21,7 @@ from ..types.namespace import ImmutablePrivateNamespace
 
 __all__ = ('conf', 'secrets')
 
+
 def load_config():
     with open('neo/core/config.yml', 'r') as config:
         raw = yaml.safe_load(config)
@@ -28,5 +29,5 @@ def load_config():
     assets = raw['assets']
     return assets, ImmutablePrivateNamespace(**secrets)
 
-conf, secrets = load_config()
 
+conf, secrets = load_config()

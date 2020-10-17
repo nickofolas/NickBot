@@ -25,11 +25,13 @@ import discord
 
 import neo
 
+
 class Codeblock:
     def __init__(self, *, content, lang=None, cb_safe=True):
         self.lang = lang or ''
         self.cb_safe = cb_safe
-        self.content = content.replace('``', '`\N{ZWSP}`') if cb_safe else content
+        self.content = content.replace(
+            '``', '`\N{ZWSP}`') if cb_safe else content
 
     def __str__(self):
         return f"```{self.lang}\n{self.content}\n```"
@@ -41,9 +43,9 @@ class Codeblock:
 class Loading:
     def __init__(self, context, *, prop=True, tick=True, exc_ignore=None):
         self._ctx = context
-        self.prop = prop # Whether to propagate errors to bot error handler
-        self.tick = tick # Whether to display a checkmark reaction when done
-        self.exc_ignore = exc_ignore # Ignored exception types
+        self.prop = prop  # Whether to propagate errors to bot error handler
+        self.tick = tick  # Whether to display a checkmark reaction when done
+        self.exc_ignore = exc_ignore  # Ignored exception types
         self.can_react = True
 
     async def finalise(self):
@@ -65,13 +67,15 @@ class Loading:
             await self.finalise()
             return True
         if self.prop and exc is not None:
-            self._ctx.bot.dispatch('command_error', self._ctx, exc) # Dispatch errors to handler
+            # Dispatch errors to handler
+            self._ctx.bot.dispatch('command_error', self._ctx, exc)
             return True
         await self.finalise()
 
 
 class Context(commands.Context):
-    async def prompt(self, message):  # This may be better used as a context manager or something
+    # This may be better used as a context manager or something
+    async def prompt(self, message):
         emojis = {
             neo.conf['emojis']['check_button']: True,
             neo.conf['emojis']['x_button']: False}
@@ -97,7 +101,7 @@ class Context(commands.Context):
             None: neo.conf['emojis']['neutral_button'],
         }
         emoji = lookup.get(opt, neo.conf['emojis']['x_button'])
-        if label is None: # Negating the condition when handling both cases
+        if label is None:  # Negating the condition when handling both cases
             return emoji
         return f'{emoji}: {label}'
 
@@ -140,4 +144,3 @@ class Context(commands.Context):
                 return await self.message.remove_reaction(neo.conf['emojis']['warning_button'], self.me)
             if str(reaction.emoji) == neo.conf['emojis']['warning_button']:
                 return await self.send(error)
-
