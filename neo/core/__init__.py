@@ -128,5 +128,5 @@ class NeoBot(commands.Bot):
         with suppress(Exception):
             [task.cancel() for task in all_tasks(loop=self.loop)]
             await self.session.close()
-            await self.conn.close()
+            await self.pool.close()
         await super().close()
