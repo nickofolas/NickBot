@@ -31,6 +31,7 @@ from dateutil.relativedelta import relativedelta
 import neo
 import neo.utils.formatters
 from neo.utils.converters import BetterUserConverter
+from neo.utils import get_next_truck_month
 
 activity_type_mapping = {
     discord.ActivityType.watching: 'Watching',
@@ -331,6 +332,19 @@ class Info(commands.Cog):
             other_ += f"\n**Features** {textwrap.fill(features_pprint, width=45)}" 
             embed.add_field(name='Info', value=other_)
             await ctx.send(embed=embed)
+    
+    @commands.command(name='truckmonth', aliases=['tm'])
+    async def when_is_truck_month(self, ctx):
+        """
+        A command with complicated usage that can be daunting for new users.
+        Tells exactly when Truck Month will next begin.
+        """
+        next_truck_month = get_next_truck_month(ctx.message.created_at)
+        await ctx.send(
+            'Truck month will next grace the earth in {0.months}'
+            ' months, {0.weeks} weeks, {0.days} days, {0.hours} '
+            'hours, {0.minutes} minutes, and {0.seconds} seconds.'.format(next_truck_month)
+        )
 
 
 def setup(bot):

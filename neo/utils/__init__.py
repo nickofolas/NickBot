@@ -21,3 +21,4 @@ from .errors import *
 from .eval_backend import *
 from .formatters import *
 from .paginator import *
+from .truck_month import get_next_truck_month
