@@ -29,7 +29,7 @@ from neo.types import TimedSet
 
 # Constants
 MAX_HIGHLIGHTS = 10
-PendingHighlight = namedtuple('PendingHighlight', ['user', 'embed'])
+PendingHighlight = namedtuple('PendingHighlight', ['user', 'embed', 'text'])
 
 regex_flag = re.compile(r"--?re(gex)?")
 excessive_or = re.compile(r"(?<!\\)\|")
@@ -141,7 +141,9 @@ class HlMon(commands.Cog):
             if len(self.queue) < 40 and self.queue.count(hl.user_id) < 5:
                 self.queue.append(PendingHighlight(
                     self.bot.get_user(hl.user_id),
-                    (await hl.to_embed(match, msg, self.bot))))
+                    await hl.to_embed(match, msg, self.bot),
+                    'In: {0.guild}/#{0.channel}\n{0.author}: {0.content}'.format(msg)
+                    ))
 
     @commands.Cog.listener(name='on_message')
     async def update_recents(self, msg):
@@ -160,7 +162,7 @@ class HlMon(commands.Cog):
         try:
             for pending in set(self.queue):
                 with suppress(Exception):
-                    await pending.user.send(embed=pending.embed)
+                    await pending.user.send(content=pending.text, embed=pending.embed)
                     await asyncio.sleep(0.25)
         finally:
             self.queue.clear()

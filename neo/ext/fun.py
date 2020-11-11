@@ -130,11 +130,13 @@ class Fun(commands.Cog):
             raise commands.CommandError(f"Found no matches for `{thing}`")
         return await self.em_converter.convert(ctx, choice[0])
 
+    @commands.is_owner()
     @commands.group(name='emoji', aliases=['em'], invoke_without_command=True)
     async def get_emoji(self, ctx, *, emoji):
         """Utilise custom emoji, both animated and cross-guild in a way that normally requires nitro"""
         await ctx.send(await self.fetch_one(ctx, emoji))
 
+    @commands.is_owner()
     @get_emoji.command(aliases=['r'])
     async def react(self, ctx, *, emoji):
         """
@@ -160,6 +162,7 @@ class Fun(commands.Cog):
             if ctx.channel.permissions_for(ctx.guild.me).manage_messages:
                 await ctx.message.delete()
 
+    @commands.is_owner()
     @get_emoji.command()
     async def big(self, ctx, emoji: Union[discord.PartialEmoji, str]):
         """Enlarges an emoji. Can work on animated emojis, but results may vary in quality"""
@@ -171,6 +174,7 @@ class Fun(commands.Cog):
         file = discord.File(io.BytesIO(out), filename=f'largeemoji.{extension}')
         await ctx.send(file=file, embed=neo.Embed().set_image(url=f'attachment://largeemoji.{extension}'))
 
+    @commands.is_owner()
     @get_emoji.command()
     async def search(self, ctx, *, query):
         """Searches the bot's indexed emojis based on the inputted query"""
