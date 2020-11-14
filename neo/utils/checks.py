@@ -18,7 +18,8 @@ along with neo.  If not, see <https://www.gnu.org/licenses/>.
 import discord
 from discord.ext import commands
 
-__all__ = ('is_owner_or_administrator', 'exclude_channels', 'snipe_check')
+__all__ = ("is_owner_or_administrator", "exclude_channels", "snipe_check")
+
 
 def is_owner_or_administrator():
     async def predicate(ctx):
@@ -26,7 +27,8 @@ def is_owner_or_administrator():
         allowed = is_owner or ctx.channel.permissions_for(ctx.author).administrator
         if not allowed:
             raise commands.CheckFailure(
-                'This command can only be used by guild admins and neo developers')
+                "This command can only be used by guild admins and neo developers"
+            )
         return True
 
     return commands.check(predicate)
@@ -44,11 +46,11 @@ def exclude_channels(guild_id):
 
 def snipe_check():
     def predicate(ctx):
-        if ctx.bot.guild_cache[ctx.guild.id].get('snipes', False) is False:
+        if ctx.bot.guild_cache[ctx.guild.id].get("snipes", False) is False:
             raise commands.CommandError(
-                'This command is opt-in, and your guild admins'
-                ' have not yet enabled it via guild config')
+                "This command is opt-in, and your guild admins"
+                " have not yet enabled it via guild config"
+            )
         return True
 
     return commands.check(predicate)
-

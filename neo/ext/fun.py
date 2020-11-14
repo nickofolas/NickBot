@@ -15,25 +15,25 @@ GNU Affero General Public License for more details.
 You should have received a copy of the GNU Affero General Public License
 along with neo.  If not, see <https://www.gnu.org/licenses/>.
 """
-import string
-import random
-import io
 import asyncio
+import io
+import random
+import string
 import textwrap
+from difflib import get_close_matches
 from html import unescape as us
 from typing import Union
-from difflib import get_close_matches
 
 import discord
-from PIL import Image, ImageSequence
-from discord.ext import commands
-import uwuify
-from humanize import apnumber
-from async_timeout import timeout
-
 import neo
+import uwuify
+from async_timeout import timeout
+from discord.ext import commands
+from humanize import apnumber
+from PIL import Image, ImageSequence
 
 NUM_EMOJIS = {str(num): f":{apnumber(num)}:" for num in range(10)}
+
 
 def upscale(inp, is_gif=False):
     img = Image.open(io.BytesIO(inp))
@@ -42,15 +42,20 @@ def upscale(inp, is_gif=False):
             frames = []
             for frame in ImageSequence.Iterator(img):
                 h, w = frame.size
-                frame = frame.resize((h*2, w*2), Image.LANCZOS)
+                frame = frame.resize((h * 2, w * 2), Image.LANCZOS)
                 frames.append(frame)
-            frames[0].save(buffer, format='GIF', save_all=True, 
-                           append_images=frames[1:], disposal=2)
+            frames[0].save(
+                buffer,
+                format="GIF",
+                save_all=True,
+                append_images=frames[1:],
+                disposal=2,
+            )
         else:
             h, w = img.size
-            newsize = (h*2, w*2)
+            newsize = (h * 2, w * 2)
             img = img.resize(newsize)
-            img.save(buffer, format='PNG')
+            img.save(buffer, format="PNG")
         del img
         return buffer.getvalue()
 
@@ -74,31 +79,32 @@ class Fun(commands.Cog):
                 out.append(f":regional_indicator_{letter.lower()}:")
             else:
                 out.append(letter)
-        await ctx.send(f'**{ctx.author.name} says: **' + ' '.join(out) + '_ _')
+        await ctx.send(f"**{ctx.author.name} says: **" + " ".join(out) + "_ _")
 
     @commands.command()
     async def vote(self, ctx, *, poll):
         """Create an easy poll"""
         # TODO: Make the message edit itself when the reactions are updated so that it's easier to tell what the actual votes are
-        embed = neo.Embed(
-            title=' ',
-            description=f'**Cast your vote:**\n{poll}')
+        embed = neo.Embed(title=" ", description=f"**Cast your vote:**\n{poll}")
         embed.set_footer(
-            text=f'Vote created by {ctx.author.name}',
-            icon_url=ctx.author.avatar_url_as(static_format='png'))
+            text=f"Vote created by {ctx.author.name}",
+            icon_url=ctx.author.avatar_url_as(static_format="png"),
+        )
         embed.timestamp = ctx.message.created_at
         vote = await ctx.send(embed=embed)
-        await vote.add_reaction('<:upvote:655880245047459853>')
-        await vote.add_reaction('<:downvote:655880259358687252>')
+        await vote.add_reaction("<:upvote:655880245047459853>")
+        await vote.add_reaction("<:downvote:655880259358687252>")
 
     @commands.command()
     async def urban(self, ctx, *, term):
         """Search urban dictionary"""
-        async with self.bot.session.get('http://api.urbandictionary.com/v0/define', params={'term': term}) as resp:
+        async with self.bot.session.get(
+            "http://api.urbandictionary.com/v0/define", params={"term": term}
+        ) as resp:
             js = await resp.json()
 
-        if not (defs := js['list']):
-            return await ctx.send('No results')
+        if not (defs := js["list"]):
+            return await ctx.send("No results")
 
         menu_list = []
         for item in defs:
@@ -113,31 +119,34 @@ class Fun(commands.Cog):
             {item['example']}
             """
             menu_list.append(textwrap.dedent(entry))
-        
+
         await ctx.paginate(
-            entries=sorted(menu_list), 
-            per_page=1, 
-            delete_on_button=True, 
-            clear_reactions_after=True
+            entries=sorted(menu_list),
+            per_page=1,
+            delete_on_button=True,
+            clear_reactions_after=True,
         )
 
     async def fetch_one(self, ctx, thing: str):
-        available_emojis = list(filter(
-            lambda em: self.bot.guild_cache[em.guild.id]['index_emojis'] is True,
-            self.bot.emojis))
+        available_emojis = list(
+            filter(
+                lambda em: self.bot.guild_cache[em.guild.id]["index_emojis"] is True,
+                self.bot.emojis,
+            )
+        )
         choice = get_close_matches(thing, map(lambda e: e.name, available_emojis), n=1)
         if not choice:
             raise commands.CommandError(f"Found no matches for `{thing}`")
         return await self.em_converter.convert(ctx, choice[0])
 
     @commands.is_owner()
-    @commands.group(name='emoji', aliases=['em'], invoke_without_command=True)
+    @commands.group(name="emoji", aliases=["em"], invoke_without_command=True)
     async def get_emoji(self, ctx, *, emoji):
         """Utilise custom emoji, both animated and cross-guild in a way that normally requires nitro"""
         await ctx.send(await self.fetch_one(ctx, emoji))
 
     @commands.is_owner()
-    @get_emoji.command(aliases=['r'])
+    @get_emoji.command(aliases=["r"])
     async def react(self, ctx, *, emoji):
         """
         React with emoji from other guilds without nitro!
@@ -145,16 +154,19 @@ class Fun(commands.Cog):
         within 15 seconds, and the bot will remove its own.
         """
         to_react = await self.fetch_one(ctx, emoji)
-        async for m in ctx.channel.history(limit=2).filter(lambda m: m.id != ctx.message.id):
+        async for m in ctx.channel.history(limit=2).filter(
+            lambda m: m.id != ctx.message.id
+        ):
             await m.add_reaction(to_react)
             important_msg = m
         try:
             react, user = await self.bot.wait_for(
-                'reaction_add',
+                "reaction_add",
                 timeout=15.0,
-                check=lambda r, u:
-                    r.message.id == important_msg.id and r.emoji == to_react and u.id == ctx.author.id
-                    )
+                check=lambda r, u: r.message.id == important_msg.id
+                and r.emoji == to_react
+                and u.id == ctx.author.id,
+            )
         except asyncio.TimeoutError:
             await important_msg.remove_reaction(to_react, self.bot.user)
         else:
@@ -166,73 +178,101 @@ class Fun(commands.Cog):
     @get_emoji.command()
     async def big(self, ctx, emoji: Union[discord.PartialEmoji, str]):
         """Enlarges an emoji. Can work on animated emojis, but results may vary in quality"""
-        i = await self.fetch_one(ctx, emoji) if \
-            isinstance(emoji, str) else emoji
-        extension = 'gif' if i.animated else 'png'
+        i = await self.fetch_one(ctx, emoji) if isinstance(emoji, str) else emoji
+        extension = "gif" if i.animated else "png"
         async with ctx.loading(tick=False):
-            out = await self.bot.loop.run_in_executor(None, upscale, (await i.url.read()), i.animated)
-        file = discord.File(io.BytesIO(out), filename=f'largeemoji.{extension}')
-        await ctx.send(file=file, embed=neo.Embed().set_image(url=f'attachment://largeemoji.{extension}'))
+            out = await self.bot.loop.run_in_executor(
+                None, upscale, (await i.url.read()), i.animated
+            )
+        file = discord.File(io.BytesIO(out), filename=f"largeemoji.{extension}")
+        await ctx.send(
+            file=file,
+            embed=neo.Embed().set_image(url=f"attachment://largeemoji.{extension}"),
+        )
 
     @commands.is_owner()
     @get_emoji.command()
     async def search(self, ctx, *, query):
         """Searches the bot's indexed emojis based on the inputted query"""
-        available_emojis = list(filter(
-            lambda em: self.bot.guild_cache[em.guild.id]['index_emojis'] is True,
-            self.bot.emojis))
+        available_emojis = list(
+            filter(
+                lambda em: self.bot.guild_cache[em.guild.id]["index_emojis"] is True,
+                self.bot.emojis,
+            )
+        )
         closest_matches = get_close_matches(
-            query,
-            map(lambda em: em.name, available_emojis),
-            n=len(available_emojis))
+            query, map(lambda em: em.name, available_emojis), n=len(available_emojis)
+        )
         await ctx.paginate(
-            list(map(
-                lambda em: f"{em} | [{em.name}]({em.url})",
-                [await self.em_converter.convert(ctx, em_name) for 
-                 em_name in closest_matches])),
-            10, delete_on_button=True, clear_reactions_after=True)
+            list(
+                map(
+                    lambda em: f"{em} | [{em.name}]({em.url})",
+                    [
+                        await self.em_converter.convert(ctx, em_name)
+                        for em_name in closest_matches
+                    ],
+                )
+            ),
+            10,
+            delete_on_button=True,
+            clear_reactions_after=True,
+        )
 
-    @get_emoji.command(name='create')
+    @get_emoji.command(name="create")
     @commands.has_permissions(manage_emojis=True)
-    async def create_emoji(self, ctx, name, *, image = None):
-        image = await (await self.bot.session.get(image)).read() if image else await ctx.message.attachments[0].read()
+    async def create_emoji(self, ctx, name, *, image=None):
+        image = (
+            await (await self.bot.session.get(image)).read()
+            if image
+            else await ctx.message.attachments[0].read()
+        )
         async with ctx.loading():
             try:
                 await ctx.guild.create_custom_emoji(name=name, image=image)
             except TypeError:
-                raise commands.CommandError('Couldn\'t find a valid image to upload in the input')
+                raise commands.CommandError(
+                    "Couldn't find a valid image to upload in the input"
+                )
 
     @commands.command()
     async def owoify(self, ctx, *, message):
         """uwuify some text"""
         kwargs = {}
         if len(message) < 1500:
-            kwargs['flags'] = uwuify.SMILEY
+            kwargs["flags"] = uwuify.SMILEY
         await ctx.send(uwuify.uwu(message, **kwargs))
 
-    @commands.command(aliases=['WorldHealthOrganization'])
+    @commands.command(aliases=["WorldHealthOrganization"])
     async def who(self, ctx):
         """Quick minigame to try to guess who someone is from their avatar"""
         if ctx.guild.large:
             choose_from = [
-                m.author for m in self.bot._connection._messages if m.guild == ctx.guild and m.author != self.bot.user
+                m.author
+                for m in self.bot._connection._messages
+                if m.guild == ctx.guild and m.author != self.bot.user
             ]
             user = random.choice(choose_from)
         else:
             user = random.choice(ctx.guild.members)
         await ctx.send(
-            embed=neo.Embed()
-            .set_image(url=user.avatar_url_as(static_format='png', size=128)))
+            embed=neo.Embed().set_image(
+                url=user.avatar_url_as(static_format="png", size=128)
+            )
+        )
         try:
             async with timeout(10):
                 while True:
                     try:
                         message = await self.bot.wait_for(
-                            'message',
+                            "message",
                             timeout=10.0,
-                            check=lambda m: m.author.bot is False)
-                        if user.name.lower() in message.content.lower() or user.display_name.lower() in message.content.lower():
-                            return await ctx.send(f'{message.author.mention} got it!')
+                            check=lambda m: m.author.bot is False,
+                        )
+                        if (
+                            user.name.lower() in message.content.lower()
+                            or user.display_name.lower() in message.content.lower()
+                        ):
+                            return await ctx.send(f"{message.author.mention} got it!")
                     except asyncio.TimeoutError:
                         continue
         except (asyncio.TimeoutError, asyncio.CancelledError):
@@ -242,9 +282,12 @@ class Fun(commands.Cog):
     async def dongsize(self, ctx, *, victim: discord.Member = None):
         """Go ahead. You know you want to."""
         victim = victim or ctx.author
-        ran = 25 if victim.id in (*self.bot.owner_ids, self.bot.user.id) else \
-            random.Random(victim.id).randint(1, 15)
-        dong = '8' + '='*ran + 'D'
+        ran = (
+            25
+            if victim.id in (*self.bot.owner_ids, self.bot.user.id)
+            else random.Random(victim.id).randint(1, 15)
+        )
+        dong = "8" + "=" * ran + "D"
         await ctx.send(dong)
 
 

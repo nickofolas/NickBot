@@ -25,14 +25,14 @@ from difflib import get_close_matches
 
 import discord
 import humanize
+import neo
 import psutil
 from discord.ext import commands
-
-import neo
 from neo.utils.formatters import flatten
 
-(checked_perms := ['is_owner', 'guild_only', 'dm_only', 'is_nsfw']) \
-    .extend(dict(discord.Permissions()).keys())
+(checked_perms := ["is_owner", "guild_only", "dm_only", "is_nsfw"]).extend(
+    dict(discord.Permissions()).keys()
+)
 
 
 def retrieve_checks(command):
@@ -40,37 +40,39 @@ def retrieve_checks(command):
     with suppress(Exception):
         for line in inspect.getsource(command.callback).splitlines():
             for permi in checked_perms:
-                if permi in line and line.lstrip().startswith('@'):
+                if permi in line and line.lstrip().startswith("@"):
                     req.append(permi)
-    return ', '.join(req)
+    return ", ".join(req)
 
 
 class EmbeddedHelpCommand(commands.HelpCommand):
     def __init__(self):
-        super().__init__(command_attrs={
-            'help': 'Shows help for the bot, a category, or a command.'
-        })
+        super().__init__(
+            command_attrs={"help": "Shows help for the bot, a category, or a command."}
+        )
         self.subcommand_not_found = self.command_not_found
 
     def get_command_signature(self, command):
         parent = command.full_parent_name
         if len(command.aliases) > 0:
-            aliases = '|'.join(command.aliases)
-            fmt = f'{command.name}|{aliases}'
+            aliases = "|".join(command.aliases)
+            fmt = f"{command.name}|{aliases}"
             if parent:
-                fmt = f'{parent} {fmt}'
+                fmt = f"{parent} {fmt}"
             alias = fmt
         else:
-            alias = command.name if not parent else f'{parent} {command.name}'
-        return f'{self.clean_prefix}{alias} {command.signature}'
+            alias = command.name if not parent else f"{parent} {command.name}"
+        return f"{self.clean_prefix}{alias} {command.signature}"
 
     async def send_bot_help(self, mapping):
         def key(c):
-            return c.cog_name or '\u200bUncategorised'
+            return c.cog_name or "\u200bUncategorised"
 
         bot = self.context.bot
-        embed = neo.Embed(title=f'{bot.user.name} Help')
-        description = f'Use `{self.clean_prefix}help <command/category>` for more help\n\n'
+        embed = neo.Embed(title=f"{bot.user.name} Help")
+        description = (
+            f"Use `{self.clean_prefix}help <command/category>` for more help\n\n"
+        )
         entries = await self.filter_commands(bot.commands, sort=True, key=key)
         for cog, cmds in itertools.groupby(entries, key=key):
             cmds = sorted(cmds, key=lambda c: c.name)
@@ -80,13 +82,18 @@ class EmbeddedHelpCommand(commands.HelpCommand):
 
     @staticmethod
     def cog_group_common_fmt(embed, description, entries):
-        description += "\n".join([f'{"⇶" if isinstance(c, commands.Group) else "⇾"} **{c.name}** -'
-                                  f' {c.short_doc or "No description"}' for c in entries])
-        embed.set_footer(text='⇶ indicates subcommands')
+        description += "\n".join(
+            [
+                f'{"⇶" if isinstance(c, commands.Group) else "⇾"} **{c.name}** -'
+                f' {c.short_doc or "No description"}'
+                for c in entries
+            ]
+        )
+        embed.set_footer(text="⇶ indicates subcommands")
         embed.description = description
 
     async def send_cog_help(self, cog):
-        embed = neo.Embed(title=f'{cog.qualified_name} Category')
+        embed = neo.Embed(title=f"{cog.qualified_name} Category")
         description = f'{cog.description or ""}\n\n'
         entries = await self.filter_commands(cog.get_commands(), sort=True)
         self.cog_group_common_fmt(embed, description, entries)
@@ -99,7 +106,7 @@ class EmbeddedHelpCommand(commands.HelpCommand):
         self.cog_group_common_fmt(embed, description, entries)
         footer = embed.footer.text
         if c := retrieve_checks(group):
-            footer += f' | Checks: {c}'
+            footer += f" | Checks: {c}"
         embed.set_footer(text=footer)
         await self.context.send(embed=embed)
 
@@ -108,26 +115,31 @@ class EmbeddedHelpCommand(commands.HelpCommand):
         description = f'{command.help or "No description provided"}\n\n'
         embed.description = description
         if c := retrieve_checks(command):
-            embed.set_footer(text=f'Checks: {c}')
+            embed.set_footer(text=f"Checks: {c}")
         await self.context.send(embed=embed)
 
     def command_not_found(self, *args):
-        invalid_input_string = ' '.join(map(str, args))
-        offered_commands = (cmd.qualified_name for cmd in self.context.bot.walk_commands())
-        return get_close_matches(invalid_input_string, offered_commands) or invalid_input_string
+        invalid_input_string = " ".join(map(str, args))
+        offered_commands = (
+            cmd.qualified_name for cmd in self.context.bot.walk_commands()
+        )
+        return (
+            get_close_matches(invalid_input_string, offered_commands)
+            or invalid_input_string
+        )
 
     async def send_error_message(self, error):
         if isinstance(error, list):
-            suggestions = '\n⇾ '.join(error)
-            embed = neo.Embed(title='Did you mean...')
-            embed.description = f'⇾ {suggestions}'
+            suggestions = "\n⇾ ".join(error)
+            embed = neo.Embed(title="Did you mean...")
+            embed.description = f"⇾ {suggestions}"
             return await self.context.send(embed=embed)
         elif isinstance(error, str):
             return await self.context.send(
-                f'No command named \'{error}\', and no similarly named commands found')
+                f"No command named '{error}', and no similarly named commands found"
+            )
         else:
             await super().send_error_message(error)
-
 
 
 class Meta(commands.Cog):
@@ -143,14 +155,14 @@ class Meta(commands.Cog):
     def cog_unload(self):
         self.bot.help_command = self.old_help
 
-    @commands.command(aliases=['src'])
+    @commands.command(aliases=["src"])
     async def source(self, ctx, *, cmd=None):
         """Show source for a command or the entire bot"""
-        desc = ''
+        desc = ""
         cmd = self.bot.get_command(cmd) if cmd else None
         if not cmd:
-            title = 'View full source'
-            url = 'https://github.com/nickofolas/neo'
+            title = "View full source"
+            url = "https://github.com/nickofolas/neo"
         else:
             if isinstance(cmd, self.bot.help_command._command_impl.__class__):
                 c = type(self.bot.help_command)
@@ -160,18 +172,18 @@ class Meta(commands.Cog):
                 fpath = os.path.relpath(c.__code__.co_filename)
             lines, first_ln = inspect.getsourcelines(c)
             last_ln = first_ln + (len(lines) - 1)
-            title = f'View source for command {cmd.qualified_name}'
-            url = f'https://github.com/nickofolas/neo/blob/master/{fpath}#L{first_ln}-L{last_ln}'
-            desc += f'**File** {fpath}\n**Lines** {first_ln} - {last_ln} [{len(lines) - 1} total]'
+            title = f"View source for command {cmd.qualified_name}"
+            url = f"https://github.com/nickofolas/neo/blob/master/{fpath}#L{first_ln}-L{last_ln}"
+            desc += f"**File** {fpath}\n**Lines** {first_ln} - {last_ln} [{len(lines) - 1} total]"
         await ctx.send(embed=neo.Embed(title=title, description=desc, url=url))
 
     async def fetch_latest_commit(self):
-        headers = {'Authorization': f'token  {neo.secrets.github_token}'}
-        url = 'https://api.github.com/repos/nickofolas/neo/commits'
-        async with self.bot.session.get(f'{url}/master', headers=headers) as resp1:
+        headers = {"Authorization": f"token  {neo.secrets.github_token}"}
+        url = "https://api.github.com/repos/nickofolas/neo/commits"
+        async with self.bot.session.get(f"{url}/master", headers=headers) as resp1:
             self.last_commit_cache = await resp1.json()
 
-    @commands.command(aliases=['ab', 'info', 'support'])
+    @commands.command(aliases=["ab", "info", "support"])
     async def about(self, ctx):
         """Displays info about the bot"""
         appinfo = await self.bot.application_info()
@@ -179,25 +191,34 @@ class Meta(commands.Cog):
         # invite_url = discord.utils.oauth_url(self.bot.user.id, permissions)
         mem = psutil.virtual_memory()[2]
         vi = sys.version_info
-        embed = neo.Embed().set_thumbnail(url=self.bot.user.avatar_url_as(
-            static_format='png'))
-        embed.set_footer(text=f'Python {vi.major}.{vi.minor}.{vi.micro} | discord.py {discord.__version__}')
-        embed.set_author(name=f'Owner: {appinfo.team.owner}', icon_url=appinfo.team.owner.avatar_url_as(static_format='png'))
+        embed = neo.Embed().set_thumbnail(
+            url=self.bot.user.avatar_url_as(static_format="png")
+        )
+        embed.set_footer(
+            text=f"Python {vi.major}.{vi.minor}.{vi.micro} | discord.py {discord.__version__}"
+        )
+        embed.set_author(
+            name=f"Owner: {appinfo.team.owner}",
+            icon_url=appinfo.team.owner.avatar_url_as(static_format="png"),
+        )
         embed.add_field(
-            name='**Bot Info**',
-            value=textwrap.dedent(f"""
+            name="**Bot Info**",
+            value=textwrap.dedent(
+                f"""
                 **Current Uptime **{humanize.naturaldelta(self.bot.loop.time())}
                 **Total Guilds **{len(self.bot.guilds):,}
                 **Visible Users **{len(self.bot.users):,}
                 **Memory **{mem}%
-            """))
-        com_url = self.last_commit_cache['html_url']
+            """
+            ),
+        )
+        com_url = self.last_commit_cache["html_url"]
         com_id_brief = self.last_commit_cache["sha"][:7]
         links = list()
-        if ctx.author not in self.bot.get_guild(neo.conf['bot_guild_id']).members:
-            links.append(f'[Support](https://discord.gg/FNzhVXs)')
-        links.extend((f'[`{com_id_brief}`]({com_url})',)) # f'[Invite]({invite_url})', 
-        embed.add_field(name='**Links**', value=' | '.join(links), inline=False)
+        if ctx.author not in self.bot.get_guild(neo.conf["bot_guild_id"]).members:
+            links.append(f"[Support](https://discord.gg/FNzhVXs)")
+        links.extend((f"[`{com_id_brief}`]({com_url})",))  # f'[Invite]({invite_url})',
+        embed.add_field(name="**Links**", value=" | ".join(links), inline=False)
         await ctx.send(embed=embed)
 
 

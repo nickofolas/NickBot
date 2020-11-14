@@ -17,9 +17,10 @@ along with neo.  If not, see <https://www.gnu.org/licenses/>.
 """
 import discord
 
-__all__ = ('Embed',)
+__all__ = ("Embed",)
+
 
 class Embed(discord.Embed):
     def __init__(self, *args, **kwargs):
-        kwargs.setdefault('colour', 0x84cdff)
+        kwargs.setdefault("colour", 0x84CDFF)
         super().__init__(*args, **kwargs)

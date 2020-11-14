@@ -19,17 +19,18 @@ import asyncio
 import contextlib
 
 import discord
+import neo
 from discord.ext import menus
 
-import neo
-
-__all__ = ('CSMenu', 'BareBonesMenu', 'PagedEmbedMenu', 'paginate')
+__all__ = ("CSMenu", "BareBonesMenu", "PagedEmbedMenu", "paginate")
 
 
 class CSMenu(menus.MenuPages, inherit_buttons=False):
     """Subclass of menus.MenuPages to customise emojis and behaviour"""
 
-    def __init__(self, source, *, delete_on_button = False, footer_extra: str = None, **kwargs):
+    def __init__(
+        self, source, *, delete_on_button=False, footer_extra: str = None, **kwargs
+    ):
         self.delete_on_button = delete_on_button
         self.closed_via_button = False
         self.footer_extra = footer_extra
@@ -52,24 +53,28 @@ class CSMenu(menus.MenuPages, inherit_buttons=False):
         return max_pages <= 1
 
     async def _get_kwargs_from_page(self, page):
-        value = await discord.utils.maybe_coroutine(self._source.format_page, self, page)
+        value = await discord.utils.maybe_coroutine(
+            self._source.format_page, self, page
+        )
         if isinstance(value, dict):
             return value
         elif isinstance(value, str):
             return {
-                'content': f'{value}\nPage {self.current_page + 1}/{self._source.get_max_pages()}',
-                'embed': None}
+                "content": f"{value}\nPage {self.current_page + 1}/{self._source.get_max_pages()}",
+                "embed": None,
+            }
         elif isinstance(value, discord.Embed):
-            text = f'Page {self.current_page + 1}/{self._source.get_max_pages()}' if \
-                self._source.get_max_pages() > 1 else ''
+            text = (
+                f"Page {self.current_page + 1}/{self._source.get_max_pages()}"
+                if self._source.get_max_pages() > 1
+                else ""
+            )
             if self.footer_extra:
                 if not text:
                     text = self.footer_extra
                 else:
-                    text += f' | {self.footer_extra}'
-            return {'embed': value.set_footer(
-                text=text),
-                    'content': None}
+                    text += f" | {self.footer_extra}"
+            return {"embed": value.set_footer(text=text), "content": None}
 
     async def update(self, payload):
         if self.is_searching:
@@ -81,35 +86,55 @@ class CSMenu(menus.MenuPages, inherit_buttons=False):
             await self.message.delete()
 
     @menus.button(
-        neo.conf['emojis']['menus']['menu_dleft'],
-        position=menus.First(0), skip_if=_skip_double_triangle_buttons)
+        neo.conf["emojis"]["menus"]["menu_dleft"],
+        position=menus.First(0),
+        skip_if=_skip_double_triangle_buttons,
+    )
     async def go_to_first_page(self, payload):
         """go to the first page"""
         await self.show_page(0)
 
-    @menus.button(neo.conf['emojis']['menus']['menu_left'], position=menus.First(1), skip_if=_skip_single_arrows)
+    @menus.button(
+        neo.conf["emojis"]["menus"]["menu_left"],
+        position=menus.First(1),
+        skip_if=_skip_single_arrows,
+    )
     async def go_to_previous_page(self, payload):
         """go to the previous page"""
         await self.show_checked_page(self.current_page - 1)
 
-    @menus.button(neo.conf['emojis']['menus']['menu_right'], position=menus.Last(), skip_if=_skip_single_arrows)
+    @menus.button(
+        neo.conf["emojis"]["menus"]["menu_right"],
+        position=menus.Last(),
+        skip_if=_skip_single_arrows,
+    )
     async def go_to_next_page(self, payload):
         """go to the next page"""
         await self.show_checked_page(self.current_page + 1)
 
     @menus.button(
-        neo.conf['emojis']['menus']['menu_dright'],
-        position=menus.Last(1), skip_if=_skip_double_triangle_buttons)
+        neo.conf["emojis"]["menus"]["menu_dright"],
+        position=menus.Last(1),
+        skip_if=_skip_double_triangle_buttons,
+    )
     async def go_to_last_page(self, payload):
         """go to the last page"""
         await self.show_page(self._source.get_max_pages() - 1)
 
-    @menus.button(neo.conf['emojis']['menus']['search'], position=menus.First(2), skip_if=_skip_double_triangle_buttons)
+    @menus.button(
+        neo.conf["emojis"]["menus"]["search"],
+        position=menus.First(2),
+        skip_if=_skip_double_triangle_buttons,
+    )
     async def number_page(self, payload):
         self.is_searching = True
-        prompt = await self.ctx.send('Enter the number of the page you would like to go to')
+        prompt = await self.ctx.send(
+            "Enter the number of the page you would like to go to"
+        )
         try:
-            msg = await self.bot.wait_for('message', check=lambda m: m.author.id == self._author_id, timeout=10.0)
+            msg = await self.bot.wait_for(
+                "message", check=lambda m: m.author.id == self._author_id, timeout=10.0
+            )
             with contextlib.suppress(Exception):
                 ind = int(msg.content)
                 await self.show_checked_page(ind - 1)
@@ -121,7 +146,7 @@ class CSMenu(menus.MenuPages, inherit_buttons=False):
                 await prompt.delete()
             self.is_searching = False
 
-    @menus.button(neo.conf['emojis']['x_button'], position=menus.First(1))
+    @menus.button(neo.conf["emojis"]["x_button"], position=menus.First(1))
     async def stop_pages(self, payload):
         """stops the pagination session."""
         self.closed_via_button = True
@@ -143,13 +168,14 @@ class BareBonesMenu(menus.ListPageSource):
         self.embed = embed
 
     async def format_page(self, menu, page):
-        join_str = '' if isinstance(page, str) else '\n'
+        join_str = "" if isinstance(page, str) else "\n"
         if self.embed:
             embed = self.embed.copy()
             embed.description = join_str.join(page)
             return embed
         else:
             return neo.Embed(description=join_str.join(page))
+
 
 async def paginate(ctx, entries, per_page, *, template: discord.Embed = None, **kwargs):
     source = BareBonesMenu(entries, per_page=per_page, embed=template)

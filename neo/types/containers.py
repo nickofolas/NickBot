@@ -16,15 +16,16 @@ You should have received a copy of the GNU Affero General Public License
 along with neo.  If not, see <https://www.gnu.org/licenses/>.
 """
 import asyncio
-from contextlib import suppress
 from collections import namedtuple
+from contextlib import suppress
 
-__all__ = ('TimedSet', 'DbCache')
+__all__ = ("TimedSet", "DbCache")
 
-PendingValue = namedtuple('PendingValue', 'item task')
+PendingValue = namedtuple("PendingValue", "item task")
+
 
 class TimedSet(set):
-    def __init__(self, *args, decay_time, loop = None, **kwargs):
+    def __init__(self, *args, decay_time, loop=None, **kwargs):
         self.decay_time = decay_time
         self.loop = loop or asyncio.get_event_loop()
         self.running = {}
@@ -45,8 +46,9 @@ class TimedSet(set):
         await asyncio.sleep(self.decay_time)
         self.discard(item)
 
+
 class DbCache(dict):
-    def __init__(self, *, db_query, query_params = [], pool, key):
+    def __init__(self, *, db_query, query_params=[], pool, key):
         self.pool = pool
         self.db_query = db_query
         self.query_params = query_params
@@ -66,4 +68,3 @@ class DbCache(dict):
         self.clear()
         await self._build_cache()
         return self
-

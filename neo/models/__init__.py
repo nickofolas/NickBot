@@ -17,4 +17,3 @@ along with neo.  If not, see <https://www.gnu.org/licenses/>.
 """
 from .github import *
 from .reddit import *
-

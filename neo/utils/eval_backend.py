@@ -15,14 +15,15 @@ GNU Affero General Public License for more details.
 You should have received a copy of the GNU Affero General Public License
 along with neo.  If not, see <https://www.gnu.org/licenses/>.
 """
-import re
 import ast
 import inspect
+import re
 import traceback
 
 import import_expression
 
-__all__ = ('NeoEval',)
+__all__ = ("NeoEval",)
+
 
 def insert_yield(body):
     if not isinstance(body[-1], ast.Expr):
@@ -34,11 +35,15 @@ def insert_yield(body):
         ast.copy_location(yield_expr, body[-1])
         body[-1] = yield_expr
 
-code_base = 'async def func(scope):' \
-            '\n  try:' \
-            '\n    pass' \
-            '\n  finally:' \
-            '\n    scope.update(locals())' 
+
+code_base = (
+    "async def func(scope):"
+    "\n  try:"
+    "\n    pass"
+    "\n  finally:"
+    "\n    scope.update(locals())"
+)
+
 
 def wrap_code(code_input):
     code_in = import_expression.parse(code_input)
@@ -51,8 +56,10 @@ def wrap_code(code_input):
 
 
 def format_exception(error):
-    fmtd_exc = ''.join(traceback.format_exception(type(error), error, error.__traceback__))
-    formatted = ''.join(re.sub(r'File ".+",', 'File "<eval>"', fmtd_exc))
+    fmtd_exc = "".join(
+        traceback.format_exception(type(error), error, error.__traceback__)
+    )
+    formatted = "".join(re.sub(r'File ".+",', 'File "<eval>"', fmtd_exc))
     return formatted
 
 
@@ -70,7 +77,7 @@ class NeoEval:
 
     def __aiter__(self):
         import_expression.exec(compile(self.code, "<eval>", "exec"), self.context)
-        _aexec = self.context['func']
+        _aexec = self.context["func"]
         return self.get_results(_aexec, self.scope)
 
     async def get_results(self, func, *args, **kwargs):
@@ -78,6 +85,4 @@ class NeoEval:
             async for result in func(*args, **kwargs):
                 yield result
         else:
-            yield await func(*args, **kwargs) or ''
-
-
+            yield await func(*args, **kwargs) or ""
