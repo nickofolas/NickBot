@@ -29,8 +29,10 @@ import neo
 import neo.utils.formatters
 from dateutil.relativedelta import relativedelta
 from discord.ext import commands
+from discord.utils import get as _get
 from neo.utils import get_next_truck_month
 from neo.utils.converters import BetterUserConverter
+from PIL import Image, ImageDraw, ImageOps, ImageSequence
 
 activity_type_mapping = {
     discord.ActivityType.watching: "Watching",
@@ -50,6 +52,14 @@ statuses_base = namedtuple(
 info_emojis = neo.conf["emojis"]["infos"]
 
 
+size = (512, 512)
+
+avatar_mask = Image.new("L", size, 0)
+draw_static = ImageDraw.Draw(avatar_mask)
+draw_static.ellipse((0, 0) + size, fill=255)
+avatar_mask = avatar_mask.resize(size, resample=Image.LANCZOS)
+
+
 class UserInfo:
     __slots__ = ("user", "ctx", "flags")
 
@@ -65,16 +75,15 @@ class UserInfo:
         if self.user.is_avatar_animated():
             return True
         elif any(
-            g.get_member(self.user.id).premium_since
+            getattr(g.get_member(self.user.id), "premium_since", None)
             for g in self.ctx.bot.guilds
-            if self.user in g.members
         ):
             return True
-        elif mem := discord.utils.get(self.ctx.bot.get_all_members(), id=self.user.id):
-            if a := discord.utils.get(mem.activities, type=discord.ActivityType.custom):
-                if a.emoji:
-                    if a.emoji.is_custom_emoji():
-                        return True
+        elif mem := _get(self.ctx.bot.get_all_members(), id=self.user.id):
+            if a := _get(mem.activities, type=discord.ActivityType.custom):
+                return (
+                    a.emoji or type("", (), {"is_custom_emoji": (lambda: False)})
+                ).is_custom_emoji()
         return False
 
     @property
@@ -99,7 +108,7 @@ class UserInfo:
         ]
         status_display = (
             f"{status_icon} "
-            f"{str(self.user.status).title().replace('Dnd', 'DND')}"
+            f"**{str(self.user.status).title().replace('Dnd', 'DND')}**"
             f" {('(' + ', '.join(multi_status) + ')' if multi_status else '')}"
         )
         return status_display
@@ -147,6 +156,21 @@ class UserInfo:
             tagline += "".join(info_emojis[f"system{i}"] for i in (1, 2))
         return tagline
 
+    async def circle(self):
+        _av = await self.user.avatar_url_as(format="png").read()
+
+        def inner():
+            with io.BytesIO() as buf:
+                im = Image.open(io.BytesIO(_av))
+                output = ImageOps.fit(im, avatar_mask.size, centering=(0.5, 0.5))
+                output.putalpha(avatar_mask)
+                output.save(buf, format="PNG")
+                return buf.getvalue()
+
+        data = await self.ctx.bot.loop.run_in_executor(None, inner)
+        file = discord.File(io.BytesIO(data), filename="av.png")
+        return file
+
 
 class Info(commands.Cog):
     """Informational commands category"""
@@ -175,13 +199,15 @@ class Info(commands.Cog):
             else ""
         )
         embed = neo.Embed(title=user_info.tagline)
-        embed.set_thumbnail(url=user.avatar_url_as(static_format="png").__str__())
+        async with ctx.loading(tick=False):
+            file = await user_info.circle()
+        embed.set_thumbnail(url="attachment://{}".format(file.filename))
         status_display = user_info.user_status
         embed.description = textwrap.dedent(
             f"""
-        {status_display}
         {badge_list} {info_emojis['nitro'] if user_info.is_nitro else ''}
-        """
+        {status_display}"""
+            + ("\n\n" if status_display else "")
         )
         stats_disp = str()
         stats_disp += f"**Registered **{humanize.naturaltime(datetime.utcnow() - user.created_at)}"
@@ -189,7 +215,7 @@ class Info(commands.Cog):
         embed.description += stats_disp
         if acts := [*user_info.user_activities]:
             embed.add_field(name="Activities", value="\n".join(acts), inline=False)
-        await ctx.send(embed=embed)
+        await ctx.send(file=file, embed=embed)
 
     @userinfo.command()
     @commands.guild_only()

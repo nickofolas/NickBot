@@ -46,6 +46,8 @@ def exclude_channels(guild_id):
 
 def snipe_check():
     def predicate(ctx):
+        if not ctx.guild:
+            return True
         if ctx.bot.guild_cache[ctx.guild.id].get("snipes", False) is False:
             raise commands.CommandError(
                 "This command is opt-in, and your guild admins"

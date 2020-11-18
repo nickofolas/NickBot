@@ -23,8 +23,9 @@ from types import SimpleNamespace
 from typing import Union
 
 import discord
-from discord.ext import commands, flags
+from discord.ext import commands, flags, tasks
 from discord.ext.commands import has_permissions
+from neo import Embed
 from neo.utils.checks import is_owner_or_administrator
 from neo.utils.converters import BoolConverter
 from neo.utils.formatters import prettify_text
@@ -39,6 +40,22 @@ class Guild(commands.Cog):
 
     def __init__(self, bot):
         self.bot = bot
+        self._counting_cache = {}
+        self._cache_ready = False
+        bot.loop.create_task(self.get_cache())
+
+    async def get_cache(self):
+        await self.bot.wait_until_ready()
+        for record in await self.bot.pool.fetch(
+            "SELECT guild_id, counting_channel FROM guild_prefs"
+        ):
+            _id, counting = record
+            if not counting:
+                continue
+            self._counting_cache[_id] = dict(counting)
+        if not self._cache_ready:
+            self.push_counting_data.start()
+            self._cache_ready = True
 
     def cog_check(self, ctx):
         return bool(ctx.guild)
@@ -111,6 +128,103 @@ class Guild(commands.Cog):
         """Kick a member - optional reason can be provided"""
         await member.kick(reason=f"{ctx.author} ({ctx.author.id}) - {reason}")
         await ctx.send(f"Kicked **{member}**")
+
+    @is_owner_or_administrator()
+    @commands.group(name="counting", invoke_without_command=True)
+    async def _guild_counting(self, ctx):
+        if (_counting := self._counting_cache[ctx.guild.id]) is None:
+            return
+        embed = Embed(description=str(_counting))
+        await ctx.send(embed=embed)
+
+    @is_owner_or_administrator()
+    @_guild_counting.command(name="channel")
+    async def _guild_counting_channel(self, ctx, channel: discord.TextChannel = None):
+        if self._counting_cache.get(ctx.guild.id) is None:
+            await self.bot.pool.execute(
+                "UPDATE guild_prefs SET counting_channel=$1::counting WHERE guild_id=$2",
+                {
+                    "channel_id": channel.id,
+                    "current_number": 0,
+                },
+                ctx.guild.id,
+            )
+
+            await self.get_cache()
+            return await ctx.send(
+                "Counting channel configured and bound to {.mention}".format(channel)
+            )
+
+        _counting = self._counting_cache[ctx.guild.id]
+        if not channel:
+            channel = type("", (), {"id": 0})
+        await self.bot.pool.execute(
+            "UPDATE guild_prefs SET counting_channel.channel_id=$1 WHERE guild_id=$2",
+            channel.id,
+            ctx.guild.id,
+        )
+
+        await self.get_cache()
+        await ctx.message.add_reaction(ctx.tick(True))
+
+    @is_owner_or_administrator()
+    @_guild_counting.command(name="number")
+    async def _guild_counting_number_override(self, ctx, number: int):
+        if self._counting_cache.get(ctx.guild.id) is None:
+            return await ctx.send("You must first set up a channel!")
+
+        await self.bot.pool.execute(
+            "UPDATE guild_prefs SET counting_channel.current_number=$1 WHERE guild_id=$2",
+            number,
+            ctx.guild.id,
+        )
+        await self.get_cache()
+
+        await ctx.message.add_reaction(ctx.tick(True))
+
+    @commands.Cog.listener(name="on_message")
+    async def check_counting(self, msg):
+        if not msg.guild:
+            return
+        elif not self._counting_cache.get(msg.guild.id):
+            return
+        elif self._counting_cache[msg.guild.id]["channel_id"] != msg.channel.id:
+            return
+        try:
+            new = int(msg.content)
+            cur = self._counting_cache[msg.guild.id]["current_number"]
+            if new == (cur + 1):
+                self._counting_cache[msg.guild.id]["current_number"] = new
+                return
+            else:
+                raise ValueError()
+        except ValueError:
+            await msg.delete()
+
+    @tasks.loop(seconds=30)
+    async def push_counting_data(self):
+        for _id, data in self._counting_cache.items():
+            await self.bot.pool.execute(
+                "UPDATE guild_prefs SET counting_channel=$1::counting WHERE guild_id=$2",
+                data,
+                _id,
+            )
+
+    @push_counting_data.before_loop
+    async def wait_for_ready(self):
+        await self.bot.wait_until_ready()
+
+    @push_counting_data.after_loop
+    async def push_final_data(self):
+        for _id, data in self._counting_cache.items():
+            await self.bot.pool.execute(
+                "UPDATE guild_prefs SET counting_channel=$1::counting WHERE guild_id=$2",
+                data,
+                _id,
+            )
+
+    def cog_unload(self):
+        self.push_counting_data.cancel()
 
 
 def setup(bot):

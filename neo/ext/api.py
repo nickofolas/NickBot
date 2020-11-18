@@ -115,7 +115,7 @@ class Api(commands.Cog):
             translated = await self.bot.loop.run_in_executor(
                 None, partial(self.translator.translate, content, dest=dest)
             )
-        except IndexError:
+        except (AttributeError, IndexError):
             raise commands.CommandError("Unable to translate at this time, sorry!")
         embed = neo.Embed()
         embed.add_field(name=f"Input: {translated.src.title()}", value=content)

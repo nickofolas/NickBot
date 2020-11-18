@@ -58,6 +58,12 @@ class Reminder:
         target = (
             self.bot.get_channel(int(list(URL(self.jump_origin).parts)[3])) or self.user
         )
+        if self.user is None:
+            await self.conn_pool.execute(
+                "DELETE FROM reminders WHERE id=$1",
+                self.rm_id,
+            )
+            return
         if self.bot.user_cache[self.user.id]["dm_reminders"] is True:
             target = self.user
         send_content = f"**{self.user.mention} - <{self.jump_origin}>**\n" + indent(

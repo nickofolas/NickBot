@@ -85,6 +85,12 @@ async def post_callback(ctx, post):
 
 
 async def user_callback(ctx, user):
+    if user.is_suspended:
+        embed = neo.Embed(title=user.name, description="User suspended")
+        embed.set_thumbnail(
+            url="https://www.redditstatic.com/interstitial-image-banned.png"
+        )
+        return await ctx.send(embed=embed)
     tstring = textwrap.fill(
         " ".join(
             sorted(

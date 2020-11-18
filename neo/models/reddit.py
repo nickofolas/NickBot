@@ -131,7 +131,7 @@ class Subreddit:
 
     def __init__(self, data, *, original=None):
         self.original_json = original
-        self.data = data
+        self.data = data or {}
         self.title = data.get("title")
         self.icon_img = data.get("icon_img")
         self.prefixed = data.get("display_name_prefixed")
@@ -153,6 +153,7 @@ class Redditor:
         "comment_karma",
         "name",
         "created",
+        "is_suspended",
     )
     """Wraps up a Redditor's JSON"""
 
@@ -160,13 +161,15 @@ class Redditor:
         about_data = about_data.get("data")
         self.tdata = trophy_data.get("data") if trophy_data else None
         self.adata = about_data
-        self.subreddit = Subreddit(about_data.get("subreddit"))
-        self.is_gold = about_data.get("is_gold")
-        self.icon_url = about_data.get("icon_img")
-        self.link_karma = about_data.get("link_karma")
-        self.comment_karma = about_data.get("comment_karma")
         self.name = about_data.get("name")
-        self.created = about_data.get("created_utc")
+        self.is_suspended = about_data.get("is_suspended")
+        if not self.is_suspended:
+            self.subreddit = Subreddit(about_data.get("subreddit"))
+            self.is_gold = about_data.get("is_gold")
+            self.icon_url = about_data.get("icon_img")
+            self.link_karma = about_data.get("link_karma")
+            self.comment_karma = about_data.get("comment_karma")
+            self.created = about_data.get("created_utc")
 
     @property
     def trophies(self):
