@@ -154,13 +154,15 @@ class Api(commands.Cog):
         if not embeds:
             return
         source = PagedEmbedMenu(embeds)
-        menu = CSMenu(source, delete_on_button=True, clear_reactions_after=True)
+        menu = CSMenu(
+            source,
+            delete_on_button=True,
+            clear_reactions_after=True,
+            has_permissions={"administrator": True},
+        )
         await menu.start(ctx)
 
-    @flags.add_flag("-ss", "--safesearch", action="store_true")
-    @flags.add_flag("query", nargs="*")
-    @google.command(aliases=["img", "i"], cls=flags.FlagCommand)
-    async def image(self, ctx, **flags):
+    async def image_callback(self, ctx, **flags):
         """
         Search Google Images for the query
         """
@@ -183,8 +185,22 @@ class Api(commands.Cog):
             delete_on_button=True,
             footer_extra=f"Safesearch: {safesearch}",
             clear_reactions_after=True,
+            has_permissions={"administrator": True},
         )
         await menu.start(ctx)
+
+    @flags.add_flag("-ss", "--safesearch", action="store_true")
+    @flags.add_flag("query", nargs="*")
+    @google.command(aliases=["img", "i"], cls=flags.FlagCommand)
+    async def _google_image(self, ctx, **flags):
+        await self.image_callback(ctx, **flags)
+
+    @flags.add_flag("-ss", "--safesearch", action="store_true")
+    @flags.add_flag("query", nargs="*")
+    @commands.command(aliases=["img", "i"], cls=flags.FlagCommand)
+    async def _just_fucking_image(self, ctx, **flags):
+        await self.image_callback(ctx, **flags)
+
 
     @commands.group(aliases=["fn"], invoke_without_command=True)
     async def fortnite(self, ctx):

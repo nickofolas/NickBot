@@ -24,6 +24,7 @@ from datetime import datetime
 
 import discord
 import neo
+from neo.utils import get_next_truck_month
 from discord.ext import commands, tasks
 from humanize import naturaltime as nt
 
@@ -61,6 +62,7 @@ class Events(commands.Cog):
 
     def __init__(self, bot):
         self.bot = bot
+        self.truck_month.start()
 
     @commands.Cog.listener()
     async def on_command_error(self, ctx, error):
@@ -176,6 +178,24 @@ class Events(commands.Cog):
         embed.set_thumbnail(url=guild.icon_url_as(static_format="png"))
         await self.bot.guild_cache.refresh()
         await self.bot.logging_channels.get("guild_io").send(embed=embed)
+
+    @tasks.loop(seconds=300)
+    async def truck_month(self):
+        next_truck_month = get_next_truck_month(datetime.now())
+        next_tm = (
+            "{0.months} months, {0.weeks} weeks,"
+            " {0.days} days, {0.hours} hours, {0.minutes}"
+            " minutes, and {0.seconds} seconds"
+        ).format(next_truck_month)
+        await self.bot.change_presence(
+            activity=discord.Activity(
+                type=5, name=f"{next_tm} to truck month."
+            ),
+        )
+
+    @truck_month.before_loop
+    async def wait_for_tm(self):
+        await self.bot.wait_until_ready()
 
 
 def setup(bot):

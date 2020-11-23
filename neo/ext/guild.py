@@ -201,7 +201,7 @@ class Guild(commands.Cog):
         except ValueError:
             await msg.delete()
 
-    @tasks.loop(seconds=30)
+    @tasks.loop(seconds=300)
     async def push_counting_data(self):
         for _id, data in self._counting_cache.items():
             await self.bot.pool.execute(

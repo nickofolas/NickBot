@@ -49,7 +49,12 @@ class StarredMessage:
             self.bot.guild_cache[self.guild_id]["starboard_channel_id"]
         )
         try:
-            self.sent_msg = await starboard_channel.fetch_message(self.sent_msg_id)
+            msg = await starboard_channel.history(
+                limit=1, before=discord.Object(self.sent_msg_id + 1)
+            ).next()
+            if msg.id != self.sent_msg_id:
+                raise
+            self.sent_msg = msg
         except Exception as e:
             logging.error(f"Starboard error, ignoring {vars(self)}, {e}")
             return None

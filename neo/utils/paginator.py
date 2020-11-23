@@ -29,12 +29,19 @@ class CSMenu(menus.MenuPages, inherit_buttons=False):
     """Subclass of menus.MenuPages to customise emojis and behaviour"""
 
     def __init__(
-        self, source, *, delete_on_button=False, footer_extra: str = None, **kwargs
+        self,
+        source,
+        *,
+        delete_on_button=False,
+        footer_extra: str = None,
+        has_permissions=None,
+        **kwargs,
     ):
         self.delete_on_button = delete_on_button
         self.closed_via_button = False
         self.footer_extra = footer_extra
         self.is_searching = False
+        self.has_permissions = has_permissions
         super().__init__(source, **kwargs)
 
     def should_add_reactions(self):
@@ -75,6 +82,34 @@ class CSMenu(menus.MenuPages, inherit_buttons=False):
                 else:
                     text += f" | {self.footer_extra}"
             return {"embed": value.set_footer(text=text), "content": None}
+
+    def reaction_check(self, payload):
+        if payload.message_id != self.message.id:
+            return False
+
+        allowed = {self.bot.owner_id, self._author_id, *self.bot.owner_ids}
+
+        if self.has_permissions and isinstance(
+            self.ctx.channel, discord.abc.GuildChannel
+        ):
+            user_perms = self.ctx.channel.permissions_for(
+                _member := self.ctx.guild.get_member(payload.user_id)
+            )
+            if all(
+                [
+                    *map(
+                        lambda pair: getattr(user_perms, pair[0]) is pair[1],
+                        self.has_permissions.items(),
+                    ),
+                    not _member.bot,
+                ]
+            ):
+                allowed.add(payload.user_id)
+
+        if payload.user_id not in allowed:
+            return False
+
+        return payload.emoji in self.buttons
 
     async def update(self, payload):
         if self.is_searching:

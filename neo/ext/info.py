@@ -39,6 +39,7 @@ activity_type_mapping = {
     discord.ActivityType.playing: "Playing",
     discord.ActivityType.streaming: "Streaming",
     discord.ActivityType.listening: "Listening to",
+    discord.ActivityType.competing: "Competing in",
 }
 
 
@@ -101,7 +102,7 @@ class UserInfo:
             e[0]
             for e in [
                 ("Mobile", self.user.mobile_status),
-                ("Desktop", self.user.desktop_status),
+                ("Electron", self.user.desktop_status),
                 ("Web", self.user.web_status),
             ]
             if str(e[1]) != "offline"
