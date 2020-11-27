@@ -123,7 +123,7 @@ class Starboard(commands.Cog):
         description += "\n**Star Requirement** {}".format(
             _config["starboard_star_requirement"]
         )
-        embed = neo.Embed(
+        embed = discord.Embed(
             title=f"{ctx.guild}'s starboard settings", description=description
         )
         embed.set_thumbnail(url=ctx.guild.icon_url_as(static_format="png"))
@@ -208,7 +208,7 @@ class Starboard(commands.Cog):
             await existing.update(new_stars=stars)
             return
         if stars >= guild["starboard_star_requirement"]:
-            embed = neo.Embed(timestamp=message.created_at, description=message.content)
+            embed = discord.Embed(timestamp=message.created_at, description=message.content)
             embed.set_author(
                 name=str(message.author),
                 icon_url=message.author.avatar_url_as(static_format="png"),

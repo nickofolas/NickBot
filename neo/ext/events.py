@@ -19,11 +19,13 @@ import asyncio
 import collections
 import difflib
 import re
+import traceback
 from contextlib import suppress
 from datetime import datetime
 
 import discord
 import neo
+from neo.core.context import Codeblock
 from neo.utils import get_next_truck_month
 from discord.ext import commands, tasks
 from humanize import naturaltime as nt
@@ -48,7 +50,7 @@ class SnipedMessage:
         return f"<SnipedMessage deleted_at={self.deleted_at!r} author={str(self.author)!r}>"
 
     def to_embed(self):
-        embed = neo.Embed()
+        embed = discord.Embed()
         embed.description = self.content
         embed.set_author(
             name=f"{self.author.name} - {nt(datetime.now() - self.deleted_at)}",
@@ -66,26 +68,34 @@ class Events(commands.Cog):
 
     @commands.Cog.listener()
     async def on_command_error(self, ctx, error):
-        if isinstance(
-            error,
-            (commands.CommandNotFound, commands.NotOwner, neo.utils.errors.Blacklisted),
-        ):
-            return  # Ignores CommandNotFound and NotOwner because they're unnecessary
+        ignored_errors = (
+            commands.CommandNotFound, 
+            commands.NotOwner, 
+            neo.utils.errors.Blacklisted
+        )
+        # Ignores CommandNotFound and NotOwner because they're unnecessary
+
+        if isinstance(error, ignored_errors):
+            return  
+
         elif isinstance(error, commands.CommandOnCooldown):
-            return await ctx.message.add_reaction(
-                neo.conf["emojis"]["alarm"]
-            )  # Handles Cooldowns uniquely
+            return await ctx.message.add_reaction(neo.conf["emojis"]["alarm"])  
+            # Handles Cooldowns uniquely
+
         do_emojis = True
-        if hasattr(error, "original"):
-            error = error.original
+        error = getattr(error, "original", error)
         if settings := self.bot.user_cache.get(ctx.author.id):
             if settings.get("repr_errors"):
                 error = repr(error)
             do_emojis = settings.get("error_emojis", True)
-        await ctx.propagate_error(
-            error, do_emojis=do_emojis
-        )  # Anything else is propagated to the
-        # reaction handler
+        
+        await ctx.propagate_error(error, do_emojis=do_emojis)
+        tb = "".join(traceback.format_exception(type(error), error, error.__traceback__))
+
+        embed = discord.Embed()
+        embed.add_field(name="Error", value=Codeblock(content=tb[:1500], lang="py"), inline=False)
+        embed.add_field(name="Invocation", value=ctx.message.clean_content, inline=False)
+        await self.bot.logging_channels['guild_io'].send(embed=embed)
 
     @commands.Cog.listener()
     async def on_message_edit(self, before, after):
@@ -138,7 +148,7 @@ class Events(commands.Cog):
 
     @commands.Cog.listener()
     async def on_guild_join(self, guild):
-        embed = neo.Embed(description=f"Joined guild {guild.name} [{guild.id}]")
+        embed = discord.Embed(description=f"Joined guild {guild.name} [{guild.id}]")
         embed.set_thumbnail(url=guild.icon_url_as(static_format="png"))
         embed.add_field(
             name="**Members**",  # Basic stats about the guild
@@ -148,9 +158,8 @@ class Events(commands.Cog):
             inline=False,
         )
         with suppress(Exception):
-            async for a in guild.audit_logs(
-                limit=5
-            ):  # Tries to disclose who added the bot
+            async for a in guild.audit_logs(limit=5):  
+                # Tries to disclose who added the bot
                 if a.action == discord.AuditLogAction.bot_add:
                     action = a
                     break

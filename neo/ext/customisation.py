@@ -108,7 +108,7 @@ class Customisation(commands.Cog):
                 )
             await self.bot.user_cache.refresh()
             return
-        embed = neo.Embed(title=f"""{ctx.author}'s Settings""")
+        embed = discord.Embed(title=f"""{ctx.author}'s Settings""")
         readable_settings = []
         for k, v in self.bot.user_cache[ctx.author.id].items():
             if k.startswith("_"):
@@ -149,7 +149,7 @@ class Customisation(commands.Cog):
                 )
             await self.bot.guild_cache.refresh()
             return
-        embed = neo.Embed(title=f"""{ctx.guild}'s Settings""")
+        embed = discord.Embed(title=f"""{ctx.guild}'s Settings""")
         readable_settings = []
         for k, v in self.bot.guild_cache[ctx.guild.id].items():
             if isinstance(v, bool):
@@ -167,7 +167,7 @@ class Customisation(commands.Cog):
     async def _prefix(self, ctx):
         """Invoked by itself, it will show base prefixes, and custom prefixes for the current guild
         Its subcommands delve into customisation of said prefixes"""
-        embed = neo.Embed()
+        embed = discord.Embed()
         guild_data = None
         always_active = [ctx.me.mention]
         if ctx.guild:
@@ -224,7 +224,7 @@ class Customisation(commands.Cog):
             )
         )
         await ctx.send(
-            embed=neo.Embed(description="\n".join(map(format_hl, enumerate(my_hl, 1))))
+            embed=discord.Embed(description="\n".join(map(format_hl, enumerate(my_hl, 1))))
             .set_footer(text=f"{len(my_hl)}/10 slots used")
             .set_author(
                 name=f"{ctx.author}'s highlights",
@@ -255,7 +255,7 @@ class Customisation(commands.Cog):
         await ctx.paginate(
             todos,
             10,
-            template=neo.Embed().set_author(
+            template=discord.Embed().set_author(
                 name=f"{ctx.author}'s todos ({len(todos):,} items)",
                 icon_url=ctx.author.avatar_url_as(static_format="png"),
             ),
@@ -313,7 +313,7 @@ class Customisation(commands.Cog):
 
         SELECT * FROM enumerated WHERE enumerated.rnum=$2"""
         todo = await self.bot.pool.fetchrow(query, ctx.author.id, todo_index)
-        embed = neo.Embed(description=todo["content"])
+        embed = discord.Embed(description=todo["content"])
         embed.set_footer(
             text=f"Created on {todo['created_at']:%a, %b, %d, %Y at %X UTC}"
         )
@@ -386,7 +386,7 @@ class Customisation(commands.Cog):
         await ctx.paginate(
             reminders or ["No reminders"],
             5,
-            template=neo.Embed().set_author(
+            template=discord.Embed().set_author(
                 name=ctx.author, icon_url=ctx.author.avatar_url_as(static_format="png")
             ),
             delete_on_button=True,

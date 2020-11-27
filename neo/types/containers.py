@@ -16,7 +16,7 @@ You should have received a copy of the GNU Affero General Public License
 along with neo.  If not, see <https://www.gnu.org/licenses/>.
 """
 import asyncio
-from collections import namedtuple
+from collections import namedtuple, defaultdict
 from contextlib import suppress
 
 __all__ = ("TimedSet", "DbCache")
@@ -47,8 +47,9 @@ class TimedSet(set):
         self.discard(item)
 
 
-class DbCache(dict):
+class DbCache(defaultdict):
     def __init__(self, *, db_query, query_params=[], pool, key):
+        super().__init__(dict)
         self.pool = pool
         self.db_query = db_query
         self.query_params = query_params

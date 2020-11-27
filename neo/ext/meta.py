@@ -69,7 +69,7 @@ class EmbeddedHelpCommand(commands.HelpCommand):
             return c.cog_name or "\u200bUncategorised"
 
         bot = self.context.bot
-        embed = neo.Embed(title=f"{bot.user.name} Help")
+        embed = discord.Embed(title=f"{bot.user.name} Help")
         description = (
             f"Use `{self.clean_prefix}help <command/category>` for more help\n\n"
         )
@@ -93,14 +93,14 @@ class EmbeddedHelpCommand(commands.HelpCommand):
         embed.description = description
 
     async def send_cog_help(self, cog):
-        embed = neo.Embed(title=f"{cog.qualified_name} Category")
+        embed = discord.Embed(title=f"{cog.qualified_name} Category")
         description = f'{cog.description or ""}\n\n'
         entries = await self.filter_commands(cog.get_commands(), sort=True)
         self.cog_group_common_fmt(embed, description, entries)
         await self.context.send(embed=embed)
 
     async def send_group_help(self, group):
-        embed = neo.Embed(title=self.get_command_signature(group))
+        embed = discord.Embed(title=self.get_command_signature(group))
         description = f'{group.help or "No description provided"}\n\n'
         entries = await self.filter_commands(group.commands, sort=True)
         self.cog_group_common_fmt(embed, description, entries)
@@ -111,7 +111,7 @@ class EmbeddedHelpCommand(commands.HelpCommand):
         await self.context.send(embed=embed)
 
     async def send_command_help(self, command):
-        embed = neo.Embed(title=self.get_command_signature(command))
+        embed = discord.Embed(title=self.get_command_signature(command))
         description = f'{command.help or "No description provided"}\n\n'
         embed.description = description
         if c := retrieve_checks(command):
@@ -131,7 +131,7 @@ class EmbeddedHelpCommand(commands.HelpCommand):
     async def send_error_message(self, error):
         if isinstance(error, list):
             suggestions = "\n⇾ ".join(error)
-            embed = neo.Embed(title="Did you mean...")
+            embed = discord.Embed(title="Did you mean...")
             embed.description = f"⇾ {suggestions}"
             return await self.context.send(embed=embed)
         elif isinstance(error, str):
@@ -175,7 +175,7 @@ class Meta(commands.Cog):
             title = f"View source for command {cmd.qualified_name}"
             url = f"https://github.com/nickofolas/neo/blob/master/{fpath}#L{first_ln}-L{last_ln}"
             desc += f"**File** {fpath}\n**Lines** {first_ln} - {last_ln} [{len(lines) - 1} total]"
-        await ctx.send(embed=neo.Embed(title=title, description=desc, url=url))
+        await ctx.send(embed=discord.Embed(title=title, description=desc, url=url))
 
     async def fetch_latest_commit(self):
         headers = {"Authorization": f"token  {neo.secrets.github_token}"}
@@ -191,7 +191,7 @@ class Meta(commands.Cog):
         # invite_url = discord.utils.oauth_url(self.bot.user.id, permissions)
         mem = psutil.virtual_memory()[2]
         vi = sys.version_info
-        embed = neo.Embed().set_thumbnail(
+        embed = discord.Embed().set_thumbnail(
             url=self.bot.user.avatar_url_as(static_format="png")
         )
         embed.set_footer(

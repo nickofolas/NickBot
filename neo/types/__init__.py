@@ -16,5 +16,4 @@ You should have received a copy of the GNU Affero General Public License
 along with neo.  If not, see <https://www.gnu.org/licenses/>.
 """
 from .containers import *
-from .embeds import *
 from .namespace import *

@@ -44,7 +44,7 @@ def submission_to_embed(submission):
             desc = "**Poll pending**\n" + "\n".join(f"➣ {opt.text}" for opt in p)
         desc += f"\n**{p.total_votes} total votes**"
     embed = (
-        neo.Embed(
+        discord.Embed(
             title=submission.title,
             description=f"{reddit_emojis['upvote']} {submission.upvotes:,} | :speech_balloon: {submission.comments:,} "
             f"| 🕙 {nt(submission.creation_delta)}\n{desc}",
@@ -69,7 +69,7 @@ def allow_nsfw_in_channel(channel):
 async def post_callback(ctx, post):
     embeds = [submission_to_embed(post)]
     for item in group(post.original_json[1]["data"]["children"], 5):
-        embed = neo.Embed(title="Browsing top-level comments")
+        embed = discord.Embed(title="Browsing top-level comments")
         for comment in item:
             embed.add_field(
                 name=f"{reddit_emojis['upvote']} {comment['data'].get('ups')} | "
@@ -86,7 +86,7 @@ async def post_callback(ctx, post):
 
 async def user_callback(ctx, user):
     if user.is_suspended:
-        embed = neo.Embed(title=user.name, description="User suspended")
+        embed = discord.Embed(title=user.name, description="User suspended")
         embed.set_thumbnail(
             url="https://www.redditstatic.com/interstitial-image-banned.png"
         )
@@ -102,7 +102,7 @@ async def user_callback(ctx, user):
         ),
         225,
     )
-    embed = neo.Embed(title=user.display_name, description=tstring)
+    embed = discord.Embed(title=user.display_name, description=tstring)
     embed.set_author(
         name=user.subreddit.prefixed,
         url=user.subreddit.full_url,
@@ -124,7 +124,7 @@ async def user_callback(ctx, user):
 
 
 async def subreddit_callback(ctx, sub):
-    embed = neo.Embed(title=sub.prefixed, url=sub.full_url)
+    embed = discord.Embed(title=sub.prefixed, url=sub.full_url)
     embed.set_thumbnail(
         url="https://i.imgur.com/gKzmGxt.png"
         if sub.nsfw and not allow_nsfw_in_channel(ctx.channel)

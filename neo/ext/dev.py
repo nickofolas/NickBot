@@ -215,7 +215,7 @@ class Dev(commands.Cog):
             delete_on_button=True,
             clear_reactions_after=True,
             timeout=300,
-            template=neo.Embed().set_author(
+            template=discord.Embed().set_author(
                 name=f'Returned {rows} {pluralize("row", rows)} in {dt:.2f}ms'
             ),
         )
@@ -312,7 +312,7 @@ class Dev(commands.Cog):
             data = await response.json()
             site = data["website"]
             await ctx.send(
-                embed=neo.Embed(title=site, url=site).set_image(url=data["snapshot"])
+                embed=discord.Embed(title=site, url=site).set_image(url=data["snapshot"])
             )
 
     @flags.add_flag("-m", "--mode", choices=["r", "l", "u"], default="r")

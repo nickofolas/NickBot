@@ -15,20 +15,9 @@ GNU Affero General Public License for more details.
 You should have received a copy of the GNU Affero General Public License
 along with neo.  If not, see <https://www.gnu.org/licenses/>.
 """
-import discord
-
-
-@property
-def jump_url(self):
-    """:class:`str`: Returns a URL that allows the client to jump to this message."""
-    guild_id = getattr(self.guild, "id", "@me")
-    return "https://canary.discord.com/channels/{0}/{1.channel.id}/{1.id}".format(
-        guild_id, self
-    )
-
-
-discord.Message.jump_url = jump_url
 
 from neo import NeoBot
 
-NeoBot().run()
+
+if __name__ == '__main__':
+    NeoBot().run()

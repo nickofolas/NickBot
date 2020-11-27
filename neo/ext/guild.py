@@ -25,7 +25,6 @@ from typing import Union
 import discord
 from discord.ext import commands, flags, tasks
 from discord.ext.commands import has_permissions
-from neo import Embed
 from neo.utils.checks import is_owner_or_administrator
 from neo.utils.converters import BoolConverter
 from neo.utils.formatters import prettify_text
@@ -134,7 +133,7 @@ class Guild(commands.Cog):
     async def _guild_counting(self, ctx):
         if (_counting := self._counting_cache[ctx.guild.id]) is None:
             return
-        embed = Embed(description=str(_counting))
+        embed = discord.Embed(description=str(_counting))
         await ctx.send(embed=embed)
 
     @is_owner_or_administrator()

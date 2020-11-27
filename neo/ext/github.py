@@ -36,7 +36,7 @@ gh_emojis = neo.conf["emojis"]["github"]
 
 
 async def user_callback(ctx, user):
-    embed = neo.Embed(
+    embed = discord.Embed(
         title=f"{user.name} ({user.user_id})",
         description=textwrap.fill(user.bio, width=40) if user.bio else None,
         url=str(user.url),
@@ -52,7 +52,7 @@ async def user_callback(ctx, user):
 
 
 async def repo_callback(ctx, repo):
-    embed = neo.Embed(
+    embed = discord.Embed(
         title=f"{repo.full_name} ({repo.repo_id})",
         description=textwrap.fill(repo.description, width=40)
         if repo.description

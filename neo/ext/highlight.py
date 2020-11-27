@@ -145,7 +145,7 @@ class Highlight:
         context_list.reverse()
         while len("\n".join(context_list)) > 2048:
             context_list = context_list[1:]
-        embed = neo.Embed(
+        embed = discord.Embed(
             title=f'Highlighted in {message.guild.name}/#{message.channel.name} with "{shorten(match, width=25)}"',
             description="\n".join(context_list) + f"\n[Jump URL]({message.jump_url})",
         )

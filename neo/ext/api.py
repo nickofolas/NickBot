@@ -46,7 +46,7 @@ def filter_posts(obj):
 def build_google_embeds(results, show_images=True):
     embeds = []  # faster
     for r in results:
-        embed = neo.Embed(title=r.title, description=r.description, url=r.url)
+        embed = discord.Embed(title=r.title, description=r.description, url=r.url)
         if show_images and r.image_url:
             embed.set_image(url=r.image_url)
         embeds.append(embed)
@@ -94,7 +94,7 @@ class Api(commands.Cog):
         py_required = discord.utils.escape_markdown(
             info.get("requires_python") or "Not specified"
         )
-        embed = neo.Embed().set_thumbnail(url="https://i.imgur.com/UWgCSMs.png")
+        embed = discord.Embed().set_thumbnail(url="https://i.imgur.com/UWgCSMs.png")
         embed.description = textwrap.fill(info.get("summary", ""), width=40)
         embed.title = f"{info.get('name')} {info['version']}"
         embed.add_field(
@@ -117,7 +117,7 @@ class Api(commands.Cog):
             )
         except (AttributeError, IndexError):
             raise commands.CommandError("Unable to translate at this time, sorry!")
-        embed = neo.Embed()
+        embed = discord.Embed()
         embed.add_field(name=f"Input: {translated.src.title()}", value=content)
         embed.add_field(
             name=f"Output: {translated.dest.title()}",
@@ -230,7 +230,7 @@ class Api(commands.Cog):
         await ctx.paginate(
             [*_gather()],
             1,
-            template=neo.Embed().set_author(
+            template=discord.Embed().set_author(
                 name=str(datetime.date.today()),
                 icon_url="https://i.imgur.com/XMTZAQT.jpg",
             ),
@@ -248,7 +248,7 @@ class Api(commands.Cog):
             headers={"TRN-Api-Key": neo.secrets.fortnite_key},
         ) as resp:
             js = await resp.json()
-        embed = neo.Embed().set_author(
+        embed = discord.Embed().set_author(
             name=js.get("epicUserHandle"), icon_url="https://i.imgur.com/XMTZAQT.jpg"
         )
         stats = str()
