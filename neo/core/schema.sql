@@ -43,7 +43,8 @@ CREATE TABLE starboard_msgs (
     channel_id  BIGINT NOT NULL,
     guild_id    BIGINT NOT NULL,
     stars       BIGINT,
-    starred_message_id BIGINT
+    starred_message_id BIGINT,
+    PRIMARY KEY (message_id, channel_id, guild_id)
 );
 
 CREATE TABLE todo (
