@@ -18,6 +18,8 @@ along with neo.  If not, see <https://www.gnu.org/licenses/>.
 import asyncio
 import collections
 import difflib
+import inspect
+import logging
 import re
 import traceback
 from contextlib import suppress
@@ -31,7 +33,7 @@ from discord.ext import commands, tasks
 from humanize import naturaltime as nt
 
 ignored_cmds = re.compile(r"\.+")
-
+log = logging.getLogger(__name__)
 
 class SnipedMessage:
     def __init__(self, *, content=None, author, before=None, after=None, deleted_at):
@@ -58,6 +60,13 @@ class SnipedMessage:
         )
         return embed
 
+HANDLERS = {
+    commands.DisabledCommand: lambda _, error: error,
+    commands.BadArgument: lambda _, error: error,
+    commands.CommandOnCooldown: lambda ctx, _: ctx.message.add_reaction(neo.conf["emojis"]["alarm"]),
+    commands.CommandNotFound: None,
+    commands.MissingRequiredArgument: lambda _, error: error
+}
 
 class Events(commands.Cog):
     """Contains the listeners for the bot"""
@@ -68,34 +77,43 @@ class Events(commands.Cog):
 
     @commands.Cog.listener()
     async def on_command_error(self, ctx, error):
-        ignored_errors = (
-            commands.CommandNotFound, 
-            commands.NotOwner, 
-            neo.utils.errors.Blacklisted
-        )
-        # Ignores CommandNotFound and NotOwner because they're unnecessary
-
-        if isinstance(error, ignored_errors):
-            return  
-
-        elif isinstance(error, commands.CommandOnCooldown):
-            return await ctx.message.add_reaction(neo.conf["emojis"]["alarm"])  
-            # Handles Cooldowns uniquely
-
-        do_emojis = True
         error = getattr(error, "original", error)
-        if settings := self.bot.user_cache.get(ctx.author.id):
-            if settings.get("repr_errors"):
-                error = repr(error)
-            do_emojis = settings.get("error_emojis", True)
-        
-        await ctx.propagate_error(error, do_emojis=do_emojis)
-        tb = "".join(traceback.format_exception(type(error), error, error.__traceback__))
+        try:
+            mro = inspect.getmro(error.__class__)
+            for cls in mro:
+                if cls in HANDLERS:
+                    handle = HANDLERS[cls]
+                    if callable(handle):
+                        func = handle(ctx, error)
+                        if asyncio.iscoroutine(func):
+                            return await func
+                        else:
+                            message = str(func)
+                    elif isinstance(handle, str):
+                        message = handle
+                    elif handle is None:
+                        return
+                    break
 
-        embed = discord.Embed()
-        embed.add_field(name="Error", value=Codeblock(content=tb[:1500], lang="py"), inline=False)
-        embed.add_field(name="Invocation", value=ctx.message.clean_content, inline=False)
-        await self.bot.logging_channels['guild_io'].send(embed=embed)
+            else:
+                raise KeyError()
+
+            await ctx.send(message)
+
+        except KeyError:
+            do_emojis = True
+            if settings := self.bot.user_cache.get(ctx.author.id):
+                if settings.get("repr_errors"):
+                    error = repr(error)
+                do_emojis = settings.get("error_emojis", True)
+
+            tb = "".join(traceback.format_exception(type(error), error, error.__traceback__))
+            log.error("\n" + tb)
+
+            await self.bot.logging_channels['guild_io'].send(
+                f"Invocation: {ctx.message.clean_content[:80]}\n" + str(Codeblock(content=tb[:1900], lang="py"))
+            )
+            await ctx.propagate_error(error, do_emojis=do_emojis)
 
     @commands.Cog.listener()
     async def on_message_edit(self, before, after):
