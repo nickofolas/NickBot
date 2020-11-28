@@ -46,7 +46,7 @@ if sys.platform == "win32":
     from ctypes import windll
     windll.kernel32.SetConsoleMode(windll.kernel32.GetStdHandle(-11), 7)
 
-LOGGERS = [("discord", logging.WARN), ("neo", logging.INFO)]
+LOGGERS = [("discord", logging.INFO), ("neo", logging.INFO)]
 
 class ColouredFormatter(logging.Formatter):
     prefix = "\x1b[38;5;"
@@ -165,8 +165,9 @@ class NeoBot(commands.Bot):
 
     async def close(self):  
         # wrapping all of them into a try except to let it die in peace
-        await super().close()
         with suppress(Exception):
-            [task.cancel() for task in asyncio.all_tasks(loop=self.loop)]
             await self.session.close()
             await self.pool.close()
+        await super().close()
+        
+
