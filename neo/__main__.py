@@ -19,5 +19,5 @@ along with neo.  If not, see <https://www.gnu.org/licenses/>.
 from neo import NeoBot
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     NeoBot().run()

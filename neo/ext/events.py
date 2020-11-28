@@ -35,6 +35,7 @@ from humanize import naturaltime as nt
 ignored_cmds = re.compile(r"\.+")
 log = logging.getLogger(__name__)
 
+
 class SnipedMessage:
     def __init__(self, *, content=None, author, before=None, after=None, deleted_at):
         self.author = author
@@ -60,13 +61,17 @@ class SnipedMessage:
         )
         return embed
 
+
 HANDLERS = {
     commands.DisabledCommand: lambda _, error: error,
     commands.BadArgument: lambda _, error: error,
-    commands.CommandOnCooldown: lambda ctx, _: ctx.message.add_reaction(neo.conf["emojis"]["alarm"]),
+    commands.CommandOnCooldown: lambda ctx, _: ctx.message.add_reaction(
+        neo.conf["emojis"]["alarm"]
+    ),
     commands.CommandNotFound: None,
-    commands.MissingRequiredArgument: lambda _, error: error
+    commands.MissingRequiredArgument: lambda _, error: error,
 }
+
 
 class Events(commands.Cog):
     """Contains the listeners for the bot"""
@@ -107,11 +112,14 @@ class Events(commands.Cog):
                     error = repr(error)
                 do_emojis = settings.get("error_emojis", True)
 
-            tb = "".join(traceback.format_exception(type(error), error, error.__traceback__))
+            tb = "".join(
+                traceback.format_exception(type(error), error, error.__traceback__)
+            )
             log.error("\n" + tb)
 
-            await self.bot.logging_channels['guild_io'].send(
-                f"Invocation: {ctx.message.clean_content[:80]}\n" + str(Codeblock(content=tb[:1900], lang="py"))
+            await self.bot.logging_channels["guild_io"].send(
+                f"Invocation: {ctx.message.clean_content[:80]}\n"
+                + str(Codeblock(content=tb[:1900], lang="py"))
             )
             await ctx.propagate_error(error, do_emojis=do_emojis)
 
@@ -139,7 +147,7 @@ class Events(commands.Cog):
                     deleted_at=now,
                 )
             )
-    
+
     @commands.Cog.listener("on_message_edit")
     async def process_edit_commands(self, before, after):
         if (datetime.utcnow() - before.created_at).seconds <= 600:
@@ -182,7 +190,7 @@ class Events(commands.Cog):
             inline=False,
         )
         with suppress(Exception):
-            async for a in guild.audit_logs(limit=5):  
+            async for a in guild.audit_logs(limit=5):
                 # Tries to disclose who added the bot
                 if a.action == discord.AuditLogAction.bot_add:
                     action = a
@@ -221,9 +229,7 @@ class Events(commands.Cog):
             " minutes, and {0.seconds} seconds"
         ).format(next_truck_month)
         await self.bot.change_presence(
-            activity=discord.Activity(
-                type=5, name=f"{next_tm} to truck month."
-            ),
+            activity=discord.Activity(type=5, name=f"{next_tm} to truck month."),
         )
 
     @truck_month.before_loop

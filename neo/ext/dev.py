@@ -193,9 +193,13 @@ class Dev(commands.Cog):
         try:
             results = await strategy(query)
         except asyncpg.PostgresError as error:
-            await ctx.send(ctx.codeblock(content=tabulate([[str(error)]], headers=["error"]), lang="sql"))
+            await ctx.send(
+                ctx.codeblock(
+                    content=tabulate([[str(error)]], headers=["error"]), lang="sql"
+                )
+            )
             return
-            
+
         dt = (time.perf_counter() - start) * 1000.0
 
         rows = len(results)
@@ -318,7 +322,9 @@ class Dev(commands.Cog):
             data = await response.json()
             site = data["website"]
             await ctx.send(
-                embed=discord.Embed(title=site, url=site).set_image(url=data["snapshot"])
+                embed=discord.Embed(title=site, url=site).set_image(
+                    url=data["snapshot"]
+                )
             )
 
     @flags.add_flag("-m", "--mode", choices=["r", "l", "u"], default="r")

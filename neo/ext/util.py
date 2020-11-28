@@ -244,7 +244,9 @@ class Util(commands.Cog):
         """Choose between multiple choices"""
         if len(options) < 2:
             raise commands.CommandError("Not enough choices provided")
-        await ctx.send('**{0}**, `{1}` was chosen'.format(ctx.author, random.choice(options)))
+        await ctx.send(
+            "**{0}**, `{1}` was chosen".format(ctx.author, random.choice(options))
+        )
 
     @random_choice.command(name="best")
     async def random_choice_bestof(self, ctx, times: Optional[int], *options):

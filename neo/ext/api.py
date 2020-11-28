@@ -201,7 +201,6 @@ class Api(commands.Cog):
     async def _just_fucking_image(self, ctx, **flags):
         await self.image_callback(ctx, **flags)
 
-
     @commands.group(aliases=["fn"], invoke_without_command=True)
     async def fortnite(self, ctx):
         """Various commands to interact with the Fortnite API"""

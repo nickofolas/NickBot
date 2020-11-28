@@ -35,18 +35,23 @@ discord.Color.pornhub = discord.Color(0xFFA31A)
 discord.Color.main = discord.Color(0x84CDFF)
 
 original_init = discord.Embed.__init__
+
+
 def __init__(self, *args, **kwargs):
     kwargs.setdefault("colour", 0x84CDFF)
     kwargs.setdefault("color", 0x84CDFF)
     original_init(self, *args, **kwargs)
 
+
 discord.Embed.__init__ = __init__
 
 if sys.platform == "win32":
     from ctypes import windll
+
     windll.kernel32.SetConsoleMode(windll.kernel32.GetStdHandle(-11), 7)
 
 LOGGERS = [("discord", logging.INFO), ("neo", logging.INFO)]
+
 
 class ColouredFormatter(logging.Formatter):
     prefix = "\x1b[38;5;"
@@ -56,23 +61,29 @@ class ColouredFormatter(logging.Formatter):
         "DEBUG": prefix + "26m",
         "ERROR": prefix + "1m",
         "WARNING": prefix + "220m",
-        "_RESET": "\x1b[0m"
+        "_RESET": "\x1b[0m",
     }
 
     def format(self, record: logging.LogRecord):
         if record.levelname in self.codes:
-            record.msg = self.codes[record.levelname] + str(record.msg) + self.codes["_RESET"]
-            record.levelname = self.codes[record.levelname] + record.levelname + self.codes["_RESET"]
+            record.msg = (
+                self.codes[record.levelname] + str(record.msg) + self.codes["_RESET"]
+            )
+            record.levelname = (
+                self.codes[record.levelname] + record.levelname + self.codes["_RESET"]
+            )
         return super().format(record)
+
 
 for name, level in LOGGERS:
     log_ = logging.getLogger(name)
     handler = logging.StreamHandler()
     formatter = ColouredFormatter(
-        fmt="[{asctime} {levelname}/{name}] {message}",
-        style="{"
+        fmt="[{asctime} {levelname}/{name}] {message}", style="{"
     )
-    formatter.datefmt = "\x1b[38;2;132;206;255m" + "%d/%m/%Y %H:%M:%S" + formatter.codes["_RESET"]
+    formatter.datefmt = (
+        "\x1b[38;2;132;206;255m" + "%d/%m/%Y %H:%M:%S" + formatter.codes["_RESET"]
+    )
 
     handler.setFormatter(formatter)
     log_.setLevel(level)
@@ -103,8 +114,18 @@ class NeoBot(commands.Bot):
                 everyone=False, users=False, roles=False
             ),
             intents=discord.Intents(
-                **dict.fromkeys(["members", "guilds", "emojis", "presences", "messages", "reactions"], True)
-            )
+                **dict.fromkeys(
+                    [
+                        "members",
+                        "guilds",
+                        "emojis",
+                        "presences",
+                        "messages",
+                        "reactions",
+                    ],
+                    True,
+                )
+            ),
         )
         self.snipes = {}
         self.loop.create_task(self.__ainit__())
@@ -140,7 +161,7 @@ class NeoBot(commands.Bot):
         return await super().get_context(message, cls=cls)
 
     def check_blacklist(self, ctx):
-        if (p := self.user_cache.get(ctx.author.id)):
+        if (p := self.user_cache.get(ctx.author.id)) :
             if p["_blacklisted"] is True:
                 raise neo.utils.errors.Blacklisted()
             else:
@@ -158,7 +179,9 @@ class NeoBot(commands.Bot):
     async def before(self, ctx):
         if not self.user_cache.get(ctx.author.id):
             with suppress(asyncpg.exceptions.UniqueViolationError):
-                await self.pool.execute("INSERT INTO user_data (user_id) VALUES ($1)", ctx.author.id)
+                await self.pool.execute(
+                    "INSERT INTO user_data (user_id) VALUES ($1)", ctx.author.id
+                )
                 # Adds people to the user_data table whenever they execute their first command
                 await self.user_cache.refresh()  # And then updates the user cache
 
@@ -168,11 +191,9 @@ class NeoBot(commands.Bot):
             "guild_io": self.get_channel(neo.conf["guild_notifs_channel"])
         }
 
-    async def close(self):  
+    async def close(self):
         # wrapping all of them into a try except to let it die in peace
         with suppress(Exception):
             await self.session.close()
             await self.pool.close()
         await super().close()
-        
-

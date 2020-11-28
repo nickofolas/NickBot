@@ -240,7 +240,7 @@ class Fun(commands.Cog):
         kwargs = {}
         if len(message) < 1500:
             kwargs["flags"] = uwuify.SMILEY
-        await ctx.send('**{}**: '.format(ctx.author) + uwuify.uwu(message, **kwargs))
+        await ctx.send("**{}**: ".format(ctx.author) + uwuify.uwu(message, **kwargs))
 
     @commands.command(aliases=["WorldHealthOrganization"])
     async def who(self, ctx):

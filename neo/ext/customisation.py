@@ -54,17 +54,25 @@ class Reminder:
         await self._do_remind()
 
     async def _do_remind(self):
-        target = self.bot.get_channel(int(list(URL(self.jump_origin).parts)[3])) or self.user
+        target = (
+            self.bot.get_channel(int(list(URL(self.jump_origin).parts)[3])) or self.user
+        )
         if self.user is None:
-            return await self.bot.pool.execute("DELETE FROM reminders WHERE id=$1", self.rm_id)
-        
+            return await self.bot.pool.execute(
+                "DELETE FROM reminders WHERE id=$1", self.rm_id
+            )
+
         if self.bot.user_cache[self.user.id].get("dm_reminders", False) is True:
             target = self.user
         send_content = f"**{self.user.mention} - <{self.jump_origin}>**\n" + indent(
             self.content, "> "
         )
-        await target.send(send_content, allowed_mentions=discord.AllowedMentions(users=[self.user]))
-        await self.bot.pool.execute("DELETE FROM reminders WHERE id=$1 AND user_id=$2", self.rm_id, self.user.id)
+        await target.send(
+            send_content, allowed_mentions=discord.AllowedMentions(users=[self.user])
+        )
+        await self.bot.pool.execute(
+            "DELETE FROM reminders WHERE id=$1 AND user_id=$2", self.rm_id, self.user.id
+        )
 
 
 class Customisation(commands.Cog):
@@ -214,7 +222,9 @@ class Customisation(commands.Cog):
             )
         )
         await ctx.send(
-            embed=discord.Embed(description="\n".join(map(format_hl, enumerate(my_hl, 1))))
+            embed=discord.Embed(
+                description="\n".join(map(format_hl, enumerate(my_hl, 1)))
+            )
             .set_footer(text=f"{len(my_hl)}/10 slots used")
             .set_author(
                 name=f"{ctx.author}'s highlights",

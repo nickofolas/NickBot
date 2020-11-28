@@ -23,7 +23,7 @@ __all__ = ("conf", "secrets")
 
 
 def load_config():
-    with open("neo/core/config.yml", "r", encoding='utf-8') as config:
+    with open("neo/core/config.yml", "r", encoding="utf-8") as config:
         raw = yaml.safe_load(config)
     secrets = raw["secret"]
     assets = raw["assets"]
