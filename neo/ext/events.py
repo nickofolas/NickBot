@@ -139,6 +139,12 @@ class Events(commands.Cog):
                     deleted_at=now,
                 )
             )
+    
+    @commands.Cog.listener("on_message_edit")
+    async def process_edit_commands(self, before, after):
+        if (datetime.utcnow() - before.created_at).seconds <= 600:
+            if after.content != before.content:
+                await self.bot.process_commands(after)
 
     @commands.Cog.listener()
     async def on_message_delete(self, message):

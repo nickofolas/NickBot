@@ -146,7 +146,7 @@ class NeoBot(commands.Bot):
     async def global_cooldown(self, ctx):
         bucket = self._cd.get_bucket(ctx.message)
         retry_after = bucket.update_rate_limit()
-        if retry_after:
+        if retry_after and not await self.is_owner(ctx.author):
             raise commands.CommandOnCooldown(bucket, retry_after)
         return True
 
