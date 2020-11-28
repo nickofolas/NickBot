@@ -25,6 +25,7 @@ import re
 import textwrap
 import time
 import traceback
+import asyncpg
 from collections import namedtuple
 from contextlib import redirect_stdout, suppress
 from typing import Union
@@ -189,7 +190,12 @@ class Dev(commands.Cog):
             strategy = self.bot.pool.fetch
 
         start = time.perf_counter()
-        results = await strategy(query)
+        try:
+            results = await strategy(query)
+        except asyncpg.PostgresError as error:
+            await ctx.send(ctx.codeblock(content=tabulate([[str(error)]], headers=["error"]), lang="sql"))
+            return
+            
         dt = (time.perf_counter() - start) * 1000.0
 
         rows = len(results)
