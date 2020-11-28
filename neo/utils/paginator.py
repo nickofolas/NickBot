@@ -209,7 +209,7 @@ class BareBonesMenu(menus.ListPageSource):
             embed.description = join_str.join(page)
             return embed
         else:
-            return neo.Embed(description=join_str.join(page))
+            return discord.Embed(description=join_str.join(page))
 
 
 async def paginate(ctx, entries, per_page, *, template: discord.Embed = None, **kwargs):

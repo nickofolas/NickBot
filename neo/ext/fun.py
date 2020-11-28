@@ -85,7 +85,7 @@ class Fun(commands.Cog):
     async def vote(self, ctx, *, poll):
         """Create an easy poll"""
         # TODO: Make the message edit itself when the reactions are updated so that it's easier to tell what the actual votes are
-        embed = neo.Embed(title=" ", description=f"**Cast your vote:**\n{poll}")
+        embed = discord.Embed(title=" ", description=f"**Cast your vote:**\n{poll}")
         embed.set_footer(
             text=f"Vote created by {ctx.author.name}",
             icon_url=ctx.author.avatar_url_as(static_format="png"),
@@ -187,7 +187,7 @@ class Fun(commands.Cog):
         file = discord.File(io.BytesIO(out), filename=f"largeemoji.{extension}")
         await ctx.send(
             file=file,
-            embed=neo.Embed().set_image(url=f"attachment://largeemoji.{extension}"),
+            embed=discord.Embed().set_image(url=f"attachment://largeemoji.{extension}"),
         )
 
     @commands.is_owner()
@@ -255,7 +255,7 @@ class Fun(commands.Cog):
         else:
             user = random.choice(ctx.guild.members)
         await ctx.send(
-            embed=neo.Embed().set_image(
+            embed=discord.Embed().set_image(
                 url=user.avatar_url_as(static_format="png", size=128)
             )
         )

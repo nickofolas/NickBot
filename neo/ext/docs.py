@@ -196,9 +196,9 @@ class Docs(commands.Cog):
 
         matches = finder(obj, cache, key=lambda t: t[0], lazy=False)[:8]
 
-        e = neo.Embed()
+        e = discord.Embed()
         if len(matches) == 0:
-            return await ctx.send(embed=neo.Embed(description="No results :("))
+            return await ctx.send(embed=discord.Embed(description="No results :("))
 
         e.description = "\n".join(f"[`{key}`]({url})" for key, url in matches)
         await ctx.send(embed=e)

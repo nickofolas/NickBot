@@ -1,8 +1,4 @@
-git+https://github.com/Rapptz/discord.py@master
-git+https://github.com/Rapptz/discord-ext-menus
-
-yarl
-aiohttp
+discord.py
 humanize
 python-dateutil
 tabulate

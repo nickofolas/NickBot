@@ -105,7 +105,7 @@ class Util(commands.Cog):
         """Gets the bot's response time and latency"""
         start = time.perf_counter()
         message = await ctx.send(
-            embed=neo.Embed(
+            embed=discord.Embed(
                 description=f":electric_plug: **Websocket** {round(self.bot.latency * 1000, 3)}ms"
             )
         )
@@ -132,7 +132,7 @@ class Util(commands.Cog):
         else:
             permissions = discord.Permissions(1878523719)
         invite_url = discord.utils.oauth_url(self.bot.user.id, permissions)
-        embed = neo.Embed(
+        embed = discord.Embed(
             title="Invite me to your server!",
             description=f"[`Invite Link`]({invite_url})\n**Permissions Value** {permissions.value}",
         ).set_thumbnail(url=self.bot.user.avatar_url_as(static_format="png"))
@@ -154,7 +154,7 @@ class Util(commands.Cog):
             main_format = "gif"
         else:
             main_format = "png"
-        (embed := neo.Embed()).set_image(
+        (embed := discord.Embed()).set_image(
             url=(aurl := target.avatar_url_as(format=main_format, size=new_size))
         )
         embed.description = " | ".join(

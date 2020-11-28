@@ -199,7 +199,7 @@ class Info(commands.Cog):
             if isinstance(user, discord.Member) and ctx.guild
             else ""
         )
-        embed = neo.Embed(title=user_info.tagline)
+        embed = discord.Embed(title=user_info.tagline)
         async with ctx.loading(tick=False):
             file = await user_info.circle()
         embed.set_thumbnail(url="attachment://{}".format(file.filename))
@@ -223,7 +223,7 @@ class Info(commands.Cog):
     async def perms(self, ctx, target: discord.Member = None):
         """Show the allowed and denied permissions for a user"""
         target = target or ctx.author
-        embed = neo.Embed()
+        embed = discord.Embed()
         ls = sorted(
             [*ctx.channel.permissions_for(target)], key=lambda x: x[1], reverse=True
         )
@@ -309,7 +309,7 @@ class Info(commands.Cog):
                 for unit in ("days", "hours", "minutes", "seconds"):
                     elapsed_formatted.append(f"{getattr(elapsed, unit):>02}")
                 description.append(f"{':'.join(elapsed_formatted)} elapsed")
-            embed = neo.Embed(
+            embed = discord.Embed(
                 description=discord.utils.escape_markdown("\n".join(description))
             )
             embed.set_author(icon_url=ac.small_image_url or "", name=ac.name)
@@ -318,14 +318,12 @@ class Info(commands.Cog):
         else:
             await ctx.send("Couldn't find a valid rich presence")
 
-    @commands.group(
-        aliases=["guild", "guildinfo", "server"], invoke_without_command=True
-    )
+    @commands.group(aliases=["guild", "guildinfo", "server"], invoke_without_command=True)
     @commands.guild_only()
     async def serverinfo(self, ctx):
         """Get info about the current server"""
         guild = ctx.guild
-        embed = neo.Embed()
+        embed = discord.Embed()
         embed.set_footer(
             text=f"Created "
             f"{humanize.naturaltime(datetime.utcnow() - guild.created_at)} | Owner: {guild.owner}"
@@ -446,7 +444,7 @@ class Info(commands.Cog):
             desc = f"**{online:,} [{online/total * 100:.0f}%] of {total:,} members online**"
             if guild.description:
                 desc += f"\n{textwrap.fill(guild.description, width=45)}"
-            embed = neo.Embed(description=desc, title=guild.name)
+            embed = discord.Embed(description=desc, title=guild.name)
             embed.set_thumbnail(url=guild.icon_url_as(static_format="png"))
             embed.set_footer(
                 text=f"Created {humanize.naturaltime(guild.created_at)} | ID: {guild.id}"

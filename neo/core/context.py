@@ -18,16 +18,14 @@ along with neo.  If not, see <https://www.gnu.org/licenses/>.
 import asyncio
 import contextlib
 import re
-from contextlib import suppress
-
 import discord
 import neo
 from discord.ext import commands
 
 
 class Codeblock:
-    def __init__(self, *, content, lang=None, cb_safe=True):
-        self.lang = lang or ""
+    def __init__(self, *, content, lang="", cb_safe=True):
+        self.lang = lang
         self.cb_safe = cb_safe
         self.content = content.replace("``", "`\N{ZWSP}`") if cb_safe else content
 
@@ -137,7 +135,7 @@ class Context(commands.Context):
     async def propagate_error(self, error, do_emojis=True):
         if do_emojis is False:
             return await self.send(error)
-        with suppress(Exception):
+        with contextlib.suppress(Exception):
             await self.message.add_reaction(neo.conf["emojis"]["warning_button"])
             try:
                 reaction, user = await self.bot.wait_for(

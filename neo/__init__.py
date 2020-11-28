@@ -16,5 +16,4 @@ You should have received a copy of the GNU Affero General Public License
 along with neo.  If not, see <https://www.gnu.org/licenses/>.
 """
 from .core import NeoBot, conf, secrets
-from .types import Embed
 from .utils import *

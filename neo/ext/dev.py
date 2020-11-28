@@ -25,6 +25,7 @@ import re
 import textwrap
 import time
 import traceback
+import asyncpg
 from collections import namedtuple
 from contextlib import redirect_stdout, suppress
 from typing import Union
@@ -189,7 +190,12 @@ class Dev(commands.Cog):
             strategy = self.bot.pool.fetch
 
         start = time.perf_counter()
-        results = await strategy(query)
+        try:
+            results = await strategy(query)
+        except asyncpg.PostgresError as error:
+            await ctx.send(ctx.codeblock(content=tabulate([[str(error)]], headers=["error"]), lang="sql"))
+            return
+            
         dt = (time.perf_counter() - start) * 1000.0
 
         rows = len(results)
@@ -215,7 +221,7 @@ class Dev(commands.Cog):
             delete_on_button=True,
             clear_reactions_after=True,
             timeout=300,
-            template=neo.Embed().set_author(
+            template=discord.Embed().set_author(
                 name=f'Returned {rows} {pluralize("row", rows)} in {dt:.2f}ms'
             ),
         )
@@ -312,7 +318,7 @@ class Dev(commands.Cog):
             data = await response.json()
             site = data["website"]
             await ctx.send(
-                embed=neo.Embed(title=site, url=site).set_image(url=data["snapshot"])
+                embed=discord.Embed(title=site, url=site).set_image(url=data["snapshot"])
             )
 
     @flags.add_flag("-m", "--mode", choices=["r", "l", "u"], default="r")
