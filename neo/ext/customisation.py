@@ -345,7 +345,6 @@ class Customisation(commands.Cog):
                 content=reminder.string,
                 deadline=reminder.time,
                 bot=self.bot,
-                conn_pool=self.bot.pool,
                 rm_id=reminder_id,
                 jump_origin=ctx.message.jump_url,
             )
@@ -431,7 +430,6 @@ class Customisation(commands.Cog):
                 content=record["content"],
                 deadline=record["deadline"],
                 bot=self.bot,
-                conn_pool=self.bot.pool,
                 rm_id=record["id"],
                 jump_origin=record["origin_jump"],
             )
