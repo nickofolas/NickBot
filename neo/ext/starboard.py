@@ -169,6 +169,8 @@ class StarboardCog(commands.Cog, name="Starboard"):
             return
         if not starboard._ready:
             return
+        if not self.bot.guild_cache[ctx.guild.id].get("starboard", False):
+            return
         if payload.channel_id == starboard.channel.id:
             return
         if (datetime.utcnow() - discord.Object(payload.message_id).created_at).days > starboard.max_days:
