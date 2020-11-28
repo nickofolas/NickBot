@@ -36,11 +36,10 @@ from yarl import URL
 
 
 class Reminder:
-    def __init__(self, *, user, bot, content, deadline, conn_pool, rm_id, jump_origin):
+    def __init__(self, *, user, bot, content, deadline, rm_id, jump_origin):
         self.user = user
         self.content = content
         self.deadline = deadline
-        self.conn_pool = conn_pool
         self.rm_id = rm_id
         self.jump_origin = jump_origin
         self.bot = bot
@@ -55,26 +54,17 @@ class Reminder:
         await self._do_remind()
 
     async def _do_remind(self):
-        target = (
-            self.bot.get_channel(int(list(URL(self.jump_origin).parts)[3])) or self.user
-        )
+        target = self.bot.get_channel(int(list(URL(self.jump_origin).parts)[3])) or self.user
         if self.user is None:
-            await self.conn_pool.execute(
-                "DELETE FROM reminders WHERE id=$1",
-                self.rm_id,
-            )
-            return
-        if self.bot.user_cache[self.user.id]["dm_reminders"] is True:
+            return await self.bot.pool.execute("DELETE FROM reminders WHERE id=$1", self.rm_id)
+        
+        if self.bot.user_cache[self.user.id].get("dm_reminders", False) is True:
             target = self.user
         send_content = f"**{self.user.mention} - <{self.jump_origin}>**\n" + indent(
             self.content, "> "
         )
-        await target.send(
-            send_content, allowed_mentions=discord.AllowedMentions(users=[self.user])
-        )
-        await self.conn_pool.execute(
-            "DELETE FROM reminders WHERE id=$1 AND user_id=$2", self.rm_id, self.user.id
-        )
+        await target.send(send_content, allowed_mentions=discord.AllowedMentions(users=[self.user]))
+        await self.bot.pool.execute("DELETE FROM reminders WHERE id=$1 AND user_id=$2", self.rm_id, self.user.id)
 
 
 class Customisation(commands.Cog):

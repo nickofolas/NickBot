@@ -318,9 +318,7 @@ class Info(commands.Cog):
         else:
             await ctx.send("Couldn't find a valid rich presence")
 
-    @commands.group(
-        aliases=["guild", "guildinfo", "server"], invoke_without_command=True
-    )
+    @commands.group(aliases=["guild", "guildinfo", "server"], invoke_without_command=True)
     @commands.guild_only()
     async def serverinfo(self, ctx):
         """Get info about the current server"""
