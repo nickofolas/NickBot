@@ -33,6 +33,8 @@ CREATE TABLE guild_prefs (
     starboard    BOOLEAN DEFAULT FALSE,
     starboard_star_requirement BIGINT DEFAULT 5,
     starboard_channel_id BIGINT,
+    starboard_format VARCHAR(200) DEFAULT ':star: **{stars}**',
+    starboard_max_days BIGINT CHECK (starboard_max_days > 1) DEFAULT 7,
     counting_channel counting
 );
 
@@ -50,3 +52,12 @@ CREATE TABLE todo (
     jump_url TEXT,
     created_at TIMESTAMP WITHOUT TIME ZONE
 );
+
+CREATE OR REPLACE FUNCTION change_starboard(new_destination BIGINT, _guild_id BIGINT) RETURNS void AS $$
+BEGIN
+        DELETE FROM starboard_msgs WHERE starboard_msgs.guild_id = _guild_id;
+        UPDATE guild_prefs 
+        SET starboard_channel_id = new_destination
+        WHERE guild_prefs.guild_id = _guild_id;
+END;
+$$ LANGUAGE plpgsql;
