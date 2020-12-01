@@ -141,12 +141,7 @@ class NeoBot(commands.Bot):
 
     async def __ainit__(self):
         self.session = aiohttp.ClientSession()
-        self.pool = await asyncpg.create_pool(
-            user=neo.secrets.dbuser,
-            password=neo.secrets.dbpass,
-            database=neo.secrets.db,
-            host=neo.secrets.dbhost,
-        )
+        self.pool = await asyncpg.create_pool(**neo.secrets.database)
         self.user_cache = await DbCache(
             db_query="SELECT * FROM user_data", key="user_id", pool=self.pool
         )

@@ -18,6 +18,7 @@ along with neo.  If not, see <https://www.gnu.org/licenses/>.
 import argparse
 import re
 import shlex
+import collections
 from contextlib import suppress
 from types import SimpleNamespace
 from typing import Union
@@ -39,7 +40,7 @@ class Guild(commands.Cog):
 
     def __init__(self, bot):
         self.bot = bot
-        self._counting_cache = {}
+        self._counting_cache = collections.defaultdict(dict)
         self._cache_ready = False
         bot.loop.create_task(self.get_cache())
 
@@ -199,6 +200,32 @@ class Guild(commands.Cog):
                 raise ValueError()
         except ValueError:
             await msg.delete()
+
+    @commands.Cog.listener("on_message_edit")
+    async def handle_edited_message(self, before, after):
+        if not (current_value := self._counting_cache[before.guild.id].get("current_number")) :
+            return
+
+        if self._counting_cache[before.channel.id] == after.channel.id:
+            await after.delete()
+            original_value = int(before.content)
+            if current_value == original_value:
+                self._counting_cache[before.guild.id]["current_number"] -= 1
+
+    
+    
+    @commands.Cog.listener("on_message_delete")
+    async def handle_deleted_message(self, message):
+        if not (current_value := self._counting_cache[message.guild.id].get("current_number")):
+            return
+        
+        if self._counting_cache[message.channel.id] == message.channel.id:
+            try:
+                number = int(message.content)
+                if number == current_value:
+                    self._counting_cache[message.guild.id]["current_number"] -= 1
+            except ValueError:
+                pass
 
     @tasks.loop(seconds=300)
     async def push_counting_data(self):
