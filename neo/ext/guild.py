@@ -18,6 +18,7 @@ along with neo.  If not, see <https://www.gnu.org/licenses/>.
 import argparse
 import re
 import shlex
+import textwrap
 import collections
 from contextlib import suppress
 from types import SimpleNamespace
@@ -134,7 +135,11 @@ class Guild(commands.Cog):
     async def _guild_counting(self, ctx):
         if (_counting := self._counting_cache[ctx.guild.id]) is None:
             return
-        embed = discord.Embed(description=str(_counting))
+        embed = discord.Embed(title="Counting")
+        embed.description = textwrap.dedent(f"""
+        **Current Number** {_counting["current_number"]:,d}
+        **Channel** <#{_counting["channel_id"]}>
+        """)
         await ctx.send(embed=embed)
 
     @is_owner_or_administrator()
@@ -155,12 +160,10 @@ class Guild(commands.Cog):
                 "Counting channel configured and bound to {.mention}".format(channel)
             )
 
-        _counting = self._counting_cache[ctx.guild.id]
-        if not channel:
-            channel = type("", (), {"id": 0})
+        channel = getattr(channel, "id", 0)
         await self.bot.pool.execute(
             "UPDATE guild_prefs SET counting_channel.channel_id=$1 WHERE guild_id=$2",
-            channel.id,
+            channel,
             ctx.guild.id,
         )
 
@@ -206,20 +209,18 @@ class Guild(commands.Cog):
         if not (current_value := self._counting_cache[before.guild.id].get("current_number")) :
             return
 
-        if self._counting_cache[before.channel.id] == after.channel.id:
+        if self._counting_cache[after.guild.id]["channel_id"] == after.channel.id:
             await after.delete()
             original_value = int(before.content)
             if current_value == original_value:
                 self._counting_cache[before.guild.id]["current_number"] -= 1
 
-    
-    
     @commands.Cog.listener("on_message_delete")
     async def handle_deleted_message(self, message):
         if not (current_value := self._counting_cache[message.guild.id].get("current_number")):
             return
         
-        if self._counting_cache[message.channel.id] == message.channel.id:
+        if self._counting_cache[message.guild.id]["channel_id"] == message.channel.id:
             try:
                 number = int(message.content)
                 if number == current_value:
