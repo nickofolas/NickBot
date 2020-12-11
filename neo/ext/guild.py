@@ -16,10 +16,11 @@ You should have received a copy of the GNU Affero General Public License
 along with neo.  If not, see <https://www.gnu.org/licenses/>.
 """
 import argparse
+import asyncio
+import collections
 import re
 import shlex
 import textwrap
-import collections
 from contextlib import suppress
 from types import SimpleNamespace
 from typing import Union
@@ -43,6 +44,7 @@ class Guild(commands.Cog):
         self.bot = bot
         self._counting_cache = collections.defaultdict(dict)
         self._cache_ready = False
+        self.locks = {}
         bot.loop.create_task(self.get_cache())
 
     async def get_cache(self):
@@ -54,6 +56,7 @@ class Guild(commands.Cog):
             if not counting:
                 continue
             self._counting_cache[_id] = dict(counting)
+            self.locks[_id] = asyncio.Lock()
         if not self._cache_ready:
             self.push_counting_data.start()
             self._cache_ready = True
@@ -130,16 +133,17 @@ class Guild(commands.Cog):
         await member.kick(reason=f"{ctx.author} ({ctx.author.id}) - {reason}")
         await ctx.send(f"Kicked **{member}**")
 
-    @is_owner_or_administrator()
     @commands.group(name="counting", invoke_without_command=True)
     async def _guild_counting(self, ctx):
         if (_counting := self._counting_cache[ctx.guild.id]) is None:
             return
         embed = discord.Embed(title="Counting")
-        embed.description = textwrap.dedent(f"""
+        embed.description = textwrap.dedent(
+            f"""
         **Current Number** {_counting["current_number"]:,d}
         **Channel** <#{_counting["channel_id"]}>
-        """)
+        """
+        )
         await ctx.send(embed=embed)
 
     @is_owner_or_administrator()
@@ -193,40 +197,37 @@ class Guild(commands.Cog):
             return
         elif self._counting_cache[msg.guild.id]["channel_id"] != msg.channel.id:
             return
+        lock = self.locks[msg.guild.id]
         try:
-            new = int(msg.content)
-            cur = self._counting_cache[msg.guild.id]["current_number"]
-            if new == (cur + 1):
-                self._counting_cache[msg.guild.id]["current_number"] = new
-                return
-            else:
+            if lock.locked():
                 raise ValueError()
+            async with lock:
+                new = int(msg.content)
+                cur = self._counting_cache[msg.guild.id]["current_number"]
+                if new == (cur + 1):
+                    self._counting_cache[msg.guild.id]["current_number"] = new
+                    return
+                else:
+                    raise ValueError()
         except ValueError:
             await msg.delete()
 
     @commands.Cog.listener("on_message_edit")
     async def handle_edited_message(self, before, after):
-        if not (current_value := self._counting_cache[before.guild.id].get("current_number")) :
+        if not after.guild:
+            return
+        if not (
+            current_value := self._counting_cache[before.guild.id].get("current_number")
+        ):
+            return
+        if after.id != after.channel.last_message_id:
             return
 
         if self._counting_cache[after.guild.id]["channel_id"] == after.channel.id:
             await after.delete()
             original_value = int(before.content)
             if current_value == original_value:
-                self._counting_cache[before.guild.id]["current_number"] -= 1
-
-    @commands.Cog.listener("on_message_delete")
-    async def handle_deleted_message(self, message):
-        if not (current_value := self._counting_cache[message.guild.id].get("current_number")):
-            return
-        
-        if self._counting_cache[message.guild.id]["channel_id"] == message.channel.id:
-            try:
-                number = int(message.content)
-                if number == current_value:
-                    self._counting_cache[message.guild.id]["current_number"] -= 1
-            except ValueError:
-                pass
+                self._counting_cache[after.guild.id]["current_number"] -= 1
 
     @tasks.loop(seconds=300)
     async def push_counting_data(self):

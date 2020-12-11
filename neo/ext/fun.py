@@ -33,6 +33,9 @@ from humanize import apnumber
 from PIL import Image, ImageSequence
 
 NUM_EMOJIS = {str(num): f":{apnumber(num)}:" for num in range(10)}
+TWEMOJI_BASE = (
+    "https://raw.githubusercontent.com/twitter/twemoji/master/assets/72x72/{}.png"
+)
 
 
 def upscale(inp, is_gif=False):
@@ -178,17 +181,43 @@ class Fun(commands.Cog):
     @get_emoji.command()
     async def big(self, ctx, emoji: Union[discord.PartialEmoji, str]):
         """Enlarges an emoji. Can work on animated emojis, but results may vary in quality"""
-        i = await self.fetch_one(ctx, emoji) if isinstance(emoji, str) else emoji
-        extension = "gif" if i.animated else "png"
         async with ctx.loading(tick=False):
+            if isinstance(emoji, discord.PartialEmoji):
+
+                i = (
+                    await self.fetch_one(ctx, emoji)
+                    if isinstance(emoji, str)
+                    else emoji
+                )
+                extension = "gif" if i.animated else "png"
+                i = await i.url.read()
+            else:
+
+                final_codepoint = []
+                for character in str(emoji):
+                    final_codepoint.append(f"{ord(character):X}")
+                target = "-".join(final_codepoint).lower()
+
+                async with self.bot.session.get(TWEMOJI_BASE.format(target)) as resp:
+                    if not resp.ok:
+                        i = await self.fetch_one(ctx, emoji)
+                        extension = "gif" if i.animated else "png"
+                        i = await i.url.read()
+
+                    else:
+                        extension = "png"
+                        i = await resp.read()
+
             out = await self.bot.loop.run_in_executor(
-                None, upscale, (await i.url.read()), i.animated
+                None, upscale, i, getattr(i, "animated", False)
             )
-        file = discord.File(io.BytesIO(out), filename=f"largeemoji.{extension}")
-        await ctx.send(
-            file=file,
-            embed=discord.Embed().set_image(url=f"attachment://largeemoji.{extension}"),
-        )
+            file = discord.File(io.BytesIO(out), filename=f"largeemoji.{extension}")
+            await ctx.send(
+                file=file,
+                embed=discord.Embed().set_image(
+                    url=f"attachment://largeemoji.{extension}"
+                ),
+            )
 
     @commands.is_owner()
     @get_emoji.command()

@@ -52,25 +52,32 @@ class Loading:
                 await self._ctx.message.add_reaction(self._ctx.tick(True))
 
     async def __aenter__(self):
-        try:
-            await self._ctx.message.add_reaction(neo.conf["emojis"]["loading"])
-        except (discord.Forbidden, discord.HTTPException) as e:
-            if e.code == 90001:  # Reaction blocked, so we can't react
-                self.can_react = False
+        async def inner():
+            try:
+                await self._ctx.message.add_reaction(neo.conf["emojis"]["loading"])
+            except (discord.Forbidden, discord.HTTPException) as e:
+                if e.code == 90001:  # Reaction blocked, so we can't react
+                    self.can_react = False
+
+        asyncio.create_task(inner())
         return self
 
     async def __aexit__(self, exc_type, exc, tb):
-        await self._ctx.message.remove_reaction(
-            neo.conf["emojis"]["loading"], self._ctx.me
+        asyncio.create_task(
+            self._ctx.message.remove_reaction(
+                neo.conf["emojis"]["loading"], self._ctx.me
+            )
         )
+
         if self.exc_ignore and isinstance(exc, self.exc_ignore):
-            await self.finalise()
+            asyncio.create_task(self.finalise())
             return True
         if self.prop and exc is not None:
             # Dispatch errors to handler
             self._ctx.bot.dispatch("command_error", self._ctx, exc)
             return True
-        await self.finalise()
+
+        asyncio.create_task(self.finalise())
 
 
 class Context(commands.Context):

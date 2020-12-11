@@ -27,10 +27,10 @@ from datetime import datetime
 
 import discord
 import neo
-from neo.core.context import Codeblock
-from neo.utils import get_next_truck_month
 from discord.ext import commands, tasks
 from humanize import naturaltime as nt
+from neo.core.context import Codeblock
+from neo.utils import get_next_truck_month
 
 ignored_cmds = re.compile(r"\.+")
 log = logging.getLogger(__name__)
@@ -62,17 +62,6 @@ class SnipedMessage:
         return embed
 
 
-HANDLERS = {
-    commands.DisabledCommand: lambda _, error: error,
-    commands.BadArgument: lambda _, error: error,
-    commands.CommandOnCooldown: lambda ctx, _: ctx.message.add_reaction(
-        neo.conf["emojis"]["alarm"]
-    ),
-    commands.CommandNotFound: None,
-    commands.MissingRequiredArgument: lambda _, error: error,
-}
-
-
 class Events(commands.Cog):
     """Contains the listeners for the bot"""
 
@@ -82,46 +71,41 @@ class Events(commands.Cog):
 
     @commands.Cog.listener()
     async def on_command_error(self, ctx, error):
+        ignored_errors = (
+            commands.CommandNotFound,
+            commands.NotOwner,
+            neo.utils.errors.Blacklisted,
+        )
+        original_error = error
+        # Ignores CommandNotFound and NotOwner because they're unnecessary
+
+        if isinstance(error, ignored_errors):
+            return
+
+        elif isinstance(error, commands.CommandOnCooldown):
+            return await ctx.message.add_reaction(neo.conf["emojis"]["alarm"])
+            # Handles Cooldowns uniquely
+
+        do_emojis = True
         error = getattr(error, "original", error)
-        try:
-            mro = inspect.getmro(error.__class__)
-            for cls in mro:
-                if cls in HANDLERS:
-                    handle = HANDLERS[cls]
-                    if callable(handle):
-                        func = handle(ctx, error)
-                        if asyncio.iscoroutine(func):
-                            return await func
-                        else:
-                            message = str(func)
-                    elif isinstance(handle, str):
-                        message = handle
-                    elif handle is None:
-                        return
-                    break
+        if settings := self.bot.user_cache.get(ctx.author.id):
+            if settings.get("repr_errors"):
+                error = repr(error)
+            do_emojis = settings.get("error_emojis", True)
 
-            else:
-                raise KeyError()
-
-            await ctx.send(message)
-
-        except KeyError:
-            do_emojis = True
-            if settings := self.bot.user_cache.get(ctx.author.id):
-                if settings.get("repr_errors"):
-                    error = repr(error)
-                do_emojis = settings.get("error_emojis", True)
-
-            tb = "".join(
-                traceback.format_exception(type(error), error, error.__traceback__)
+        tb = "".join(
+            traceback.format_exception(
+                type(original_error), original_error, original_error.__traceback__
             )
-            log.error("\n" + tb)
+        )
+        log.error("\n" + tb)
 
-            await self.bot.logging_channels["guild_io"].send(
-                f"Invocation: {ctx.message.clean_content[:80]}\n"
-                + str(Codeblock(content=tb[:1900], lang="py"))
-            )
-            await ctx.propagate_error(error, do_emojis=do_emojis)
+        await self.bot.logging_channels["guild_io"].send(
+            f"Invocation: {ctx.message.clean_content[:80]}\n"
+            + str(Codeblock(content=tb[:1900], lang="py"))
+        )
+
+        await ctx.propagate_error(error, do_emojis=do_emojis)
 
     @commands.Cog.listener()
     async def on_message_edit(self, before, after):

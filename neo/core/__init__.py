@@ -188,7 +188,7 @@ class NeoBot(commands.Bot):
 
     async def close(self):
         # wrapping all of them into a try except to let it die in peace
+        await super().close()
         with suppress(Exception):
             await self.session.close()
             await self.pool.close()
-        await super().close()

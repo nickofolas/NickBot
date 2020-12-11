@@ -70,6 +70,9 @@ class Starboard:
         return self._cached_stars.get(id)
 
     async def create_star(self, message, stars):
+        if self.get_star(message.id):
+            return
+
         kwargs = {"original_id": message.id, "stars": stars}
 
         embed = discord.Embed(description=str())
@@ -194,6 +197,10 @@ class StarboardCog(commands.Cog, name="Starboard"):
                 return
 
             star = await starboard.create_star(message, count)
+
+            if not star:
+                return
+
             query = """
             INSERT INTO starboard_msgs (
                 message_id, 
