@@ -1,6 +1,6 @@
 """
 neo Discord bot
-Copyright (C) 2020 nickofolas
+Copyright (C) 2021 nickofolas
 
 neo is free software: you can redistribute it and/or modify
 it under the terms of the GNU Affero General Public License as published
@@ -84,9 +84,9 @@ class Customisation(commands.Cog):
 
     @commands.command(name="settings")
     async def user_settings(
-        self, ctx, setting_name=None, *, new_setting: Union[BoolConverter, str] = None
+        self, ctx, setting_name=None, *, new_setting: Union[BoolConverter, int, str] = None
     ):
-        """View and edit boolean user settings"""
+        """View and edit user settings"""
         if setting_name is not None and new_setting is not None:
             keys = [
                 *filter(

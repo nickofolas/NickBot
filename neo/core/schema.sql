@@ -2,12 +2,12 @@ CREATE TYPE counting AS ( channel_id BIGINT, current_number BIGINT );
 
 CREATE TABLE user_data (
     user_id BIGINT PRIMARY KEY, 
-    repr_errors  BOOLEAN  DEFAULT FALSE,
-    error_emojis BOOLEAN  DEFAULT FALSE,
-    hl_blocks    BIGINT[] DEFAULT ARRAY[]::BIGINT[],
-    hl_whitelist BIGINT[] DEFAULT ARRAY[]::BIGINT[],
-    can_snipe    BOOLEAN  DEFAULT TRUE,
-    _blacklisted BOOLEAN  DEFAULT FALSE
+    repr_errors   BOOLEAN  DEFAULT FALSE,
+    error_emojis  BOOLEAN  DEFAULT FALSE,
+    hl_blocks     BIGINT[] DEFAULT ARRAY[]::BIGINT[],
+    hl_whitelist  BIGINT[] DEFAULT ARRAY[]::BIGINT[],
+    can_snipe     BOOLEAN  DEFAULT TRUE,
+    _blacklisted  BOOLEAN  DEFAULT FALSE
 );
 
 CREATE TABLE highlights (

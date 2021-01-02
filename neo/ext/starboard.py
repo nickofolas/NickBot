@@ -1,8 +1,10 @@
-import discord
+import asyncio
 import textwrap
-from typing import Union
-from discord.ext import commands
 from datetime import datetime
+from typing import Union
+
+import discord
+from discord.ext import commands
 
 
 class Star:
@@ -48,10 +50,9 @@ class Starboard:
                 message = await self.channel.history(
                     limit=1, before=discord.Object(star["starred_message_id"] + 1)
                 ).next()
-            except Exception:
-                continue
 
-            if message.id != star["starred_message_id"]:
+            except Exception as e:
+                print(e)
                 continue
 
             self._cached_stars[star["message_id"]] = Star(
@@ -59,6 +60,7 @@ class Starboard:
                 stars=star["stars"],
                 original_id=star["message_id"],
             )
+
         self._ready = True
         return self
 
@@ -70,6 +72,8 @@ class Starboard:
         return self._cached_stars.get(id)
 
     async def create_star(self, message, stars):
+        if not self._ready:
+            return
         if self.get_star(message.id):
             return
 
@@ -106,6 +110,9 @@ class Starboard:
         return star
 
     async def destroy_star(self, id):
+        if not self._ready:
+            return
+
         star = self._cached_stars.pop(id)
         try:
             await star.referencing_message.delete()
@@ -113,6 +120,9 @@ class Starboard:
             return star
 
     async def update_star(self, id, stars):
+        if not self._ready:
+            return
+
         star = self.get_star(id)
         star.stars = stars
 
@@ -151,7 +161,9 @@ class StarboardCog(commands.Cog, name="Starboard"):
                 "max_days": config["starboard_max_days"],
             }
 
-            self.starboards[guild] = await Starboard(**kwargs)
+            self.starboards[guild] = Starboard(**kwargs)
+
+        await asyncio.gather(*self.starboards.values())
 
         self._ready = True
 
@@ -184,6 +196,7 @@ class StarboardCog(commands.Cog, name="Starboard"):
             return
 
         if (star := starboard.get_star(payload.message_id)) is None:
+
             message = await self.get_message(
                 self.bot.get_channel(payload.channel_id), payload.message_id
             )
@@ -241,11 +254,10 @@ class StarboardCog(commands.Cog, name="Starboard"):
             ):
                 star.stars = 0
 
-            query = "DELETE FROM starboard_msgs WHERE message_id = $1"
-            await self.bot.pool.execute(query, star.original_id)
-
             if star.stars < starboard.required_stars:
                 await starboard.destroy_star(star.original_id)
+                query = "DELETE FROM starboard_msgs WHERE message_id = $1"
+                await self.bot.pool.execute(query, star.original_id)
             else:
                 await starboard.update_star(star.original_id, star.stars)
                 query = """
@@ -345,11 +357,12 @@ class StarboardCog(commands.Cog, name="Starboard"):
             }
             await channel.edit(overwrites=overwrites)
 
+        self.starboards[ctx.guild.id].channel = channel
         channel = getattr(channel, "id", channel)
         await self.bot.pool.execute(
             "SELECT change_starboard($1, $2); ", channel, ctx.guild.id
         )
-        self.starboards[ctx.guild.id].channel = channel
+
         self.bot.guild_cache[ctx.guild.id].update({"starboard_channel_id": channel})
         if channel:
             await ctx.send("Starboard relocated")

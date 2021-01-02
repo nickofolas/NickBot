@@ -1,6 +1,6 @@
 """
 neo Discord bot
-Copyright (C) 2020 nickofolas
+Copyright (C) 2021 nickofolas
 
 neo is free software: you can redistribute it and/or modify
 it under the terms of the GNU Affero General Public License as published
@@ -142,6 +142,7 @@ class Context(commands.Context):
     async def propagate_error(self, error, do_emojis=True):
         if do_emojis is False:
             return await self.send(error)
+
         with contextlib.suppress(Exception):
             await self.message.add_reaction(neo.conf["emojis"]["warning_button"])
             try:

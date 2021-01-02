@@ -12,6 +12,6 @@ PyYAML
 async-cse
 discord-flags
 async-timeout
-googletrans
+googletrans==4.0.0rc1
 import-expression
 

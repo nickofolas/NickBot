@@ -1,6 +1,6 @@
 """
 neo Discord bot
-Copyright (C) 2020 nickofolas
+Copyright (C) 2021 nickofolas
 
 neo is free software: you can redistribute it and/or modify
 it under the terms of the GNU Affero General Public License as published
@@ -88,7 +88,7 @@ class Events(commands.Cog):
 
         do_emojis = True
         error = getattr(error, "original", error)
-        if settings := self.bot.user_cache.get(ctx.author.id):
+        if (settings := self.bot.user_cache.get(ctx.author.id)):
             if settings.get("repr_errors"):
                 error = repr(error)
             do_emojis = settings.get("error_emojis", True)

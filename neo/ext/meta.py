@@ -1,6 +1,6 @@
 """
 neo Discord bot
-Copyright (C) 2020 nickofolas
+Copyright (C) 2021 nickofolas
 
 neo is free software: you can redistribute it and/or modify
 it under the terms of the GNU Affero General Public License as published
@@ -150,7 +150,6 @@ class Meta(commands.Cog):
         self.old_help = self.bot.help_command
         self.bot.help_command = EmbeddedHelpCommand()
         self.bot.help_command.cog = self
-        self.bot.loop.create_task(self.fetch_latest_commit())
 
     def cog_unload(self):
         self.bot.help_command = self.old_help
@@ -176,12 +175,6 @@ class Meta(commands.Cog):
             url = f"https://github.com/nickofolas/neo/blob/master/{fpath}#L{first_ln}-L{last_ln}"
             desc += f"**File** {fpath}\n**Lines** {first_ln} - {last_ln} [{len(lines) - 1} total]"
         await ctx.send(embed=discord.Embed(title=title, description=desc, url=url))
-
-    async def fetch_latest_commit(self):
-        headers = {"Authorization": f"token  {neo.secrets.github_token}"}
-        url = "https://api.github.com/repos/nickofolas/neo/commits"
-        async with self.bot.session.get(f"{url}/master", headers=headers) as resp1:
-            self.last_commit_cache = await resp1.json()
 
     @commands.command(aliases=["ab", "info", "support"])
     async def about(self, ctx):
@@ -212,12 +205,9 @@ class Meta(commands.Cog):
             """
             ),
         )
-        com_url = self.last_commit_cache["html_url"]
-        com_id_brief = self.last_commit_cache["sha"][:7]
         links = list()
         if ctx.author not in self.bot.get_guild(neo.conf["bot_guild_id"]).members:
             links.append(f"[Support](https://discord.gg/FNzhVXs)")
-        links.extend((f"[`{com_id_brief}`]({com_url})",))  # f'[Invite]({invite_url})',
         embed.add_field(name="**Links**", value=" | ".join(links), inline=False)
         await ctx.send(embed=embed)
 

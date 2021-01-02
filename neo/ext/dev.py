@@ -1,6 +1,6 @@
 """
 neo Discord bot
-Copyright (C) 2020 nickofolas
+Copyright (C) 2021 nickofolas
 
 neo is free software: you can redistribute it and/or modify
 it under the terms of the GNU Affero General Public License as published
@@ -25,17 +25,18 @@ import re
 import textwrap
 import time
 import traceback
-import asyncpg
 from collections import namedtuple
 from contextlib import redirect_stdout, suppress
 from typing import Union
 
+import asyncpg
 import discord
 import import_expression
 import neo
 from discord.ext import commands, flags
 from neo.utils.converters import BoolConverter, CBStripConverter
-from neo.utils.eval_backend import NeoEval, clear_intersection, format_exception
+from neo.utils.eval_backend import (NeoEval, clear_intersection,
+                                    format_exception)
 from neo.utils.formatters import clean_bytes, group, pluralize
 from tabulate import tabulate
 
@@ -353,6 +354,9 @@ class Dev(commands.Cog):
         self, ctx, target: Union[discord.Member, discord.User, int]
     ):
         target = target.id if not isinstance(target, int) else target
+        if target in self.bot.owner_ids:
+            raise commands.CommandError("What the fuck no you don't get to do that")
+
         async with ctx.loading():
             if not (_u := self.bot.user_cache.get(target)):
                 with suppress(Exception):

@@ -7,7 +7,6 @@ secret:
   dbuser: ''
   fortnite_key: ''
   gimage_keys:  # List of values
-  github_token: ''
   gsearch_keys: # List of values
   imgur_id: ''
   rebrandly_key: ''
