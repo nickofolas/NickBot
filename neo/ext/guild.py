@@ -69,7 +69,6 @@ class Guild(commands.Cog):
     @flags.add_flag("--contains", nargs="+")
     @flags.add_flag("--or", action="store_true", dest="_or")
     @flags.add_flag("--not", action="store_true", dest="_not")
-    @flags.add_flag("--emoji", action="store_true")
     @flags.add_flag("--bot", action="store_const", const=lambda m: m.author.bot)
     @flags.add_flag("--after", type=int, default=0)
     @flags.add_flag("--before", type=int, default=0)
@@ -77,11 +76,12 @@ class Guild(commands.Cog):
     @commands.max_concurrency(1, commands.BucketType.channel)
     @flags.command(name="clear", aliases=["c"])
     async def custom(self, ctx, **args):
-        """Clear messages from the channel
-        Can be specialised using flags"""
+        """Clear messages from the channel"""
         predicates = []
+
         if args["bot"]:
             predicates.append(args["bot"])
+
         if args["user"]:
             users = []
             converter = commands.MemberConverter()
@@ -90,16 +90,18 @@ class Guild(commands.Cog):
                     user = await converter.convert(ctx, u)
                     users.append(user)
             predicates.append(lambda m: m.author in users)
+
         if args["contains"]:
             predicates.append(
                 lambda m: any(sub in m.content for sub in args["contains"])
             )
-        op = all if not args["_or"] else any
 
+        op = all if not args["_or"] else any
         def predicate(m):
             r = op(p(m) for p in predicates)
             if args["_not"]:
                 return not r
+
             return r
 
         constraints = {"before": discord.Object(args["before"] or ctx.message.id)}
@@ -109,10 +111,13 @@ class Guild(commands.Cog):
         args["search_depth"] = max(
             0, min(2000, args["search_depth"])
         )  # clamp from 0-2000
-        async with ctx.loading():
-            await ctx.channel.purge(
+        async with ctx.loading(tick=False):
+            deleted = await ctx.channel.purge(
                 limit=args["search_depth"], check=predicate, **constraints
             )
+        
+        await ctx.message.delete()
+        await ctx.send(f"{len(deleted)} messages purged.", delete_after=5)
 
     @commands.command()
     @has_permissions(ban_members=True)

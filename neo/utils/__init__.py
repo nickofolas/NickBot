@@ -21,4 +21,4 @@ from .errors import *
 from .eval_backend import *
 from .formatters import *
 from .paginator import *
-from .truck_month import get_next_truck_month
+from .truck_month import get_next_truck_month, rdelta_filter_null

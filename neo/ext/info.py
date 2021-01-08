@@ -30,7 +30,7 @@ import neo.utils.formatters
 from dateutil.relativedelta import relativedelta
 from discord.ext import commands
 from discord.utils import get as _get
-from neo.utils import get_next_truck_month
+from neo.utils import get_next_truck_month, rdelta_filter_null
 from neo.utils.converters import BetterUserConverter
 from PIL import Image, ImageDraw, ImageOps, ImageSequence
 
@@ -467,11 +467,7 @@ class Info(commands.Cog):
         """
         next_truck_month = get_next_truck_month(ctx.message.created_at)
         await ctx.send(
-            "Truck month will next grace the earth in {0.months}"
-            " months, {0.weeks} weeks, {0.days} days, {0.hours} "
-            "hours, {0.minutes} minutes, and {0.seconds} seconds.".format(
-                next_truck_month
-            )
+            f"Truck month will next grace the earth in {', '.join(rdelta_filter_null(next_truck_month))}"
         )
 
 

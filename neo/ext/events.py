@@ -30,7 +30,7 @@ import neo
 from discord.ext import commands, tasks
 from humanize import naturaltime as nt
 from neo.core.context import Codeblock
-from neo.utils import get_next_truck_month
+from neo.utils import get_next_truck_month, rdelta_filter_null
 
 ignored_cmds = re.compile(r"\.+")
 log = logging.getLogger(__name__)
@@ -207,11 +207,7 @@ class Events(commands.Cog):
     @tasks.loop(seconds=300)
     async def truck_month(self):
         next_truck_month = get_next_truck_month(datetime.now())
-        next_tm = (
-            "{0.months} months, {0.weeks} weeks,"
-            " {0.days} days, {0.hours} hours, {0.minutes}"
-            " minutes, and {0.seconds} seconds"
-        ).format(next_truck_month)
+        next_tm = f"{', '.join(rdelta_filter_null(next_truck_month))}"
         await self.bot.change_presence(
             activity=discord.Activity(type=5, name=f"{next_tm} to truck month."),
         )
