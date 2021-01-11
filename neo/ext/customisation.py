@@ -41,7 +41,7 @@ class Reminder:
         self.content = content
         self.deadline = deadline
         self.rm_id = rm_id
-        self.jump_origin = jump_origin
+        self.jump_origin = URL(jump_origin)
         self.bot = bot
         self.task = bot.loop.create_task(self._do_wait(), name=f"REMINDER-{self.rm_id}")
 
@@ -54,9 +54,7 @@ class Reminder:
         await self._do_remind()
 
     async def _do_remind(self):
-        target = (
-            self.bot.get_channel(int(list(URL(self.jump_origin).parts)[3])) or self.user
-        )
+        target = self.bot.get_channel(int(self.jump_origin.parts[3])) or self.user
         if self.user is None:
             return await self.bot.pool.execute(
                 "DELETE FROM reminders WHERE id=$1", self.rm_id
@@ -64,11 +62,15 @@ class Reminder:
 
         if self.bot.user_cache[self.user.id].get("dm_reminders", False) is True:
             target = self.user
-        send_content = f"**{self.user.mention} - <{self.jump_origin}>**\n" + indent(
-            self.content, "> "
+
+        original_reference = discord.PartialMessage(
+            channel=target, id=int(self.jump_origin.parts[-1])
         )
+
         await target.send(
-            send_content, allowed_mentions=discord.AllowedMentions(users=[self.user])
+            self.content,
+            allowed_mentions=discord.AllowedMentions(users=[self.user]),
+            reference=original_reference.to_reference(),
         )
         await self.bot.pool.execute(
             "DELETE FROM reminders WHERE id=$1 AND user_id=$2", self.rm_id, self.user.id
@@ -84,7 +86,11 @@ class Customisation(commands.Cog):
 
     @commands.command(name="settings")
     async def user_settings(
-        self, ctx, setting_name=None, *, new_setting: Union[BoolConverter, int, str] = None
+        self,
+        ctx,
+        setting_name=None,
+        *,
+        new_setting: Union[BoolConverter, int, str] = None,
     ):
         """View and edit user settings"""
         if setting_name is not None and new_setting is not None:

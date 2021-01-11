@@ -7,6 +7,9 @@ import discord
 from discord.ext import commands
 
 
+MEDALS = ("🥇", "🥈", "🥉", " 4", " 5")
+
+
 class Star:
     def __init__(self, *, referencing_message, original_id, stars=0):
         self.original_id = original_id
@@ -288,6 +291,31 @@ class StarboardCog(commands.Cog, name="Starboard"):
                 starboard
             )
         )
+        await ctx.send(embed=embed)
+
+    @starboard.command(aliases=["lb"])
+    @commands.guild_only()
+    async def leaderboard(self, ctx):
+        if ctx.guild.id not in self.starboards:
+            raise commands.CommandError("This server doesn't have a starboard!")
+
+        starboard = self.starboards.get(ctx.guild.id)
+
+        embed = discord.Embed(title=f"{ctx.guild} Starboard Leaderboard", description="")
+
+        top_stars = sorted(
+            starboard.stars.values(), key=lambda star: star.stars, reverse=True
+        )
+
+        for index, star in enumerate(top_stars):
+            try:
+                embed.description += "{0} [{1.stars} stars]({1.referencing_message.jump_url})\n".format(
+                    MEDALS[index], star
+                )
+            
+            except IndexError:
+                break
+
         await ctx.send(embed=embed)
 
     @starboard.command()
