@@ -7,7 +7,7 @@ import discord
 from discord.ext import commands
 
 
-MEDALS = ("🥇", "🥈", "🥉", " 4", " 5")
+MEDALS = ("🥇", "🥈", "🥉", "\n4", "5")
 
 
 class Star:
@@ -50,9 +50,7 @@ class Starboard:
         for star in self._stars:
 
             try:
-                message = await self.channel.history(
-                    limit=1, before=discord.Object(star["starred_message_id"] + 1)
-                ).next()
+                message = self.channel.get_partial_message(star["starred_message_id"])
 
             except Exception as e:
                 print(e)

@@ -33,20 +33,27 @@ from humanize import apnumber
 from PIL import Image, ImageSequence
 
 NUM_EMOJIS = {str(num): f":{apnumber(num)}:" for num in range(10)}
-TWEMOJI_BASE = (
-    "https://raw.githubusercontent.com/twitter/twemoji/master/assets/72x72/{}.png"
-)
+IMG_MAX_SIZE = 512
+GIF_MAX_SIZE = 256
 
 
 def upscale(inp, is_gif=False):
     img = Image.open(io.BytesIO(inp))
     with io.BytesIO() as buffer:
         if is_gif:
+            h, w = img.size
             frames = []
-            for frame in ImageSequence.Iterator(img):
-                h, w = frame.size
-                frame = frame.resize((h * 2, w * 2), Image.LANCZOS)
+
+            while len(frames) < 100:
+                ratio = GIF_MAX_SIZE / h
+                frame = img.resize((GIF_MAX_SIZE, int(w * ratio)), Image.NEAREST)
                 frames.append(frame)
+
+                try:
+                    img.seek(img.tell() + 1)
+                except EOFError:
+                    break
+
             frames[0].save(
                 buffer,
                 format="GIF",
@@ -56,8 +63,9 @@ def upscale(inp, is_gif=False):
             )
         else:
             h, w = img.size
-            newsize = (h * 2, w * 2)
-            img = img.resize(newsize)
+            ratio = IMG_MAX_SIZE / h
+
+            img = img.resize((IMG_MAX_SIZE, int(w * ratio)))
             img.save(buffer, format="PNG")
         del img
         return buffer.getvalue()
@@ -130,122 +138,36 @@ class Fun(commands.Cog):
             clear_reactions_after=True,
         )
 
-    async def fetch_one(self, ctx, thing: str):
-        available_emojis = list(
-            filter(
-                lambda em: self.bot.guild_cache[em.guild.id]["index_emojis"] is True,
-                self.bot.emojis,
-            )
-        )
-        choice = get_close_matches(thing, map(lambda e: e.name, available_emojis), n=1)
-        if not choice:
-            raise commands.CommandError(f"Found no matches for `{thing}`")
-        return await self.em_converter.convert(ctx, choice[0])
-
     @commands.is_owner()
     @commands.group(name="emoji", aliases=["em"], invoke_without_command=True)
     async def get_emoji(self, ctx, *, emoji):
-        """Utilise custom emoji, both animated and cross-guild in a way that normally requires nitro"""
-        await ctx.send(await self.fetch_one(ctx, emoji))
+        ...
 
-    @commands.is_owner()
-    @get_emoji.command(aliases=["r"])
-    async def react(self, ctx, *, emoji):
-        """
-        React with emoji from other guilds without nitro!
-        Use the command with an emoji name, and then add your reaction
-        within 15 seconds, and the bot will remove its own.
-        """
-        to_react = await self.fetch_one(ctx, emoji)
-        async for m in ctx.channel.history(limit=2).filter(
-            lambda m: m.id != ctx.message.id
-        ):
-            await m.add_reaction(to_react)
-            important_msg = m
-        try:
-            react, user = await self.bot.wait_for(
-                "reaction_add",
-                timeout=15.0,
-                check=lambda r, u: r.message.id == important_msg.id
-                and r.emoji == to_react
-                and u.id == ctx.author.id,
-            )
-        except asyncio.TimeoutError:
-            await important_msg.remove_reaction(to_react, self.bot.user)
-        else:
-            await important_msg.remove_reaction(to_react, self.bot.user)
-            if ctx.channel.permissions_for(ctx.guild.me).manage_messages:
-                await ctx.message.delete()
-
-    @commands.is_owner()
+    @commands.max_concurrency(1, commands.BucketType.channel)
     @get_emoji.command()
-    async def big(self, ctx, emoji: Union[discord.PartialEmoji, str]):
-        """Enlarges an emoji. Can work on animated emojis, but results may vary in quality"""
+    async def big(self, ctx, emoji: discord.PartialEmoji):
+        """Enlarges an emoji.
+
+        Quality of animated emojis is erratic. GIF emojis will be limited to 64 frames duration."""
         async with ctx.loading(tick=False):
-            if isinstance(emoji, discord.PartialEmoji):
+            extension = "gif" if emoji.animated else "png"
 
-                i = (
-                    await self.fetch_one(ctx, emoji)
-                    if isinstance(emoji, str)
-                    else emoji
+            try:
+                out = await self.bot.loop.run_in_executor(
+                    None,
+                    upscale,
+                    await emoji.url.read(),
+                    getattr(emoji, "animated", False),
                 )
-                extension = "gif" if i.animated else "png"
-                i = await i.url.read()
-            else:
 
-                final_codepoint = []
-                for character in str(emoji):
-                    final_codepoint.append(f"{ord(character):X}")
-                target = "-".join(final_codepoint).lower()
+                file = discord.File(io.BytesIO(out), filename=f"largeemoji.{extension}")
+                await ctx.send(f"**Requested by: **{ctx.author}", file=file)
 
-                async with self.bot.session.get(TWEMOJI_BASE.format(target)) as resp:
-                    if not resp.ok:
-                        i = await self.fetch_one(ctx, emoji)
-                        extension = "gif" if i.animated else "png"
-                        i = await i.url.read()
-
-                    else:
-                        extension = "png"
-                        i = await resp.read()
-
-            out = await self.bot.loop.run_in_executor(
-                None, upscale, i, getattr(i, "animated", False)
-            )
-            file = discord.File(io.BytesIO(out), filename=f"largeemoji.{extension}")
-            await ctx.send(
-                file=file,
-                embed=discord.Embed().set_image(
-                    url=f"attachment://largeemoji.{extension}"
-                ),
-            )
-
-    @commands.is_owner()
-    @get_emoji.command()
-    async def search(self, ctx, *, query):
-        """Searches the bot's indexed emojis based on the inputted query"""
-        available_emojis = list(
-            filter(
-                lambda em: self.bot.guild_cache[em.guild.id]["index_emojis"] is True,
-                self.bot.emojis,
-            )
-        )
-        closest_matches = get_close_matches(
-            query, map(lambda em: em.name, available_emojis), n=len(available_emojis)
-        )
-        await ctx.paginate(
-            list(
-                map(
-                    lambda em: f"{em} | [{em.name}]({em.url})",
-                    [
-                        await self.em_converter.convert(ctx, em_name)
-                        for em_name in closest_matches
-                    ],
-                )
-            ),
-            10,
-            delete_on_button=True,
-            clear_reactions_after=True,
-        )
+            except discord.HTTPException as error:
+                if error.code == 40005:
+                    return await ctx.send(
+                        "File too large to upload to Discord, aborting."
+                    )
 
     @get_emoji.command(name="create")
     @commands.has_permissions(manage_emojis=True)

@@ -67,14 +67,19 @@ class Reminder:
             channel=target, id=int(self.jump_origin.parts[-1])
         )
 
-        await target.send(
-            self.content,
-            allowed_mentions=discord.AllowedMentions(users=[self.user]),
-            reference=original_reference.to_reference(),
-        )
-        await self.bot.pool.execute(
-            "DELETE FROM reminders WHERE id=$1 AND user_id=$2", self.rm_id, self.user.id
-        )
+        try:
+            await target.send(
+                self.content,
+                allowed_mentions=discord.AllowedMentions(users=[self.user]),
+                reference=original_reference.to_reference(),
+            )
+
+        finally:
+            await self.bot.pool.execute(
+                "DELETE FROM reminders WHERE id=$1 AND user_id=$2",
+                self.rm_id,
+                self.user.id,
+            )
 
 
 class Customisation(commands.Cog):
