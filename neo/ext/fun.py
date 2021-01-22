@@ -161,7 +161,7 @@ class Fun(commands.Cog):
                 )
 
                 file = discord.File(io.BytesIO(out), filename=f"largeemoji.{extension}")
-                await ctx.send(f"**Requested by: **{ctx.author}", file=file)
+                await ctx.send(f"**Requested by: **{ctx.author}\n<{emoji.url}>", file=file)
 
             except discord.HTTPException as error:
                 if error.code == 40005:
@@ -171,9 +171,9 @@ class Fun(commands.Cog):
 
     @get_emoji.command(name="create")
     @commands.has_permissions(manage_emojis=True)
-    async def create_emoji(self, ctx, name, *, image=None):
+    async def create_emoji(self, ctx, name, *, image: Union[discord.PartialEmoji, str] = None):
         image = (
-            await (await self.bot.session.get(image)).read()
+            await (await self.bot.session.get(str(getattr(image, "url", image)))).read()
             if image
             else await ctx.message.attachments[0].read()
         )

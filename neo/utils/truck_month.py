@@ -3,7 +3,7 @@ from datetime import datetime
 from dateutil.relativedelta import relativedelta
 
 
-RDELTA_NAMES = ["months", "weeks", "days", "hours", "minutes", "seconds"]
+RDELTA_NAMES = ["months", "days", "hours", "minutes", "seconds"]
 
 
 def get_next_year(current_time: datetime) -> int:

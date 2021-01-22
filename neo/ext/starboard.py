@@ -7,9 +7,6 @@ import discord
 from discord.ext import commands
 
 
-MEDALS = ("🥇", "🥈", "🥉", "\n4", "5")
-
-
 class Star:
     def __init__(self, *, referencing_message, original_id, stars=0):
         self.original_id = original_id
@@ -291,30 +288,43 @@ class StarboardCog(commands.Cog, name="Starboard"):
         )
         await ctx.send(embed=embed)
 
-    @starboard.command(aliases=["lb"])
+    @starboard.command(aliases=["lb"], ignore_extra=False)
     @commands.guild_only()
     async def leaderboard(self, ctx):
+        """Shows a ranked listing of all starred messages"""
         if ctx.guild.id not in self.starboards:
             raise commands.CommandError("This server doesn't have a starboard!")
 
         starboard = self.starboards.get(ctx.guild.id)
 
-        embed = discord.Embed(title=f"{ctx.guild} Starboard Leaderboard", description="")
-
-        top_stars = sorted(
-            starboard.stars.values(), key=lambda star: star.stars, reverse=True
+        embed = discord.Embed(
+            title=f"{ctx.guild} Starboard Leaderboard", description=""
         )
+        top_stars = []
 
-        for index, star in enumerate(top_stars):
+        for index, star in enumerate(
+            sorted(starboard.stars.values(), key=lambda star: star.stars, reverse=True),
+            1,
+        ):
             try:
-                embed.description += "{0} [{1.stars} stars]({1.referencing_message.jump_url})\n".format(
-                    MEDALS[index], star
+                top_stars.append(
+                    "{0} [{1.stars} stars]({1.referencing_message.jump_url})".format(
+                        index, star
+                    )
                 )
-            
+
             except IndexError:
                 break
 
-        await ctx.send(embed=embed)
+        await ctx.paginate(
+            top_stars,
+            5,
+            delete_on_button=True,
+            clear_reactions_after=True,
+            template=discord.Embed().set_author(
+                name=f"{ctx.guild} Starboard Leaderboard", icon_url=ctx.guild.icon_url
+            ),
+        )
 
     @starboard.command()
     @commands.has_permissions(manage_channels=True)

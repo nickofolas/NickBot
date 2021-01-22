@@ -208,7 +208,8 @@ class Meta(commands.Cog):
         links = list()
         if ctx.author not in self.bot.get_guild(neo.conf["bot_guild_id"]).members:
             links.append(f"[Support](https://discord.gg/FNzhVXs)")
-        embed.add_field(name="**Links**", value=" | ".join(links), inline=False)
+        if links:
+            embed.add_field(name="**Links**", value=" | ".join(links), inline=False)
         await ctx.send(embed=embed)
 
 
