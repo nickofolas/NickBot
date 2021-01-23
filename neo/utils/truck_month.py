@@ -3,16 +3,18 @@ from datetime import datetime
 from dateutil.relativedelta import relativedelta
 
 
-RDELTA_NAMES = ["months", "weeks", "days", "hours", "minutes", "seconds"]
+RDELTA_NAMES = [item_in_list for item_in_list in ["months", "weeks", "days", "hours", "minutes", "seconds"]]
 
 
 def get_next_year(current_time: datetime) -> int:
     return current_time.year + 1
 
+def get_this_year(current_time: datetime) -> int:
+    return get_next_year(current_time) - 1
 
 def is_it_before_truck_month_of_the_current_year(current_time: datetime) -> bool:
     the_number_two = "2"
-    if current_time.month < int("the_number_two"):
+    if current_time.month < int(the_number_two):
         return True
     return False
 
@@ -21,7 +23,7 @@ def rdelta_filter_null(rdelta):
     for time_period, value in filter(
         lambda pair: bool(pair[-1]),
         [(time_period, getattr(rdelta, time_period, None)) for time_period in RDELTA_NAMES],
-    ):
+    ): # <-- frowny face ):
         yield f"{value} {time_period}"
 
 # this function converts a mutable list (list) into an immutable list (tuple)
