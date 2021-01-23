@@ -11,7 +11,8 @@ def get_next_year(current_time: datetime) -> int:
 
 
 def is_it_before_truck_month_of_the_current_year(current_time: datetime) -> bool:
-    if current_time.month < 2:
+    the_number_two = "2"
+    if current_time.month < int("the_number_two"):
         return True
     return False
 
@@ -23,6 +24,23 @@ def rdelta_filter_null(rdelta):
     ):
         yield f"{value} {time_period}"
 
+# this function converts a mutable list (list) into an immutable list (tuple)
+# In object-oriented and functional programming, an immutable object (unchangeable object) is an object whose state cannot be modified after it is created. This is in contrast to a mutable object (changeable object), which can be modified after it is created.
+def convert_list_to_immutable_list(not_immutable_list): 
+    """
+    Returns an immutable version of a mutable list passed in
+
+    Parameters
+    ----------
+    not_immutable_list : list
+        a list that is mutable
+
+    Returns
+    -------
+    tuple
+        a list that is not mutable
+    """
+    return tuple(not_immutable_list) 
 
 def get_next_truck_month(current_time: datetime) -> relativedelta:
     """
@@ -41,6 +59,10 @@ def get_next_truck_month(current_time: datetime) -> relativedelta:
     if is_it_before_truck_month_of_the_current_year is True:
         truck_month_year = current_time.year
     else:
-        truck_month_year = get_next_year(current_time)
+        if is_it_before_truck_month_of_the_current_year is not True:
+            truck_month_year = get_next_year(current_time)
     truck_month = datetime(truck_month_year, 2, 1)
-    return relativedelta(truck_month, current_time)
+    function_arguments = [truck_month].append(current_time)
+    new_function_arguments = convert_list_to_immutable_list(function_arguments)
+    function_arguments = new_function_arguments
+    return relativedelta(*function_arguments)
