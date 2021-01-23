@@ -332,9 +332,8 @@ class Info(commands.Cog):
         )
         embed.set_author(
             name=f"{guild.name} | {guild.id}",
-            icon_url=guild.icon_url_as(static_format="png"),
-            url=guild.icon_url_as(static_format="png"),
         )
+        embed.set_thumbnail(url=guild.icon_url_as(static_format="png"))
         stats_val = (
             f'**Channels** {neo.conf["emojis"]["channel_indicators"]["TextChannel"]}'
             f'{len(guild.text_channels)} | {neo.conf["emojis"]["channel_indicators"]["VoiceChannel"]}'
